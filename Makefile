@@ -12,11 +12,11 @@
 
 NAME = webserv
 
-SOURCE = src/main.cpp # src/requests.cpp src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
+SOURCE = src/main.cpp src/server.cpp # src/requests.cpp src/response.cpp src/cgi.cpp src/utils.cpp
 
 OBJECT = $(SOURCE:.cpp=.o)
 
-HEADERS = includes/webserv.hpp # includes/server.hpp includes/request.hpp includes/response.hpp includes/cgi.hpp
+HEADERS = includes/webserv.hpp includes/server.hpp # includes/request.hpp includes/response.hpp includes/cgi.hpp
 
 INCLUDES = -Iincludes
 
@@ -43,7 +43,7 @@ $(NAME) : $(OBJECT)
 	@echo "$(GREEN) $<"
 	@$(PRINT_LOADING)
 	$(CPP) $(INCLUDES) -c $< -o $@
-
+	
 clean :
 	@rm -f $(OBJECT)
 
