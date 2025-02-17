@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+         #
+#    By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/20 11:17:19 by hmrabet           #+#    #+#              #
-#    Updated: 2025/01/20 11:26:24 by hmrabet          ###   ########.fr        #
+#    Updated: 2025/02/17 15:46:49 by mel-hamd         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,7 +16,7 @@ SOURCE = src/main.cpp # src/requests.cpp src/response.cpp src/server.cpp src/cgi
 
 OBJECT = $(SOURCE:.cpp=.o)
 
-HEADERS = includes/webserv.hpp # includes/server.hpp includes/request.hpp includes/response.hpp includes/cgi.hpp
+HEADERS = includes/webserv.hpp  includes/Response.hpp includes/methods/Delete.hpp includes/methods/Get.hpp includes/methods/Post.hpp includes/methods/Put.hpp  # includes/server.hpp includes/request.hpp includes/response.hpp includes/cgi.hpp  
 
 INCLUDES = -Iincludes
 
