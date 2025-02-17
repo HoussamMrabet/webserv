@@ -6,13 +6,14 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/16 22:14:25 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/18 00:23:47 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
 #include <iostream>
+#include <sstream>
 #include <map>
 
 class Request {
@@ -41,5 +42,6 @@ class Request {
         std::string getHeader(const std::string &key) const;
 
         void addHeader(const std::string &key, const std::string &value);
+        void parseRequest(const std::string& rawRequest);
         void printRequest() const;
     };
