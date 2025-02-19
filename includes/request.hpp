@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/18 00:23:47 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/19 08:06:32 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,25 +16,60 @@
 #include <sstream>
 #include <map>
 
-class Request {
+typedef enum e_method
+{
+    UNDEFINED,
+    GET,
+    POST,
+    DELETE,
+    INVALID,
+} t_method;
+
+typedef enum e_reqState
+{
+    VALID,
+    INVALID_REQ_LINE,
+    INVALID_METHOD,
+    HOST_MISSING,
+    INVALID_HEADERS,
+} t_reqState;
+
+typedef enum e_step
+{
+    REQ_LINE,
+    HEADERS,
+    BODY,
+} t_step;
+
+class Request
+{
     private:
-        std::string method;
+        int         statusCode;
+        t_step      currentStep;
+        t_reqState  state;
+        t_method    method;
+        std::string reqLine;
         std::string uri;
         std::string httpVersion;
         std::map<std::string, std::string> headers;
         std::string body;
+        void parseRequestLine();
+        void parseHeaders();
+        void parseBody();
 
     public:
         Request();
         ~Request();
 
-        void setMethod(const std::string &method);
+        void setReqLine(const std::string &reqLine);
+        void setMethod(t_method &method);
         void setUri(const std::string &uri);
         void setHttpVersion(const std::string &httpVersion);
         void setHeaders(const std::map<std::string, std::string> &headers);
         void setBody(const std::string &body);
         
-        std::string getMethod() const;
+        t_method getMethod() const;
+        std::string getReqLine() const;
         std::string getUri() const;
         std::string getHttpVersion() const;
         std::map<std::string, std::string> getHeaders() const;
@@ -44,4 +79,4 @@ class Request {
         void addHeader(const std::string &key, const std::string &value);
         void parseRequest(const std::string& rawRequest);
         void printRequest() const;
-    };
+};

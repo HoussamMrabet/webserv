@@ -3,19 +3,27 @@
 /*                                                        :::      ::::::::   */
 /*   request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/18 00:41:58 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/19 08:06:02 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "request.hpp"
 
-Request::Request() {}
+Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body("")
+{
+    this->headers["Connection"] = "Keep-Alive";
+}
 Request::~Request() {}
 
-void Request::setMethod(const std::string &method)
+void Request::setReqLine(const std::string &reqLine)
+{
+    this->reqLine = reqLine;
+}
+
+void Request::setMethod(t_method &method)
 {
     this->method = method;
 }
@@ -41,7 +49,12 @@ void Request::setBody(const std::string &body)
     this->body = body;
 }
 
-std::string Request::getMethod() const
+std::string Request::getReqLine() const
+{
+    return (this->reqLine);
+}
+
+t_method Request::getMethod() const
 {
     return (this->method);
 }
@@ -79,82 +92,144 @@ void Request::addHeader(const std::string &key, const std::string &value)
     this->headers[key] = value;
 }
 
+void Request::parseRequestLine()
+{
+    if (!this->reqLine.empty() && (this->reqLine[0] == ' ' || this->reqLine[0] == '\t'))
+    {
+        this->state = INVALID_REQ_LINE;
+        return;
+    }
+
+    std::istringstream lineStream(this->reqLine);
+    std::string methodStr;
+
+    if (!(lineStream >> methodStr >> this->uri >> this->httpVersion))
+    {
+        this->state = INVALID_REQ_LINE;
+        return;
+    }
+
+    if (methodStr == "GET")
+        this->method = GET;
+    else if (methodStr == "POST")
+        this->method = POST;
+    else if (methodStr == "DELETE")
+        this->method = DELETE;
+    else
+    {
+        this->statusCode = 400;
+        this->method = INVALID;
+        this->state = INVALID_METHOD;
+        return;
+    }
+
+    if (httpVersion != "HTTP/1.0" && httpVersion != "HTTP/1.1")
+    {
+        this->state = INVALID_REQ_LINE;
+        return;
+    }
+
+    this->state = VALID;
+}
+
+void Request::parseHeaders()
+{
+    std::istringstream headerStream(reqLine);
+    std::string line;
+    std::string lastHeaderKey;
+
+    while (std::getline(headerStream, line))
+    {
+        if (line == "\r" || line.empty())
+            break;
+
+        if (!line.empty() && (line[0] == ' ' || line[0] == '\t'))
+        {
+            if (!lastHeaderKey.empty())
+                headers[lastHeaderKey] += " " + line.substr(1);
+            else
+                state = INVALID_HEADERS;
+            continue;
+        }
+
+        std::istringstream lineStream(line);
+        std::string key, value;
+        if (std::getline(lineStream, key, ':'))
+        {
+            if (std::getline(lineStream, value))
+            {
+                while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
+                    value.erase(0, 1);
+
+                headers[key] = value;
+                lastHeaderKey = key;
+            }
+            else
+            {
+                state = INVALID_HEADERS;
+                return;
+            }
+        }
+        else
+        {
+            state = INVALID_HEADERS;
+            return;
+        }
+    }
+
+    if (httpVersion >= "HTTP/1.1" && headers.find("Host") == headers.end())
+    {
+        state = HOST_MISSING;
+        return;
+    }
+
+    state = VALID;
+}
+
+
 void Request::parseRequest(const std::string &rawRequest)
 {
     std::istringstream requestStream(rawRequest);
     std::string line;
 
-    // request line
-    if (std::getline(requestStream, line))
+    while (std::getline(requestStream, line))
     {
-        std::istringstream lineStream(line);
-        lineStream >> this->method >> this->uri >> this->httpVersion;
-    }
-
-    // headers
-    while (std::getline(requestStream, line) && line != "\r")
-    {
-        std::istringstream headerStream(line);
-        std::string key, value;
-        if (std::getline(headerStream, key, ':'))
+        if (this->currentStep == REQ_LINE)
         {
-            if (std::getline(headerStream, value))
+            this->reqLine += line;
+            if (this->reqLine.find("\r") != std::string::npos)
             {
-                while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
-                    value.erase(0, 1);
-                headers[key] = value;
+                this->parseRequestLine();
+                if (this->state != VALID)
+                    return;
+                this->currentStep = HEADERS;
             }
         }
-    }
-
-    if (headers.find("Content-Length") != headers.end())
-    {
-        std::istringstream contentLengthStream(headers["Content-Length"]);
-        int contentLength;
-        contentLengthStream >> contentLength;
-        char *buffer = new char[contentLength + 1];
-        requestStream.read(buffer, contentLength);
-        buffer[contentLength] = '\0';
-        body = buffer;
-        delete[] buffer;
-    }
-    else if (headers.find("Transfer-Encoding") != headers.end() && headers["Transfer-Encoding"] == "chunked")
-    {
-        // "0\r\n\r\n"
-        body.clear();
-        while (std::getline(requestStream, line))
+        else if (this->currentStep == HEADERS)
         {
-            int chunkSize;
-            std::istringstream chunkSizeStream(line);
-            chunkSizeStream >> std::hex >> chunkSize;
-            if (chunkSize == 0)
-                break;
-            char *buffer = new char[chunkSize + 1];
-            requestStream.read(buffer, chunkSize);
-            buffer[chunkSize] = '\0';
-            body += buffer;
-            delete[] buffer;
-            requestStream.ignore(2); // \r\n
+            if (line == "\r")
+            {
+                this->parseHeaders();
+                if (this->state != VALID)
+                    return;
+                this->currentStep = BODY;
+            }
+            else
+            {
+                this->headers[line.substr(0, line.find(":"))] = line.substr(line.find(":") + 2);
+            }
         }
-    }
-    else if (headers.find("Content-Type") != headers.end() && headers["Content-Type"].find("multipart/form-data") != std::string::npos)
-    {
-        std::string boundary = "--" + headers["Content-Type"].substr(headers["Content-Type"].find("boundary=") + 9);
-        std::string fullBody((std::istreambuf_iterator<char>(requestStream)), std::istreambuf_iterator<char>());
-
-        size_t pos = 0;
-        while ((pos = fullBody.find(boundary)) != std::string::npos)
+        else if (this->currentStep == BODY)
         {
-            std::string part = fullBody.substr(0, pos);
-            body += part + "\n";
-            fullBody.erase(0, pos + boundary.length());
+            this->body += line;
+            this->parseBody();
         }
     }
 }
 
 void Request::printRequest() const
 {
-    std::cout << this->method << " " << this->uri << " " << this->httpVersion << std::endl;
+    std::cout << this->reqLine << std::endl;
     std::cout << "Header" << std::endl;
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); it++)
         std::cout << it->first << ": " << it->second << std::endl;
