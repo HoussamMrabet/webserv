@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/19 16:02:46 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/19 17:19:43 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,11 @@ class Request
         std::string httpVersion;
         std::map<std::string, std::string> headers;
         std::string body;
+        bool isChunked;
+        bool isBoundary;
+        bool isContentLength;
+        std::string boundaryKey;
+        int contentLength;
         void parseRequestLine();
         void parseHeaders();
         void parseBody();
