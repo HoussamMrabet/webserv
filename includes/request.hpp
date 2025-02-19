@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/19 17:25:03 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/19 22:02:03 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <map>
 
 typedef enum e_method
@@ -58,6 +59,7 @@ class Request
         bool isContentLength;
         std::string boundaryKey;
         int contentLength;
+        std::string headersData;
         void parseRequestLine();
         void parseHeaders();
         void parseBody();

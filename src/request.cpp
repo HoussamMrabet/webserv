@@ -6,15 +6,15 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/19 17:26:45 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/19 22:02:41 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "request.hpp"
 
-Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0)
+Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0), headersData("")
 {
-    this->headers["Connection"] = "close";
+    this->headers["connection"] = "keep-alive";
 }
 Request::~Request() {}
 
@@ -169,9 +169,8 @@ void Request::parseRequestLine()
 
 void Request::parseHeaders()
 {
-    std::istringstream headerStream(reqLine);
+    std::istringstream headerStream(this->headersData);
     std::string line;
-    std::string lastHeaderKey;
 
     while (std::getline(headerStream, line))
     {
@@ -180,13 +179,8 @@ void Request::parseHeaders()
 
         if (!line.empty() && (line[0] == ' ' || line[0] == '\t'))
         {
-            if (!lastHeaderKey.empty())
-                this->headers[lastHeaderKey] += " " + line.substr(1);
-            else
-            {
-                this->state = INVALID_HEADERS;
-                this->statusCode = 400;
-            }
+            this->state = INVALID_HEADERS;
+            this->statusCode = 400;
             return;
         }
 
@@ -205,8 +199,11 @@ void Request::parseHeaders()
                     this->statusCode = 400;
                     return;
                 }
+
+                for (size_t i = 0; i < key.size(); i++)
+                    key[i] = std::tolower(key[i]);
+
                 this->headers[key] = value;
-                lastHeaderKey = key;
             }
             else
             {
@@ -221,22 +218,7 @@ void Request::parseHeaders()
         }
     }
 
-    bool hostFound = false;
-    for (std::map<std::string, std::string>::iterator it = this->headers.begin(); it != this->headers.end(); ++it)
-    {
-        std::string key = it->first;
-
-        for (size_t i = 0; i < key.length(); i++)
-            key[i] = std::tolower(key[i]);
-
-        if (key == "host")
-        {
-            hostFound = true;
-            break;
-        }
-    }
-
-    if (!hostFound)
+    if (this->headers.find("host") == this->headers.end())
     {
         this->state = HOST_MISSING;
         this->statusCode = 400;
@@ -316,11 +298,13 @@ void Request::parseRequest(const std::string &rawRequest)
             }
             else
             {
-                this->headers[line.substr(0, line.find(":"))] = line.substr(line.find(":") + 2);
+                this->headersData += line + '\n';
             }
         }
         else if (this->currentStep == BODY)
         {
+            if (this->method != POST)
+                return ;
             this->body += line;
             this->parseBody();
         }
@@ -334,5 +318,6 @@ void Request::printRequest() const
     for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); it++)
         std::cout << it->first << ": " << it->second << std::endl;
     if (!this->body.empty())
-        std::cout << "\nBody\n" << this->body << std::endl;
+        std::cout << "\nBody\n"
+                  << this->body << std::endl;
 }
