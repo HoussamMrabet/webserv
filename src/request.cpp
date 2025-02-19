@@ -6,13 +6,13 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/19 17:23:22 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/19 17:26:45 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "request.hpp"
 
-Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), contentLength(0), boundaryKey("")
+Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0)
 {
     this->headers["Connection"] = "close";
 }
@@ -243,6 +243,8 @@ void Request::parseHeaders()
         return;
     }
 }
+
+void Request::parseBody() {}
 
 void Request::parseRequest(const std::string &rawRequest)
 {

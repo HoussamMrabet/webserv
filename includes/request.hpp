@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/19 17:19:43 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/19 17:25:03 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,8 +80,8 @@ class Request
         std::map<std::string, std::string> getHeaders() const;
         std::string getBody() const;
         std::string getHeader(const std::string &key) const;
-        t_reqState Request::getState() const;
-        int Request::getStatusCode() const;
+        t_reqState getState() const;
+        int getStatusCode() const;
 
         void addHeader(const std::string &key, const std::string &value);
         void parseRequest(const std::string& rawRequest);
