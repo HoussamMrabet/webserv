@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/19 08:06:02 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/19 16:41:25 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,16 @@ t_method Request::getMethod() const
     return (this->method);
 }
 
+t_reqState Request::getState() const
+{
+    return (this->state);
+}
+
+int Request::getStatusCode() const
+{
+    return (this->statusCode);
+}
+
 std::string Request::getUri() const
 {
     return (this->uri);
@@ -97,6 +107,7 @@ void Request::parseRequestLine()
     if (!this->reqLine.empty() && (this->reqLine[0] == ' ' || this->reqLine[0] == '\t'))
     {
         this->state = INVALID_REQ_LINE;
+        this->statusCode = 400;
         return;
     }
 
@@ -106,6 +117,7 @@ void Request::parseRequestLine()
     if (!(lineStream >> methodStr >> this->uri >> this->httpVersion))
     {
         this->state = INVALID_REQ_LINE;
+        this->statusCode = 400;
         return;
     }
 
@@ -123,13 +135,36 @@ void Request::parseRequestLine()
         return;
     }
 
-    if (httpVersion != "HTTP/1.0" && httpVersion != "HTTP/1.1")
+    if (httpVersion.size() < 6 || httpVersion.substr(0, 5) != "HTTP/")
     {
         this->state = INVALID_REQ_LINE;
+        this->statusCode = 400;
         return;
     }
-
-    this->state = VALID;
+    
+    std::string version = httpVersion.substr(5);
+    
+    if (version.empty() || version.find_first_not_of("0123456789.") != std::string::npos)
+    {
+        this->state = INVALID_REQ_LINE;
+        this->statusCode = 400;
+        return;
+    }
+    
+    double versionNumber = atof(version.c_str());
+    if (versionNumber < 1.0 || versionNumber > 1.999)
+    {
+        this->state = INVALID_REQ_LINE;
+        this->statusCode = 400;
+        return;
+    }
+    
+    if (httpVersion != "HTTP/1.1")
+    {
+        this->state = INVALID_REQ_LINE;
+        this->statusCode = 505;
+        return;
+    }
 }
 
 void Request::parseHeaders()
@@ -182,8 +217,6 @@ void Request::parseHeaders()
         state = HOST_MISSING;
         return;
     }
-
-    state = VALID;
 }
 
 
@@ -192,6 +225,8 @@ void Request::parseRequest(const std::string &rawRequest)
     std::istringstream requestStream(rawRequest);
     std::string line;
 
+    if (this->state != VALID)
+        return ;
     while (std::getline(requestStream, line))
     {
         if (this->currentStep == REQ_LINE)
