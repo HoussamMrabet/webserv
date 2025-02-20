@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/19 22:02:03 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/20 16:58:46 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,7 @@ class Request
         bool isContentLength;
         std::string boundaryKey;
         int contentLength;
+        std::string requestData;
         std::string headersData;
         void parseRequestLine();
         void parseHeaders();
