@@ -22,11 +22,11 @@
 
 int main(int ac, char **av)
 {
-    // if (ac == 1 
+    // if (ac == 1) // if no config file use default path 
     if (ac == 2){
         // parse config file name
-        // parse config file
-        // creat server
+        // parse config file content
+        // creat server with config file data
         std::string s = av[1];
         if (s.size() < 7 || s.substr(s.size() - 7, s.size() - 1) != ".config") std::cout << "NO" << std::endl;
         else std::cout << "OK" << std::endl;
