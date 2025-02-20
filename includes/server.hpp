@@ -36,6 +36,8 @@
 // };
 //-----------------------------------------------------------------
 
+// add class for socket
+
 class Server{
     public:
         Server(std::string ipAddress, int port);
