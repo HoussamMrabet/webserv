@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/20 16:58:46 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/21 06:47:54 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,5 +88,6 @@ class Request
 
         void addHeader(const std::string &key, const std::string &value);
         void parseRequest(const std::string& rawRequest);
-        void printRequest() const;
+        void printRequest();
+        bool    bodyDone;
 };

@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/20 17:29:06 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/21 08:04:03 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0), requestData(""), headersData("")
 {
     this->headers["connection"] = "keep-alive";
+    bodyDone = false;
 }
 Request::~Request() {}
 
@@ -228,7 +229,28 @@ void Request::parseHeaders()
 
 void Request::parseBody()
 {
-    
+    if (this->isChunked)
+    {
+        if (this->isBoundary)
+        {
+            ;
+        }
+    }
+    else if (this->isBoundary)
+    {
+        
+    }
+    else if (this->isContentLength)
+    {
+        std::ofstream file("/Users/hmrabet/goinfre/uploads/video.mp4", std::ios::out | std::ios::trunc);
+        std::cerr << "here\n";
+        file << this->body;
+    }
+    else
+    {
+        this->statusCode = 400;
+        this->state = INVALID_HEADERS;
+    }
 }
 
 
@@ -239,6 +261,7 @@ void Request::parseRequest(const std::string &rawRequest)
     this->requestData += rawRequest;
     if (this->state == VALID && this->currentStep == REQ_LINE)
     {
+        std::cerr << "here1\n";
         size_t pos = this->requestData.find("\r\n");
         if (pos != std::string::npos)
         {
@@ -263,21 +286,21 @@ void Request::parseRequest(const std::string &rawRequest)
             std::map<std::string, std::string>::iterator transferEncodingIt = this->headers.find("Transfer-Encoding");
             if (transferEncodingIt != this->headers.end())
             {
-                if (transferEncodingIt->second != "chunked")
-                {
-                    this->state = INVALID_HEADERS;
-                    this->statusCode = 400;
-                    return;
-                }
+                // if (transferEncodingIt->second != "chunked")
+                // {
+                //     this->state = INVALID_HEADERS;
+                //     this->statusCode = 400;
+                //     return;
+                // }
                 this->isChunked = true;
             }
 
-            std::map<std::string, std::string>::iterator contentLengthIt = this->headers.find("Content-Length");
+            std::map<std::string, std::string>::iterator contentLengthIt = this->headers.find("content-length");
             if (contentLengthIt != this->headers.end())
             {
                 char *end;
                 contentLength = strtol(contentLengthIt->second.c_str(), &end, 10);
-                if (*end != '\0' || contentLength < 0)
+                if (contentLength < 0)
                 {
                     this->state = INVALID_HEADERS;
                     this->statusCode = 400;
@@ -304,13 +327,15 @@ void Request::parseRequest(const std::string &rawRequest)
     {
         this->body += this->requestData;
         this->requestData = "";
-        this->parseBody();
+        if (this->body.size() == static_cast<size_t>(this->contentLength)) {
+            this->parseBody();
+        }
         if (this->state != VALID)
-            return;
+            return ;
     }
 }
 
-void Request::printRequest() const
+void Request::printRequest()
 {
     std::cout << this->reqLine << std::endl << std::endl;
     for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); it++)
