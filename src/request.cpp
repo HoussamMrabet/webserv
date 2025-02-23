@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/23 03:17:18 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/23 15:32:51 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "request.hpp"
 
-Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0), requestData(""), headersData(""), currentContentLength(0)
+Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0), requestData(""), headersData(""), currentContentLength(0), fileName(""), fullBody("")
 {
     this->headers["connection"] = "keep-alive";
 }
@@ -179,7 +179,6 @@ void Request::parseHeaders()
 
         if (!line.empty() && (line[0] == ' ' || line[0] == '\t'))
         {
-            throw "aghshd";
             this->state = INVALID_HEADERS;
             this->statusCode = 400;
             return;
@@ -209,12 +208,14 @@ void Request::parseHeaders()
             else
             {
                 this->state = INVALID_HEADERS;
+                this->statusCode = 400;
                 return;
             }
         }
         else
         {
             this->state = INVALID_HEADERS;
+            this->statusCode = 400;
             return;
         }
     }
@@ -242,8 +243,18 @@ void Request::parseBody()
     }
     else if (this->isContentLength)
     {
-        std::ofstream file("/Users/hmrabet/goinfre/uploads/video.mp4", std::ios::out | std::ios::trunc);
-        file << this->body;
+        if (fileName.empty())
+        {
+            this->file.close();
+            this->fileName = "./" + std::to_string(time(0)) + ".txt";
+            std::ofstream newfile(fileName, std::ios::out | std::ios::binary);
+            this->file = std::move(newfile);
+            file << this->body;
+        }
+        else
+        {
+            this->file << this->body;
+        }
         this->body = "";
     }
     else
@@ -315,8 +326,9 @@ void Request::parseRequest(const std::string &rawRequest)
                 size_t boundaryPos = contentType.find("boundary=");
                 if (boundaryPos != std::string::npos)
                 {
-                    this->boundaryKey = contentType.substr(boundaryPos + 9);
+                    this->boundaryKey = "--" + contentType.substr(boundaryPos + 9);
                     this->isBoundary = true;
+                    std::cout << this->boundaryKey << std::endl;
                 }
             }
             this->currentStep = BODY;
@@ -324,12 +336,18 @@ void Request::parseRequest(const std::string &rawRequest)
     }
     if (this->state == VALID && this->currentStep == BODY && this->currentContentLength < this->contentLength)
     {
+        this->fullBody += this->requestData;
         this->body += this->requestData;
         this->currentContentLength += requestData.size();
         this->requestData = "";
         this->parseBody();
         if (this->state != VALID)
             return ;
+    }
+    if (this->currentContentLength == this->contentLength)
+    {
+        this->currentStep = DONE;
+        printRequest();
     }
 }
 
@@ -339,6 +357,6 @@ void Request::printRequest()
     for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); it++)
         std::cout << it->first << ": " << it->second << std::endl;
     std::cout << std::endl;
-    if (!this->body.empty())
-        std::cout << this->body << std::endl;
+    if (!this->fullBody.empty())
+        std::cout << this->fullBody << std::endl;
 }

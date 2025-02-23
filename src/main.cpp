@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/22 20:28:54 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/23 15:29:16 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #include <cstring>
 #include <fcntl.h>
 
-#define PORT 8080
+#define PORT 3002
 #define BUFFER_SIZE 8000000
 
 int main()
@@ -80,8 +80,8 @@ int main()
             if (valread > 0)
             {
                 buffer[valread] = '\0';
-                std::cout << "Received Request:\n"
-                          << std::endl;
+                // std::cout << "Received Request:\n"
+                //           << std::endl;
                 buf.append(buffer, valread);
                 req.parseRequest(buf);
                 // req.printRequest();

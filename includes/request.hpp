@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/23 03:16:05 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/23 15:31:12 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ typedef enum e_step
     REQ_LINE,
     HEADERS,
     BODY,
+    DONE
 } t_step;
 
 class Request
@@ -62,6 +63,9 @@ class Request
         std::string requestData;
         std::string headersData;
         size_t currentContentLength;
+        std::string fileName;
+        std::ofstream file;
+        std::string fullBody;
         void parseRequestLine();
         void parseHeaders();
         void parseBody();
