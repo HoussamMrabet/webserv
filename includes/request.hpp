@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/21 06:47:54 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/23 03:16:05 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,9 +58,10 @@ class Request
         bool isBoundary;
         bool isContentLength;
         std::string boundaryKey;
-        int contentLength;
+        size_t contentLength;
         std::string requestData;
         std::string headersData;
+        size_t currentContentLength;
         void parseRequestLine();
         void parseHeaders();
         void parseBody();
@@ -89,5 +90,4 @@ class Request
         void addHeader(const std::string &key, const std::string &value);
         void parseRequest(const std::string& rawRequest);
         void printRequest();
-        bool    bodyDone;
 };

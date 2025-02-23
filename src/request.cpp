@@ -6,16 +6,15 @@
 /*   By: hmrabet <hmrabet@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/21 08:04:03 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/23 03:17:18 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "request.hpp"
 
-Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0), requestData(""), headersData("")
+Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0), requestData(""), headersData(""), currentContentLength(0)
 {
     this->headers["connection"] = "keep-alive";
-    bodyDone = false;
 }
 Request::~Request() {}
 
@@ -180,6 +179,7 @@ void Request::parseHeaders()
 
         if (!line.empty() && (line[0] == ' ' || line[0] == '\t'))
         {
+            throw "aghshd";
             this->state = INVALID_HEADERS;
             this->statusCode = 400;
             return;
@@ -238,13 +238,13 @@ void Request::parseBody()
     }
     else if (this->isBoundary)
     {
-        
+             
     }
     else if (this->isContentLength)
     {
         std::ofstream file("/Users/hmrabet/goinfre/uploads/video.mp4", std::ios::out | std::ios::trunc);
-        std::cerr << "here\n";
         file << this->body;
+        this->body = "";
     }
     else
     {
@@ -261,7 +261,6 @@ void Request::parseRequest(const std::string &rawRequest)
     this->requestData += rawRequest;
     if (this->state == VALID && this->currentStep == REQ_LINE)
     {
-        std::cerr << "here1\n";
         size_t pos = this->requestData.find("\r\n");
         if (pos != std::string::npos)
         {
@@ -283,15 +282,15 @@ void Request::parseRequest(const std::string &rawRequest)
             this->parseHeaders();
             if (this->state != VALID)
                 return;
-            std::map<std::string, std::string>::iterator transferEncodingIt = this->headers.find("Transfer-Encoding");
+            std::map<std::string, std::string>::iterator transferEncodingIt = this->headers.find("transfer-encoding");
             if (transferEncodingIt != this->headers.end())
             {
-                // if (transferEncodingIt->second != "chunked")
-                // {
-                //     this->state = INVALID_HEADERS;
-                //     this->statusCode = 400;
-                //     return;
-                // }
+                if (transferEncodingIt->second != "chunked")
+                {
+                    this->state = INVALID_HEADERS;
+                    this->statusCode = 400;
+                    return;
+                }
                 this->isChunked = true;
             }
 
@@ -309,7 +308,7 @@ void Request::parseRequest(const std::string &rawRequest)
                 this->isContentLength = true;
             }
 
-            std::map<std::string, std::string>::iterator contentTypeIt = this->headers.find("Content-Type");
+            std::map<std::string, std::string>::iterator contentTypeIt = this->headers.find("content-type");
             if (contentTypeIt != this->headers.end())
             {
                 std::string contentType = contentTypeIt->second;
@@ -323,13 +322,12 @@ void Request::parseRequest(const std::string &rawRequest)
             this->currentStep = BODY;
         }
     }
-    if (this->state == VALID && this->currentStep == BODY)
+    if (this->state == VALID && this->currentStep == BODY && this->currentContentLength < this->contentLength)
     {
         this->body += this->requestData;
+        this->currentContentLength += requestData.size();
         this->requestData = "";
-        if (this->body.size() == static_cast<size_t>(this->contentLength)) {
-            this->parseBody();
-        }
+        this->parseBody();
         if (this->state != VALID)
             return ;
     }
