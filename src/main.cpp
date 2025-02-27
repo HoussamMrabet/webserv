@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/23 15:29:16 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/27 03:11:45 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #include <cstring>
 #include <fcntl.h>
 
-#define PORT 3002
+#define PORT 3000
 #define BUFFER_SIZE 8000000
 
 int main()
@@ -56,7 +56,7 @@ int main()
         return EXIT_FAILURE;
     }
 
-    std::cout << "Server listening on port " << PORT << "..." << std::endl;
+    // std::cout << "Server listening on port " << PORT << "..." << std::endl;
 
     Request req;
     while (true)
@@ -73,10 +73,9 @@ int main()
         // Read request
         while (true)
         {
-
             ssize_t valread = read(new_socket, buffer, BUFFER_SIZE - 1);
             if (valread == -1)
-                continue;
+            continue;
             if (valread > 0)
             {
                 buffer[valread] = '\0';
@@ -84,7 +83,7 @@ int main()
                 //           << std::endl;
                 buf.append(buffer, valread);
                 req.parseRequest(buf);
-                // req.printRequest();
+                req.printRequest();
                 buf.clear();
             }
         }

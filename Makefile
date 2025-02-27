@@ -6,17 +6,17 @@
 #    By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/20 11:17:19 by hmrabet           #+#    #+#              #
-#    Updated: 2025/01/20 11:26:24 by hmrabet          ###   ########.fr        #
+#    Updated: 2025/02/26 20:00:25 by hmrabet          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = webserv
 
-SOURCE = src/main.cpp # src/requests.cpp src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
+SOURCE = src/main.cpp src/request.cpp src/boundary.cpp # src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
 
 OBJECT = $(SOURCE:.cpp=.o)
 
-HEADERS = includes/webserv.hpp # includes/server.hpp includes/request.hpp includes/response.hpp includes/cgi.hpp
+HEADERS = includes/webserv.hpp includes/request.hpp includes/boundary.hpp # includes/server.hpp  includes/response.hpp includes/cgi.hpp
 
 INCLUDES = -Iincludes
 

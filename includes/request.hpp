@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/23 15:31:12 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/02/27 03:07:43 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@
 #include <sstream>
 #include <fstream>
 #include <map>
+#include <vector>
+#include "boundary.hpp"
 
 typedef enum e_method
 {
@@ -66,6 +68,7 @@ class Request
         std::string fileName;
         std::ofstream file;
         std::string fullBody;
+        std::vector<Boundary *> boundaries;
         void parseRequestLine();
         void parseHeaders();
         void parseBody();
@@ -89,6 +92,7 @@ class Request
         std::string getBody() const;
         std::string getHeader(const std::string &key) const;
         t_reqState getState() const;
+        t_step getCurrentStep() const;
         int getStatusCode() const;
 
         void addHeader(const std::string &key, const std::string &value);
