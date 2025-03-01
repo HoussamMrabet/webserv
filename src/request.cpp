@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/27 03:14:00 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/01 06:27:51 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -263,13 +263,22 @@ void Request::parseBody()
         {
             ;
         }
+        else
+        {
+            ;
+        }
     }
     else if (this->isBoundary)
     {
-        // Remove leading CRLF
         while (this->body.size() >= 2 && (this->body.substr(0, 2) == "\r\n"))
             this->body.erase(0, 2);
 
+        if (this->body.find(this->boundaryKey + "--") == 0)
+        {
+            this->body.clear();
+            this->currentStep = DONE;
+            return ;
+        }
         if (this->body.find(this->boundaryKey) == 0)
         {
             this->body.erase(0, this->boundaryKey.size() + 2);
@@ -292,7 +301,7 @@ void Request::parseBody()
                 if (!line.empty() && line.back() == '\r')
                     line.pop_back();
 
-                // std::cout << line << std::endl;
+                std::cout << line << std::endl;
 
                 if (line.empty())
                     break;
@@ -326,10 +335,10 @@ void Request::parseBody()
                 }
             }
 
-            if (!name.empty())
-                boundary->setFileName(name);
-            else if (!filename.empty())
+            if (!filename.empty())
                 boundary->setFileName(filename);
+            else if (!name.empty())
+                boundary->setFileName(name);
             else
                 boundary->setFileName(generateRandomFileName());
 
@@ -340,16 +349,16 @@ void Request::parseBody()
                 this->body.erase(0, headerEndPos + 4);
             }
         }
-        size_t nextCrlf = this->body.find(this->boundaryKey);
-        if (nextCrlf != std::string::npos)
+        size_t nextBoundaryPos = this->body.find(this->boundaryKey);
+        if (nextBoundaryPos != std::string::npos)
         {
-            std::string fileContent = this->body.substr(0, nextCrlf);
+            std::string fileContent = this->body.substr(0, nextBoundaryPos);
             if (!this->boundaries.empty())
             {
                 this->boundaries.back()->writeToFile(fileContent);
             }
 
-            this->body.erase(0, nextCrlf);
+            this->body.erase(0, nextBoundaryPos);
         }
         else
         {
@@ -359,12 +368,15 @@ void Request::parseBody()
             }
             this->body.clear();
         }
+        if (this->body.find(this->boundaryKey + "--") != std::string::npos)
+            parseBody();
     }
     else if (this->isContentLength)
     {
         std::ofstream newfile("./video.mp4", std::ios::out | std::ios::binary | std::ios::app);
         newfile.write(this->body.c_str(), this->body.size());
-        this->body = "";
+        this->body.clear();
+        this->currentStep = DONE;
     }
     else
     {
@@ -442,12 +454,12 @@ void Request::parseRequest(const std::string &rawRequest)
             this->currentStep = BODY;
         }
     }
-    if (this->state == VALID && this->currentStep == BODY && this->currentContentLength < this->contentLength)
+    if (this->state == VALID && this->currentStep == BODY)
     {
         this->fullBody += this->requestData;
         this->body += this->requestData;
         this->currentContentLength += requestData.size();
-        this->requestData = "";
+        this->requestData.clear();
         this->parseBody();
         if (this->state != VALID)
             return;

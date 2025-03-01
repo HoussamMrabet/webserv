@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/27 03:11:45 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/01 06:16:52 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #include <cstring>
 #include <fcntl.h>
 
-#define PORT 3000
+#define PORT 3001
 #define BUFFER_SIZE 8000000
 
 int main()
@@ -56,7 +56,7 @@ int main()
         return EXIT_FAILURE;
     }
 
-    // std::cout << "Server listening on port " << PORT << "..." << std::endl;
+    std::cout << "Server listening on port " << PORT << "..." << std::endl;
 
     Request req;
     while (true)
@@ -82,14 +82,18 @@ int main()
                 // std::cout << "Received Request:\n"
                 //           << std::endl;
                 buf.append(buffer, valread);
+                // std::cout.write(buf.c_str(), buf.size());
+                // std::cout.flush();
                 req.parseRequest(buf);
-                req.printRequest();
+                // req.printRequest();
                 buf.clear();
+                if (req.getCurrentStep() == DONE)
+                    break ;
             }
         }
 
         // Simple HTTP Response
-        std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
+        std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nDone!";
         send(new_socket, response.c_str(), response.length(), 0);
 
         // Close connection
