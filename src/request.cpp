@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/01 06:39:18 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/01 22:17:53 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,6 +111,23 @@ void Request::addHeader(const std::string &key, const std::string &value)
     this->headers[key] = value;
 }
 
+void handleSpecialCharacters(std::string& uri) {
+    std::string encodedChars[] = {"%20", "%21", "%22", "%23", "%24", "%25", "%26", "%27", "%28", "%29", "%2A", "%2B", "%2C",
+                                    "%2D", "%2E", "%2F", "%3A", "%3B", "%3C", "%3D", "%3E", "%3F", "%40", "%5B", "%5C", "%5D",
+                                    "%5E", "%5F", "%60", "%7B", "%7C", "%7D", "%7E"};
+
+    std::string specialChars[] = {" ", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/", ":", ";", "<",
+                                    "=", ">", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~"};
+
+    for (size_t i = 0; i < sizeof(encodedChars) / sizeof(encodedChars[0]); i++) {
+        std::string::size_type n = 0;
+        while ((n = uri.find(encodedChars[i], n)) != std::string::npos) {
+            uri.replace(n, encodedChars[i].length(), specialChars[i]);
+            n += 1;
+        }
+    }
+}
+
 void Request::parseRequestLine()
 {
     if (!this->reqLine.empty() && (this->reqLine[0] == ' ' || this->reqLine[0] == '\t'))
@@ -174,6 +191,8 @@ void Request::parseRequestLine()
         this->statusCode = 505;
         return;
     }
+
+    handleSpecialCharacters(this->uri);
 }
 
 void Request::parseHeaders()
