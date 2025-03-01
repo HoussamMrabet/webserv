@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/27 03:07:43 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/01 06:39:44 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,7 @@ class Request
         void parseRequestLine();
         void parseHeaders();
         void parseBody();
+        void setBodyInformations();
 
     public:
         Request();
