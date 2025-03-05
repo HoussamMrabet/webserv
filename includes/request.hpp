@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/01 06:39:44 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/05 13:42:28 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,7 @@ class Request
         void parseHeaders();
         void parseBody();
         void setBodyInformations();
+        void parseBoundaryHeaders(const std::string &boundaryHeaders);
 
     public:
         Request();

@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/01 22:17:53 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/05 15:53:11 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -272,6 +272,77 @@ std::string generateRandomFileName()
     return tmp_s;
 }
 
+void Request::parseBoundaryHeaders(const std::string &boundaryHeaders)
+{
+    std::istringstream headerStream(boundaryHeaders);
+    std::string line, name, filename;
+    std::map<std::string, std::string> heads;
+
+    fileName = "";
+    name = "";
+    while (std::getline(headerStream, line))
+    {
+        if (line == "\r" || line.empty())
+            continue;
+        
+        std::istringstream lineStream(line);
+        std::string key, value;
+        if (std::getline(lineStream, key, ':'))
+        {
+            if (std::getline(lineStream, value))
+            {
+                while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
+                    value.erase(0, 1);
+
+                for (size_t i = 0; i < key.size(); i++)
+                    key[i] = std::tolower(key[i]);
+
+                heads[key] = value;
+            }
+        }
+    }
+    this->boundaries.back()->setHeaders(heads);
+    for (std::map<std::string, std::string>::const_iterator it = heads.begin(); it != heads.end(); it++)
+    {
+        if (it->first == "content-disposition")
+        {
+            std::string disposition = it->second;
+            size_t namePos = disposition.find("filename=");
+            if (namePos != std::string::npos)
+            {
+                size_t start = namePos + 9;
+                if (disposition[start] == '"')
+                    start++;
+
+                size_t end = disposition.find_first_of("\"", start);
+                if (end != std::string::npos)
+                    fileName = disposition.substr(start, end - start);
+                else
+                    fileName = disposition.substr(start);
+            }
+            namePos = disposition.find("name=");
+            if (namePos != std::string::npos)
+            {
+                size_t start = namePos + 5;
+                if (disposition[start] == '"')
+                    start++;
+
+                size_t end = disposition.find_first_of("\"", start);
+                if (end != std::string::npos)
+                    name = disposition.substr(start, end - start);
+                else
+                    name = disposition.substr(start);
+            }
+        }
+    }
+    if (!fileName.empty())
+        this->boundaries.back()->setFileName(fileName);
+    else if (!name.empty())
+        this->boundaries.back()->setFileName(name);
+    else
+        this->boundaries.back()->setFileName(generateRandomFileName());
+}
+
 void Request::parseBody()
 {
     if (this->isChunked)
@@ -283,9 +354,6 @@ void Request::parseBody()
     }
     else if (this->isBoundary)
     {
-        while (this->body.size() >= 2 && (this->body.substr(0, 2) == "\r\n"))
-            this->body.erase(0, 2);
-
         if (this->body.find(this->boundaryKey + "--") == 0)
         {
             this->body.clear();
@@ -298,94 +366,45 @@ void Request::parseBody()
 
             Boundary *boundary = new Boundary();
 
-            std::istringstream stream(this->body);
-            std::string line;
-            std::string name, filename;
-
-            size_t pos = this->requestData.find("\r\n\r\n");
+            this->boundaries.push_back(boundary);
+        }
+        if (this->boundaries.size() && this->boundaries.back()->getCurrentStep() == BOUNDARY_HEADERS)
+        {
+            size_t pos = this->body.find("\r\n\r\n");
             if (pos != std::string::npos)
             {
-                this->headersData = this->requestData.substr(0, pos);
-                this->requestData.erase(0, pos + 4);
+                std::string boundaryHeaders = this->body.substr(0, pos);
+                this->body.erase(0, pos + 4);
+                this->parseBoundaryHeaders(boundaryHeaders);
+                this->boundaries.back()->setCurrentStep(BOUNDARY_BODY);
             }
-
-            while (std::getline(stream, line))
+        }
+        if (this->boundaries.size() && this->boundaries.back()->getCurrentStep() == BOUNDARY_BODY)
+        {
+            size_t endBoundary = this->body.find("\r\n" + this->boundaryKey);
+            if (endBoundary != std::string::npos)
             {
-                if (!line.empty() && line.back() == '\r')
-                    line.pop_back();
-
-                std::cout << line << std::endl;
-
-                if (line.empty())
-                    break;
-
-                std::size_t namePos = line.find("name=");
-                if (namePos != std::string::npos)
-                {
-                    size_t start = namePos + 5;
-                    if (line[start] == '"')
-                        start++;
-
-                    size_t end = line.find_first_of("\"", start);
-                    if (end != std::string::npos)
-                        name = line.substr(start, end - start);
-                    else
-                        name = line.substr(start);
-                }
-
-                std::size_t filePos = line.find("filename=");
-                if (filePos != std::string::npos)
-                {
-                    size_t start = filePos + 9;
-                    if (line[start] == '"')
-                        start++;
-
-                    size_t end = line.find_first_of("\"", start);
-                    if (end != std::string::npos)
-                        filename = line.substr(start, end - start);
-                    else
-                        filename = line.substr(start);
-                }
-            }
-            
-            if (!filename.empty())
-                boundary->setFileName(filename);
-            else if (!name.empty())
-                boundary->setFileName(name);
-            else
-                boundary->setFileName(generateRandomFileName());
-
-            this->boundaries.push_back(boundary);
-
-            size_t headerEndPos = this->body.find("\r\n\r\n");
-            if (headerEndPos != std::string::npos)
-                this->body.erase(0, headerEndPos + 4);
-        }
-
-        size_t nextBoundaryPos = this->body.find(this->boundaryKey);
-        if (nextBoundaryPos != std::string::npos)
-        {
-            std::string fileContent = this->body.substr(0, nextBoundaryPos);
-            if (!this->boundaries.empty())
+                std::string fileContent = this->body.substr(0, endBoundary);
                 this->boundaries.back()->writeToFile(fileContent);
-            this->body.erase(0, nextBoundaryPos);
-        }
-        else
-        {
-            if (!this->boundaries.empty())
+                this->body.erase(0, endBoundary + 2);
+                this->boundaries.back()->setCurrentStep(BOUNDARY_DONE);
+            }
+            else
+            {
                 this->boundaries.back()->writeToFile(this->body);
-            this->body.clear();
+                this->body.clear();
+            }
         }
-
-        if (this->body.find(this->boundaryKey + "--") != std::string::npos)
-            parseBody();
     }
     else if (this->isContentLength)
     {
-        std::ofstream newfile("./video.mp4", std::ios::out | std::ios::binary | std::ios::app);
-        newfile.write(this->body.c_str(), this->body.size());
-        this->body.clear();
-        this->currentStep = DONE;
+        if (this->contentLength == this->currentContentLength)
+        {
+            std::ofstream newfile("./video.mp4", std::ios::out | std::ios::binary | std::ios::app);
+            newfile.write(this->body.c_str(), this->body.size());
+            this->body.clear();    
+            this->currentStep = DONE;
+        }
     }
     else
     {
@@ -489,6 +508,6 @@ void Request::printRequest()
     for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); it++)
         std::cout << it->first << ": " << it->second << std::endl;
     std::cout << std::endl;
-    if (!this->fullBody.empty())
-        std::cout << this->fullBody << std::endl;
+    if (!this->requestData.empty())
+        std::cout << this->requestData << std::endl;
 }

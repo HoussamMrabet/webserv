@@ -1,18 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Boundary.cpp                                       :+:      :+:    :+:   */
+/*   boundary.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 20:01:43 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/27 02:53:17 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/05 14:27:40 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "boundary.hpp"
 
-Boundary::Boundary() {}
+Boundary::Boundary() : currentStep(BOUNDARY_HEADERS) {}
 
 Boundary::~Boundary()
 {
@@ -38,6 +38,11 @@ void Boundary::setContent(const std::string &content)
     this->content = content;
 }
 
+void Boundary::setCurrentStep(t_boundaryStep step)
+{
+    this->currentStep = step;
+}
+
 std::string Boundary::getFileName() const
 {
     return fileName;
@@ -51,6 +56,11 @@ std::map<std::string, std::string> Boundary::getHeaders() const
 std::string Boundary::getContent() const
 {
     return content;
+}
+
+t_boundaryStep Boundary::getCurrentStep() const
+{
+    return currentStep;
 }
 
 void Boundary::writeToFile(const std::string &content)

@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/01 06:16:52 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/05 15:54:55 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,8 +18,8 @@
 #include <cstring>
 #include <fcntl.h>
 
-#define PORT 3001
-#define BUFFER_SIZE 8000000
+#define PORT 3000
+#define BUFFER_SIZE 1024
 
 int main()
 {
@@ -34,6 +34,14 @@ int main()
     if (server_fd == 0)
     {
         perror("Socket failed");
+        return EXIT_FAILURE;
+    }
+
+    // Forcefully bind to the port even if already in use
+    int opt = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    {
+        perror("setsockopt failed");
         return EXIT_FAILURE;
     }
 
@@ -71,27 +79,29 @@ int main()
 
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
         // Read request
-        while (true)
+        while (req.getCurrentStep() != DONE)
         {
             ssize_t valread = read(new_socket, buffer, BUFFER_SIZE - 1);
-            if (valread == -1)
-            continue;
             if (valread > 0)
             {
                 buffer[valread] = '\0';
                 // std::cout << "Received Request:\n"
                 //           << std::endl;
+
                 buf.append(buffer, valread);
                 // std::cout.write(buf.c_str(), buf.size());
                 // std::cout.flush();
+                // std::cout << buf << std::flush;
                 req.parseRequest(buf);
                 // req.printRequest();
                 buf.clear();
-                if (req.getCurrentStep() == DONE)
-                    break ;
+            }
+            else
+            {
+                req.parseRequest("");
             }
         }
-
+        // req.printRequest();
         // Simple HTTP Response
         std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nDone!";
         send(new_socket, response.c_str(), response.length(), 0);
