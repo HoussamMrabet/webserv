@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/05 13:42:28 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/09 10:22:10 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,6 +98,6 @@ class Request
         int getStatusCode() const;
 
         void addHeader(const std::string &key, const std::string &value);
-        void parseRequest(const std::string& rawRequest);
+        void parseRequest(const std::string& rawRequest = "");
         void printRequest();
 };

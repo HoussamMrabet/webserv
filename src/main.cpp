@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/05 15:54:55 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/09 14:33:23 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ int main()
     int server_fd, new_socket;
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
-    char buffer[BUFFER_SIZE] = {0};
+    char buffer[BUFFER_SIZE + 1] = {0};
     std::string buf;
 
     // Create socket
@@ -81,13 +81,13 @@ int main()
         // Read request
         while (req.getCurrentStep() != DONE)
         {
-            ssize_t valread = read(new_socket, buffer, BUFFER_SIZE - 1);
+            ssize_t valread = read(new_socket, buffer, BUFFER_SIZE);
             if (valread > 0)
             {
                 buffer[valread] = '\0';
                 // std::cout << "Received Request:\n"
                 //           << std::endl;
-
+                
                 buf.append(buffer, valread);
                 // std::cout.write(buf.c_str(), buf.size());
                 // std::cout.flush();
@@ -98,7 +98,7 @@ int main()
             }
             else
             {
-                req.parseRequest("");
+                req.parseRequest();
             }
         }
         // req.printRequest();

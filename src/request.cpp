@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/05 15:53:11 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/09 14:33:03 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,17 +111,20 @@ void Request::addHeader(const std::string &key, const std::string &value)
     this->headers[key] = value;
 }
 
-void handleSpecialCharacters(std::string& uri) {
+void handleSpecialCharacters(std::string &uri)
+{
     std::string encodedChars[] = {"%20", "%21", "%22", "%23", "%24", "%25", "%26", "%27", "%28", "%29", "%2A", "%2B", "%2C",
-                                    "%2D", "%2E", "%2F", "%3A", "%3B", "%3C", "%3D", "%3E", "%3F", "%40", "%5B", "%5C", "%5D",
-                                    "%5E", "%5F", "%60", "%7B", "%7C", "%7D", "%7E"};
+                                  "%2D", "%2E", "%2F", "%3A", "%3B", "%3C", "%3D", "%3E", "%3F", "%40", "%5B", "%5C", "%5D",
+                                  "%5E", "%5F", "%60", "%7B", "%7C", "%7D", "%7E"};
 
     std::string specialChars[] = {" ", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/", ":", ";", "<",
-                                    "=", ">", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~"};
+                                  "=", ">", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~"};
 
-    for (size_t i = 0; i < sizeof(encodedChars) / sizeof(encodedChars[0]); i++) {
+    for (size_t i = 0; i < sizeof(encodedChars) / sizeof(encodedChars[0]); i++)
+    {
         std::string::size_type n = 0;
-        while ((n = uri.find(encodedChars[i], n)) != std::string::npos) {
+        while ((n = uri.find(encodedChars[i], n)) != std::string::npos)
+        {
             uri.replace(n, encodedChars[i].length(), specialChars[i]);
             n += 1;
         }
@@ -269,7 +272,10 @@ std::string generateRandomFileName()
     for (int i = 0; i < len; ++i)
         tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
 
-    return tmp_s;
+    std::ifstream file(tmp_s);
+    if (file.good())
+        return (generateRandomFileName());
+    return (tmp_s);
 }
 
 void Request::parseBoundaryHeaders(const std::string &boundaryHeaders)
@@ -284,7 +290,7 @@ void Request::parseBoundaryHeaders(const std::string &boundaryHeaders)
     {
         if (line == "\r" || line.empty())
             continue;
-        
+
         std::istringstream lineStream(line);
         std::string key, value;
         if (std::getline(lineStream, key, ':'))
@@ -354,14 +360,21 @@ void Request::parseBody()
     }
     else if (this->isBoundary)
     {
-        if (this->body.find(this->boundaryKey + "--") == 0)
+        static bool newFile = false;
+        if (this->body.find(this->boundaryKey + "--\r\n") == 0)
         {
             this->body.clear();
             this->currentStep = DONE;
-            return ;
+            return;
         }
-        if (this->body.find(this->boundaryKey) == 0)
+        if (this->body.find(this->boundaryKey + "\r\n") == 0)
         {
+            if (!newFile)
+            {
+                newFile = true;
+                return;
+            }
+            newFile = false;
             this->body.erase(0, this->boundaryKey.size() + 2);
 
             Boundary *boundary = new Boundary();
@@ -388,11 +401,64 @@ void Request::parseBody()
                 this->boundaries.back()->writeToFile(fileContent);
                 this->body.erase(0, endBoundary + 2);
                 this->boundaries.back()->setCurrentStep(BOUNDARY_DONE);
+                return;
             }
-            else
+            size_t crlf = this->body.find("\r");
+            while (crlf != std::string::npos)
+            {            
+                if (crlf == this->body.size() - 1)
+                    return;
+                
+                if (crlf + 1 < this->body.size())
+                {
+                    char nextChar = this->body[crlf + 1];
+                    
+                    if (nextChar != '\n')
+                    {
+                        this->boundaries.back()->writeToFile(this->body.substr(0, crlf + 1));
+                        this->body.erase(0, crlf + 1);
+                    }
+                    else if (crlf + 2 >= this->body.size())
+                        break ;
+                    else
+                    {
+                        char afterNewline = this->body[crlf + 2];
+                        
+                        if (afterNewline != '-')
+                        {
+                            this->boundaries.back()->writeToFile(this->body.substr(0, crlf + 2));
+                            this->body.erase(0, crlf + 2);
+                        }
+                        else
+                        {
+                            if (this->body.substr(crlf + 2).size() > this->boundaryKey.size())
+                            {
+                                size_t isBoundaryKey = this->body.substr(crlf).find(this->boundaryKey);
+                                if (isBoundaryKey != 0)
+                                {
+                                    this->boundaries.back()->writeToFile(this->body.substr(0, crlf + 2));
+                                    this->body.erase(0, crlf + 2);
+                                }
+                                else
+                                    break ;
+                            }
+                            else
+                                break ;
+                        }
+                    }
+                }
+
+                crlf = this->body.find("\r");
+            }
+            if (crlf == std::string::npos && this->body.size() > this->boundaryKey.size() + 2)
             {
-                this->boundaries.back()->writeToFile(this->body);
-                this->body.clear();
+                size_t endBoundary = this->body.find("\r\n" + this->boundaryKey + "\r\n");
+                size_t endRequest = this->body.find("\r\n" + this->boundaryKey + "--");
+                if (endBoundary == std::string::npos && endRequest == std::string::npos)
+                {
+                    this->boundaries.back()->writeToFile(this->body);
+                    this->body.clear();
+                }
             }
         }
     }
@@ -402,7 +468,7 @@ void Request::parseBody()
         {
             std::ofstream newfile("./video.mp4", std::ios::out | std::ios::binary | std::ios::app);
             newfile.write(this->body.c_str(), this->body.size());
-            this->body.clear();    
+            this->body.clear();
             this->currentStep = DONE;
         }
     }
