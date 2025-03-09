@@ -6,17 +6,17 @@
 #    By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/20 11:17:19 by hmrabet           #+#    #+#              #
-#    Updated: 2025/02/17 15:46:49 by mel-hamd         ###   ########.fr        #
+#    Updated: 2025/03/09 06:51:11 by mel-hamd         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = webserv
 
-SOURCE = src/main.cpp # src/requests.cpp src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
+SOURCE = src/main.cpp  src/configfile.cpp# src/requests.cpp src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
 
 OBJECT = $(SOURCE:.cpp=.o)
 
-HEADERS = includes/webserv.hpp  includes/Response.hpp includes/methods/Delete.hpp includes/methods/Get.hpp includes/methods/Post.hpp includes/methods/Put.hpp  # includes/server.hpp includes/request.hpp includes/response.hpp includes/cgi.hpp  
+HEADERS = includes/webserv.hpp  #includes/Response.hpp includes/methods/Delete.hpp includes/methods/Get.hpp includes/methods/Post.hpp includes/methods/Put.hpp  # includes/server.hpp includes/request.hpp includes/response.hpp includes/cgi.hpp  
 
 INCLUDES = -Iincludes
 
