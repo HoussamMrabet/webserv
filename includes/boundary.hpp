@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 20:01:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/05 14:29:09 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/09 14:37:17 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,4 +47,5 @@ class Boundary
         std::string getContent() const;
         t_boundaryStep getCurrentStep() const;
         void writeToFile(const std::string &content);
+        void closeFile();
 };

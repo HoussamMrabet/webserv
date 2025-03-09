@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 20:01:43 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/05 14:27:40 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/09 14:37:03 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,4 +78,10 @@ void Boundary::writeToFile(const std::string &content)
     {
         std::cerr << "Failed to write to the file!" << std::endl;
     }
+}
+
+void Boundary::closeFile()
+{
+    if (this->file.is_open())
+        this->file.close();
 }

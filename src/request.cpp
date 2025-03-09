@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 14:33:03 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/09 14:36:30 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -364,6 +364,8 @@ void Request::parseBody()
         if (this->body.find(this->boundaryKey + "--\r\n") == 0)
         {
             this->body.clear();
+            if (this->boundaries.size())
+                this->boundaries.back()->closeFile();
             this->currentStep = DONE;
             return;
         }
@@ -377,6 +379,8 @@ void Request::parseBody()
             newFile = false;
             this->body.erase(0, this->boundaryKey.size() + 2);
 
+            if (this->boundaries.size())
+                this->boundaries.back()->closeFile();
             Boundary *boundary = new Boundary();
 
             this->boundaries.push_back(boundary);
