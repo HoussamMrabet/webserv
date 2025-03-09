@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 16:04:25 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/09 16:20:33 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -261,7 +261,7 @@ void Request::parseHeaders()
     }
 }
 
-std::string generateRandomFileName()
+std::string generateRandomFileName(const std::string &prefix = "")
 {
     static const char alphanum[] =
         "0123456789"
@@ -274,10 +274,10 @@ std::string generateRandomFileName()
     for (int i = 0; i < len; ++i)
         tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
 
-    std::ifstream file(tmp_s);
+    std::ifstream file(prefix + tmp_s);
     if (file.good())
         return (generateRandomFileName());
-    return (tmp_s);
+    return (prefix + tmp_s);
 }
 
 void Request::parseBoundaryHeaders(const std::string &boundaryHeaders)
@@ -476,8 +476,8 @@ void Request::parseBody()
                     return ;
                 else
                 {
-                    
                     this->file.write(this->body.substr(0, this->chunkSize).c_str(), this->chunkSize);
+                    this->file.flush();
                     this->body.erase(0, this->chunkSize + 2);
                     inChunk = false;
                 }
@@ -514,6 +514,7 @@ void Request::parseBody()
         if (this->contentLength == this->currentContentLength)
         {
             this->file.write(this->body.c_str(), this->body.size());
+            this->file.flush();
             this->file.close();
             this->body.clear();
             this->currentStep = DONE;
@@ -568,7 +569,7 @@ void Request::setBodyInformations()
         }
     }
     if (!this->isBoundary)
-        this->file = std::ofstream("./[Animerco.com] Mob Psycho 100 III - 12 END.mp4", std::ios::out | std::ios::binary | std::ios::trunc);
+        this->file = std::ofstream(generateRandomFileName("./binary_file_"), std::ios::out | std::ios::binary | std::ios::trunc);
 }
 
 void Request::parseRequest(const std::string &rawRequest)
