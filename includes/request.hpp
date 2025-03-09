@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 10:22:10 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/09 15:50:42 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,7 @@ class Request
         std::string httpVersion;
         std::map<std::string, std::string> headers;
         std::string body;
+        std::ofstream file;
         bool isChunked;
         bool isBoundary;
         bool isContentLength;
@@ -66,13 +67,16 @@ class Request
         std::string headersData;
         size_t currentContentLength;
         std::string fileName;
-        std::ofstream file;
         std::string fullBody;
         std::vector<Boundary *> boundaries;
+        size_t chunkSize;
+        std::string chunkData;
+        bool   inChunk;;
         void parseRequestLine();
         void parseHeaders();
         void parseBody();
         void setBodyInformations();
+        void parseBoundary();
         void parseBoundaryHeaders(const std::string &boundaryHeaders);
 
     public:

@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 14:33:23 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/09 16:01:43 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ int main()
         return EXIT_FAILURE;
     }
 
-    std::cout << "Server listening on port " << PORT << "..." << std::endl;
+    // std::cout << "Server listening on port " << PORT << "..." << std::endl;
 
     Request req;
     while (true)
@@ -91,7 +91,7 @@ int main()
                 buf.append(buffer, valread);
                 // std::cout.write(buf.c_str(), buf.size());
                 // std::cout.flush();
-                // std::cout << buf << std::flush;
+                std::cout << buf << std::flush;
                 req.parseRequest(buf);
                 // req.printRequest();
                 buf.clear();
