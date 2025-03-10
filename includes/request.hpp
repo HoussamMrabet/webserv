@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 15:50:42 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/09 16:24:37 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,7 @@ class Request
         void parseBody();
         void setBodyInformations();
         void parseBoundary();
+        void parseChunkedBoundary();
         void parseBoundaryHeaders(const std::string &boundaryHeaders);
 
     public:

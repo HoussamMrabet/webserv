@@ -6,13 +6,13 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 16:20:33 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/10 00:41:12 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "request.hpp"
 
-Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0), requestData(""), headersData(""), currentContentLength(0), fileName(""), fullBody(""), chunkSize(0), inChunk(false)
+Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0), requestData(""), headersData(""), currentContentLength(0), fileName(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false)
 {
     this->headers["connection"] = "keep-alive";
 }
@@ -460,48 +460,161 @@ void Request::parseBoundary()
     }
 }
 
+void Request::parseChunkedBoundary()
+{
+    static bool newFile = false;
+    if (this->chunkData.find(this->boundaryKey + "--\r\n") == 0)
+    {
+        this->chunkData.clear();
+        if (this->boundaries.size())
+            this->boundaries.back()->closeFile();
+        this->currentStep = DONE;
+        return;
+    }
+    if (this->chunkData.find(this->boundaryKey + "\r\n") == 0)
+    {
+        if (!newFile)
+        {
+            newFile = true;
+            return;
+        }
+        newFile = false;
+        this->chunkData.erase(0, this->boundaryKey.size() + 2);
+
+        if (this->boundaries.size())
+            this->boundaries.back()->closeFile();
+        Boundary *boundary = new Boundary();
+
+        this->boundaries.push_back(boundary);
+    }
+    if (this->boundaries.size() && this->boundaries.back()->getCurrentStep() == BOUNDARY_HEADERS)
+    {
+        size_t pos = this->chunkData.find("\r\n\r\n");
+        if (pos != std::string::npos)
+        {
+            std::string boundaryHeaders = this->chunkData.substr(0, pos);
+            this->chunkData.erase(0, pos + 4);
+            this->parseBoundaryHeaders(boundaryHeaders);
+            this->boundaries.back()->setCurrentStep(BOUNDARY_BODY);
+        }
+    }
+    if (this->boundaries.size() && this->boundaries.back()->getCurrentStep() == BOUNDARY_BODY)
+    {
+        size_t endBoundary = this->chunkData.find("\r\n" + this->boundaryKey);
+        if (endBoundary != std::string::npos)
+        {
+            std::string fileContent = this->chunkData.substr(0, endBoundary);
+            this->boundaries.back()->writeToFile(fileContent);
+            this->chunkData.erase(0, endBoundary + 2);
+            this->boundaries.back()->setCurrentStep(BOUNDARY_DONE);
+            return;
+        }
+        size_t crlf = this->chunkData.find("\r");
+        while (crlf != std::string::npos)
+        {
+            if (crlf == this->chunkData.size() - 1)
+                return;
+
+            if (crlf + 1 < this->chunkData.size())
+            {
+                char nextChar = this->chunkData[crlf + 1];
+
+                if (nextChar != '\n')
+                {
+                    this->boundaries.back()->writeToFile(this->chunkData.substr(0, crlf + 1));
+                    this->chunkData.erase(0, crlf + 1);
+                }
+                else if (crlf + 2 >= this->chunkData.size())
+                    break;
+                else
+                {
+                    char afterNewline = this->chunkData[crlf + 2];
+
+                    if (afterNewline != '-')
+                    {
+                        this->boundaries.back()->writeToFile(this->chunkData.substr(0, crlf + 2));
+                        this->chunkData.erase(0, crlf + 2);
+                    }
+                    else
+                    {
+                        if (this->chunkData.substr(crlf + 2).size() > this->boundaryKey.size())
+                        {
+                            size_t isBoundaryKey = this->chunkData.substr(crlf).find(this->boundaryKey);
+                            if (isBoundaryKey != 0)
+                            {
+                                this->boundaries.back()->writeToFile(this->chunkData.substr(0, crlf + 2));
+                                this->chunkData.erase(0, crlf + 2);
+                            }
+                            else
+                                break;
+                        }
+                        else
+                            break;
+                    }
+                }
+            }
+
+            crlf = this->chunkData.find("\r");
+        }
+        if (crlf == std::string::npos && this->chunkData.size() > this->boundaryKey.size() + 2)
+        {
+            size_t endBoundary = this->chunkData.find("\r\n" + this->boundaryKey + "\r\n");
+            size_t endRequest = this->chunkData.find("\r\n" + this->boundaryKey + "--");
+            if (endBoundary == std::string::npos && endRequest == std::string::npos)
+            {
+                this->boundaries.back()->writeToFile(this->chunkData);
+                this->chunkData.clear();
+            }
+        }
+    }
+}
+
 void Request::parseBody()
 {
     if (this->isChunked)
     {
-        if (this->isBoundary)
+        if (this->body.empty())
+            parseChunkedBoundary();
+        if (inChunk)
         {
-            parseBoundary();
-        }
-        else
-        {
-            if (inChunk)
+            if (this->body.size() < this->chunkSize + 2)
+                return ;
+            else
             {
-                if (this->body.size() < this->chunkSize + 2)
-                    return ;
+                if (this->isBoundary)
+                {
+                    this->chunkData += this->body.substr(0, this->chunkSize);
+                    parseChunkedBoundary();
+                    this->body.erase(0, this->chunkSize + 2);
+                }
                 else
                 {
                     this->file.write(this->body.substr(0, this->chunkSize).c_str(), this->chunkSize);
                     this->file.flush();
                     this->body.erase(0, this->chunkSize + 2);
-                    inChunk = false;
                 }
+                inChunk = false;
             }
-            size_t pos = this->body.find("\r\n");
-            if (pos != std::string::npos)
+        }
+        size_t pos = this->body.find("\r\n");
+        if (pos != std::string::npos)
+        {
+            std::string chunkSizeStr = this->body.substr(0, pos);
+            this->body.erase(0, pos + 2);
+            char *end;
+            this->chunkSize = strtol(chunkSizeStr.c_str(), &end, 16);
+            this->inChunk = true;
+            if (this->chunkSize < 0)
             {
-                std::string chunkSizeStr = this->body.substr(0, pos);
-                this->body.erase(0, pos + 2);
-                char *end;
-                this->chunkSize = strtol(chunkSizeStr.c_str(), &end, 16);
-                this->inChunk = true;
-                if (this->chunkSize < 0)
-                {
-                    this->state = INVALID_HEADERS;
-                    this->statusCode = 400;
-                    return;
-                }
-                if (this->chunkSize == 0)
-                {
-                    this->body.clear();
-                    this->currentStep = DONE;
-                    return;
-                }
+                this->state = INVALID_HEADERS;
+                this->statusCode = 400;
+                return;
+            }
+            if (this->chunkSize == 0)
+            {
+                this->body.clear();
+                this->currentStep = DONE;
+                return;
             }
         }
     }
@@ -565,7 +678,7 @@ void Request::setBodyInformations()
         {
             this->boundaryKey = "--" + contentType.substr(boundaryPos + 9);
             this->isBoundary = true;
-            this->boundaryKey.erase(this->boundaryKey.size() - 1);
+            this->boundaryKey.erase(this->boundaryKey.size());
         }
     }
     if (!this->isBoundary)
