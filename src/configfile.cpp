@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/09 06:24:37 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/09 07:59:24 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/03/10 07:55:10 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,15 @@ void openFile(std::string file) {
 		{
 			line = line.substr(0, found);
 		}
-		buffFile += line;
+		size_t pos;
+		
+		pos = 0;
+		while ((found = line.find('\t', pos)) != std::string::npos) {
+			buffFile += line.substr(pos, found - pos);
+			buffFile += " ";
+			pos = found + 1;
+		}
+		buffFile += line.substr(pos) + " ";
 	 }
 	 std::cout << buffFile << std::endl;
 }
