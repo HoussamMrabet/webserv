@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 20:01:43 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 08:11:45 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/15 08:23:47 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,11 +38,6 @@ void Multipart::setContentType(const std::string &contentType)
     this->contentType = contentType;
 }
 
-void Multipart::setContent(const std::string &content)
-{
-    this->content = content;
-}
-
 void Multipart::setCurrentStep(t_multipartStep step)
 {
     this->currentStep = step;
@@ -61,11 +56,6 @@ std::map<std::string, std::string> Multipart::getHeaders() const
 std::string Multipart::getContentType() const
 {
     return contentType;
-}
-
-std::string Multipart::getContent() const
-{
-    return content;
 }
 
 t_multipartStep Multipart::getCurrentStep() const

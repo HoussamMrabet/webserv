@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 07:33:43 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/15 08:19:41 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,8 +103,34 @@ int main()
         }
         // req.printRequest();
         // Simple HTTP Response
-        std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nDone!";
-        send(new_socket, response.c_str(), response.length(), 0);
+        std::string response;
+        switch (req.getStatusCode())
+        {
+            case 200:
+                response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nDone!";
+                send(new_socket, response.c_str(), response.length(), 0);
+                break;
+            case 400:
+                response = "HTTP/1.1 400 Bad Request\r\nContent-Length: 11\r\n\r\nBad Request";
+                send(new_socket, response.c_str(), response.length(), 0);
+                break;
+            case 500:
+                response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 21\r\n\r\nInternal Server Error";
+                send(new_socket, response.c_str(), response.length(), 0);
+                break;
+            case 501:
+                response = "HTTP/1.1 501 Not Implemented\r\nContent-Length: 17\r\n\r\nNot Implemented";
+                send(new_socket, response.c_str(), response.length(), 0);
+                break;
+            case 505:
+                response = "HTTP/1.1 505 HTTP Version Not Supported\r\nContent-Length: 29\r\n\r\nHTTP Version Not Supported";
+                send(new_socket, response.c_str(), response.length(), 0);
+                break;
+            default:
+                response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 21\r\n\r\nInternal Server Error";
+                send(new_socket, response.c_str(), response.length(), 0);
+                break;
+        }
 
         // Close connection
         close(new_socket);
