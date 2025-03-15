@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 07:18:14 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/15 07:33:43 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@
 #include <fcntl.h>
 
 #define PORT 3000
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 1
 
 int main()
 {
@@ -79,7 +79,7 @@ int main()
 
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
         // Read request
-        while (req.getCurrentStep() != DONE)
+        while (!req.isDone())
         {
             ssize_t valread = read(new_socket, buffer, BUFFER_SIZE);
             if (valread > 0)

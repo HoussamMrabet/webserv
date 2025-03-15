@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 07:13:51 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/15 07:24:07 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,9 +80,9 @@ class Request
         std::map<std::string, std::string> getHeaders() const;
         std::string getBody() const;
         std::string getHeader(const std::string &key) const;
-        t_step getCurrentStep() const;
         int getStatusCode() const;
 
+        bool isDone() const;
         void parseRequest(const std::string& rawRequest = "");
         void printRequest();
 };

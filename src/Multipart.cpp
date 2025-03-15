@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 20:01:43 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 03:40:17 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/15 08:11:45 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,15 +17,15 @@ Multipart::Multipart() : currentStep(MULTIPART_HEADERS) {}
 Multipart::~Multipart()
 {
     if (file.is_open())
-    {
         file.close();
-    }
 }
 
 void Multipart::setFileName(const std::string &fileName)
 {
     this->fileName = fileName;
     this->file = std::ofstream("./" + fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+    if (!this->file.is_open())
+        throw "Failed to open file";
 }
 
 void Multipart::setHeaders(const std::map<std::string, std::string> &headers)
@@ -76,18 +76,13 @@ t_multipartStep Multipart::getCurrentStep() const
 void Multipart::writeToFile(const std::string &content)
 {
     if (!this->file.is_open())
-    {
-        std::cerr << "File is not open!" << std::endl;
-        return;
-    }
+        throw "File is not open!";
     
     this->file.write(content.c_str(), content.size());
     this->file.flush();
     
     if (this->file.fail())
-    {
-        std::cerr << "Failed to write to the file!" << std::endl;
-    }
+        throw "Failed to write to the file!";
 }
 
 void Multipart::closeFile()
