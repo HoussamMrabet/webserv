@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 16:24:37 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/15 07:13:51 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,9 @@
 #include <fstream>
 #include <map>
 #include <vector>
-#include "boundary.hpp"
+#include "Multipart.hpp"
+
+#define CHUNKED true
 
 typedef enum e_method
 {
@@ -25,17 +27,7 @@ typedef enum e_method
     GET,
     POST,
     DELETE,
-    INVALID,
 } t_method;
-
-typedef enum e_reqState
-{
-    VALID,
-    INVALID_REQ_LINE,
-    INVALID_METHOD,
-    HOST_MISSING,
-    INVALID_HEADERS,
-} t_reqState;
 
 typedef enum e_step
 {
@@ -49,8 +41,8 @@ class Request
 {
     private:
         int         statusCode;
+        std::string message;
         t_step      currentStep;
-        t_reqState  state;
         t_method    method;
         std::string reqLine;
         std::string uri;
@@ -59,7 +51,7 @@ class Request
         std::string body;
         std::ofstream file;
         bool isChunked;
-        bool isBoundary;
+        bool isMultipart;
         bool isContentLength;
         std::string boundaryKey;
         size_t contentLength;
@@ -68,7 +60,7 @@ class Request
         size_t currentContentLength;
         std::string fileName;
         std::string fullBody;
-        std::vector<Boundary *> boundaries;
+        std::vector<Multipart *> multipartData;
         size_t chunkSize;
         std::string chunkData;
         bool   inChunk;;
@@ -76,33 +68,24 @@ class Request
         void parseHeaders();
         void parseBody();
         void setBodyInformations();
-        void parseBoundary();
-        void parseChunkedBoundary();
-        void parseBoundaryHeaders(const std::string &boundaryHeaders);
+        void parseMultipart(bool isChunked = false);
+        void parseMultipartHeaders(const std::string &multipartHeaders);
 
     public:
         Request();
         ~Request();
-
-        void setReqLine(const std::string &reqLine);
-        void setMethod(t_method &method);
-        void setUri(const std::string &uri);
-        void setHttpVersion(const std::string &httpVersion);
-        void setHeaders(const std::map<std::string, std::string> &headers);
-        void setBody(const std::string &body);
         
         t_method getMethod() const;
-        std::string getReqLine() const;
         std::string getUri() const;
-        std::string getHttpVersion() const;
         std::map<std::string, std::string> getHeaders() const;
         std::string getBody() const;
         std::string getHeader(const std::string &key) const;
-        t_reqState getState() const;
         t_step getCurrentStep() const;
         int getStatusCode() const;
 
-        void addHeader(const std::string &key, const std::string &value);
         void parseRequest(const std::string& rawRequest = "");
         void printRequest();
 };
+
+void handleUriSpecialCharacters(std::string &uri);
+std::string generateRandomFileName(const std::string &prefix = "");

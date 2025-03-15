@@ -1,20 +1,20 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   boundary.cpp                                       :+:      :+:    :+:   */
+/*   Multipart.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 20:01:43 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 14:37:03 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/15 03:40:17 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "boundary.hpp"
+#include "Multipart.hpp"
 
-Boundary::Boundary() : currentStep(BOUNDARY_HEADERS) {}
+Multipart::Multipart() : currentStep(MULTIPART_HEADERS) {}
 
-Boundary::~Boundary()
+Multipart::~Multipart()
 {
     if (file.is_open())
     {
@@ -22,48 +22,58 @@ Boundary::~Boundary()
     }
 }
 
-void Boundary::setFileName(const std::string &fileName)
+void Multipart::setFileName(const std::string &fileName)
 {
     this->fileName = fileName;
     this->file = std::ofstream("./" + fileName, std::ios::out | std::ios::binary | std::ios::trunc);
 }
 
-void Boundary::setHeaders(const std::map<std::string, std::string> &headers)
+void Multipart::setHeaders(const std::map<std::string, std::string> &headers)
 {
     this->headers = headers;
 }
 
-void Boundary::setContent(const std::string &content)
+void Multipart::setContentType(const std::string &contentType)
+{
+    this->contentType = contentType;
+}
+
+void Multipart::setContent(const std::string &content)
 {
     this->content = content;
 }
 
-void Boundary::setCurrentStep(t_boundaryStep step)
+void Multipart::setCurrentStep(t_multipartStep step)
 {
     this->currentStep = step;
 }
 
-std::string Boundary::getFileName() const
+std::string Multipart::getFileName() const
 {
     return fileName;
 }
 
-std::map<std::string, std::string> Boundary::getHeaders() const
+std::map<std::string, std::string> Multipart::getHeaders() const
 {
     return headers;
 }
 
-std::string Boundary::getContent() const
+std::string Multipart::getContentType() const
+{
+    return contentType;
+}
+
+std::string Multipart::getContent() const
 {
     return content;
 }
 
-t_boundaryStep Boundary::getCurrentStep() const
+t_multipartStep Multipart::getCurrentStep() const
 {
     return currentStep;
 }
 
-void Boundary::writeToFile(const std::string &content)
+void Multipart::writeToFile(const std::string &content)
 {
     if (!this->file.is_open())
     {
@@ -80,7 +90,7 @@ void Boundary::writeToFile(const std::string &content)
     }
 }
 
-void Boundary::closeFile()
+void Multipart::closeFile()
 {
     if (this->file.is_open())
         this->file.close();

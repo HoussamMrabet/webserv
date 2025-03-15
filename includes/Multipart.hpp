@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   boundary.hpp                                       :+:      :+:    :+:   */
+/*   Multipart.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 20:01:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 14:37:17 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/15 03:39:29 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,36 +16,39 @@
 #include <fstream>
 #include <map>
 
-typedef enum e_boundaryStep
+typedef enum e_multipartStep
 {
-    BOUNDARY_HEADERS,
-    BOUNDARY_BODY,
-    BOUNDARY_DONE
-} t_boundaryStep;
+    MULTIPART_HEADERS,
+    MULTIPART_BODY,
+    MULTIPART_DONE
+} t_multipartStep;
 
 
-class Boundary
+class Multipart
 {
     private:
         std::string fileName;
         std::ofstream file;
         std::map<std::string, std::string> headers;
+        std::string contentType;
         std::string content;
-        t_boundaryStep  currentStep;
+        t_multipartStep  currentStep;
         
     public:
-        Boundary();
-        ~Boundary();
+        Multipart();
+        ~Multipart();
         
         void setFileName(const std::string &fileName);
         void setHeaders(const std::map<std::string, std::string> &headers);
+        void setContentType(const std::string &contentType);
         void setContent(const std::string &content);
-        void setCurrentStep(t_boundaryStep step);
+        void setCurrentStep(t_multipartStep step);
         
         std::string getFileName() const;
         std::map<std::string, std::string> getHeaders() const;
+        std::string getContentType() const;
         std::string getContent() const;
-        t_boundaryStep getCurrentStep() const;
+        t_multipartStep getCurrentStep() const;
         void writeToFile(const std::string &content);
         void closeFile();
 };

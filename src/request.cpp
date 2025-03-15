@@ -6,68 +6,27 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/10 00:41:12 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/15 07:17:23 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "request.hpp"
+#include "Request.hpp"
 
-Request::Request() : statusCode(200), currentStep(REQ_LINE), state(VALID), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isBoundary(false), isContentLength(false), boundaryKey(""), contentLength(0), requestData(""), headersData(""), currentContentLength(0), fileName(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false)
+Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE), method(UNDEFINED), reqLine(""), uri(""), httpVersion(""), body(""), isChunked(false), isMultipart(false), isContentLength(false), boundaryKey(""), contentLength(0), requestData(""), headersData(""), currentContentLength(0), fileName(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false)
 {
     this->headers["connection"] = "keep-alive";
 }
 Request::~Request()
 {
-    for (size_t i = 0; i < boundaries.size(); ++i)
-        delete boundaries[i];
+    for (size_t i = 0; i < multipartData.size(); ++i)
+        delete multipartData[i];
     if (file.is_open())
         file.close();
-}
-
-void Request::setReqLine(const std::string &reqLine)
-{
-    this->reqLine = reqLine;
-}
-
-void Request::setMethod(t_method &method)
-{
-    this->method = method;
-}
-
-void Request::setUri(const std::string &uri)
-{
-    this->uri = uri;
-}
-
-void Request::setHttpVersion(const std::string &httpVersion)
-{
-    this->httpVersion = httpVersion;
-}
-
-void Request::setHeaders(const std::map<std::string, std::string> &headers)
-{
-    this->headers.clear();
-    this->headers.insert(headers.begin(), headers.end());
-}
-
-void Request::setBody(const std::string &body)
-{
-    this->body = body;
-}
-
-std::string Request::getReqLine() const
-{
-    return (this->reqLine);
 }
 
 t_method Request::getMethod() const
 {
     return (this->method);
-}
-
-t_reqState Request::getState() const
-{
-    return (this->state);
 }
 
 int Request::getStatusCode() const
@@ -80,11 +39,6 @@ std::string Request::getUri() const
     return (this->uri);
 }
 
-std::string Request::getHttpVersion() const
-{
-    return (this->httpVersion);
-}
-
 std::map<std::string, std::string> Request::getHeaders() const
 {
     return (this->headers);
@@ -92,7 +46,7 @@ std::map<std::string, std::string> Request::getHeaders() const
 
 std::string Request::getBody() const
 {
-    return (this->body);
+    return (this->fullBody);
 }
 
 std::string Request::getHeader(const std::string &key) const
@@ -108,38 +62,12 @@ t_step Request::getCurrentStep() const
     return (this->currentStep);
 }
 
-void Request::addHeader(const std::string &key, const std::string &value)
-{
-    this->headers[key] = value;
-}
-
-void handleSpecialCharacters(std::string &uri)
-{
-    std::string encodedChars[] = {"%20", "%21", "%22", "%23", "%24", "%25", "%26", "%27", "%28", "%29", "%2A", "%2B", "%2C",
-                                  "%2D", "%2E", "%2F", "%3A", "%3B", "%3C", "%3D", "%3E", "%3F", "%40", "%5B", "%5C", "%5D",
-                                  "%5E", "%5F", "%60", "%7B", "%7C", "%7D", "%7E"};
-
-    std::string specialChars[] = {" ", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/", ":", ";", "<",
-                                  "=", ">", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~"};
-
-    for (size_t i = 0; i < sizeof(encodedChars) / sizeof(encodedChars[0]); i++)
-    {
-        std::string::size_type n = 0;
-        while ((n = uri.find(encodedChars[i], n)) != std::string::npos)
-        {
-            uri.replace(n, encodedChars[i].length(), specialChars[i]);
-            n += 1;
-        }
-    }
-}
-
 void Request::parseRequestLine()
 {
     if (!this->reqLine.empty() && (this->reqLine[0] == ' ' || this->reqLine[0] == '\t'))
     {
-        this->state = INVALID_REQ_LINE;
-        this->statusCode = 400;
-        return;
+        this->message = "Invalid request line";
+        throw 400;
     }
 
     std::istringstream lineStream(this->reqLine);
@@ -147,9 +75,8 @@ void Request::parseRequestLine()
 
     if (!(lineStream >> methodStr >> this->uri >> this->httpVersion))
     {
-        this->state = INVALID_REQ_LINE;
-        this->statusCode = 400;
-        return;
+        this->message = "Invalid request line";
+        throw 400;
     }
 
     if (methodStr == "GET")
@@ -160,44 +87,50 @@ void Request::parseRequestLine()
         this->method = DELETE;
     else
     {
-        this->statusCode = 400;
-        this->method = INVALID;
-        this->state = INVALID_METHOD;
-        return;
+        this->message = "Invalid Method";
+        throw 400;
     }
-
+    
+    handleUriSpecialCharacters(this->uri);
+    if (this->uri[0] != '/')
+    {
+        this->message = "Invalid URI";
+        throw 400;
+    }
+    
     if (httpVersion.size() < 6 || httpVersion.substr(0, 5) != "HTTP/")
     {
-        this->state = INVALID_REQ_LINE;
-        this->statusCode = 400;
-        return;
+        this->message = "Invalid request line";
+        throw 400;
     }
 
     std::string version = httpVersion.substr(5);
 
     if (version.empty() || version.find_first_not_of("0123456789.") != std::string::npos)
     {
-        this->state = INVALID_REQ_LINE;
-        this->statusCode = 400;
-        return;
+        this->message = "Invalid request line";
+        throw 400;
     }
-
+    
     double versionNumber = atof(version.c_str());
-    if (versionNumber < 1.0 || versionNumber > 1.999)
+    if (versionNumber < 1.0)
     {
-        this->state = INVALID_REQ_LINE;
-        this->statusCode = 400;
-        return;
+        this->message = "Invalid request line";
+        throw 400;
     }
 
     if (httpVersion != "HTTP/1.1")
     {
-        this->state = INVALID_REQ_LINE;
-        this->statusCode = 505;
-        return;
+        this->message = "HTTP Version Not Supported";
+        throw 505;
     }
 
-    handleSpecialCharacters(this->uri);
+    std::string extra;
+    if (lineStream >> extra)
+    {
+        this->message = "Invalid request line";
+        throw 400;
+    }
 }
 
 void Request::parseHeaders()
@@ -212,9 +145,8 @@ void Request::parseHeaders()
 
         if (!line.empty() && (line[0] == ' ' || line[0] == '\t'))
         {
-            this->state = INVALID_HEADERS;
-            this->statusCode = 400;
-            return;
+            this->message = "Invalid header: `" + line + "`";
+            throw 400;
         }
 
         std::istringstream lineStream(line);
@@ -228,9 +160,8 @@ void Request::parseHeaders()
 
                 if (!key.empty() && (key[0] == ' ' || key[0] == '\t' || key[key.size() - 1] == ' ' || key[key.size() - 1] == '\t'))
                 {
-                    this->state = INVALID_HEADERS;
-                    this->statusCode = 400;
-                    return;
+                    this->message = "Invalid header: `" + lineStream.str() + "`";
+                    throw 400;
                 }
 
                 for (size_t i = 0; i < key.size(); i++)
@@ -239,50 +170,20 @@ void Request::parseHeaders()
                 this->headers[key] = value.back() == '\r' ? value.substr(0, value.size() - 1) : value;
             }
             else
-            {
-                this->state = INVALID_HEADERS;
-                this->statusCode = 400;
-                return;
-            }
-        }
-        else
-        {
-            this->state = INVALID_HEADERS;
-            this->statusCode = 400;
-            return;
+                this->headers[key] = "";
         }
     }
 
     if (this->headers.find("host") == this->headers.end())
     {
-        this->state = HOST_MISSING;
-        this->statusCode = 400;
-        return;
+        this->message = "Invalid headers: Host is missing";
+        throw 400;
     }
 }
 
-std::string generateRandomFileName(const std::string &prefix = "")
+void Request::parseMultipartHeaders(const std::string &multipartHeaders)
 {
-    static const char alphanum[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-    int len = 10;
-    std::string tmp_s;
-    tmp_s.reserve(len);
-
-    for (int i = 0; i < len; ++i)
-        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-
-    std::ifstream file(prefix + tmp_s);
-    if (file.good())
-        return (generateRandomFileName());
-    return (prefix + tmp_s);
-}
-
-void Request::parseBoundaryHeaders(const std::string &boundaryHeaders)
-{
-    std::istringstream headerStream(boundaryHeaders);
+    std::istringstream headerStream(multipartHeaders);
     std::string line, name, filename;
     std::map<std::string, std::string> heads;
 
@@ -309,7 +210,7 @@ void Request::parseBoundaryHeaders(const std::string &boundaryHeaders)
             }
         }
     }
-    this->boundaries.back()->setHeaders(heads);
+    this->multipartData.back()->setHeaders(heads);
     for (std::map<std::string, std::string>::const_iterator it = heads.begin(); it != heads.end(); it++)
     {
         if (it->first == "content-disposition")
@@ -342,99 +243,106 @@ void Request::parseBoundaryHeaders(const std::string &boundaryHeaders)
                     name = disposition.substr(start);
             }
         }
+        else if (it->first == "content-type")
+        {
+            std::string contentType = it->second;
+            std::transform(contentType.begin(), contentType.end(), contentType.begin(), ::tolower);
+            this->multipartData.back()->setContentType(contentType);
+        }
     }
     if (!fileName.empty())
-        this->boundaries.back()->setFileName(fileName);
+        this->multipartData.back()->setFileName(fileName);
     else if (!name.empty())
-        this->boundaries.back()->setFileName(name);
+        this->multipartData.back()->setFileName(name);
     else
-        this->boundaries.back()->setFileName(generateRandomFileName());
+        this->multipartData.back()->setFileName(generateRandomFileName());
 }
 
-void Request::parseBoundary()
+void Request::parseMultipart(bool isChunked)
 {
     static bool newFile = false;
-    if (this->body.find(this->boundaryKey + "--\r\n") == 0)
+    std::string &data = isChunked ? this->chunkData : this->body;
+    
+    if (data.find(this->boundaryKey + "--\r\n") == 0)
     {
-        this->body.clear();
-        if (this->boundaries.size())
-            this->boundaries.back()->closeFile();
-        this->currentStep = DONE;
-        return;
+        data.clear();
+        if (this->multipartData.size())
+            this->multipartData.back()->closeFile();
+        throw 200;
     }
-    if (this->body.find(this->boundaryKey + "\r\n") == 0)
+    if (data.find(this->boundaryKey + "\r\n") == 0)
     {
         if (!newFile)
         {
             newFile = true;
-            return;
+            return ;
         }
         newFile = false;
-        this->body.erase(0, this->boundaryKey.size() + 2);
+        data.erase(0, this->boundaryKey.size() + 2);
 
-        if (this->boundaries.size())
-            this->boundaries.back()->closeFile();
-        Boundary *boundary = new Boundary();
+        if (this->multipartData.size())
+            this->multipartData.back()->closeFile();
+        Multipart *multipart = new Multipart();
 
-        this->boundaries.push_back(boundary);
+        this->multipartData.push_back(multipart);
     }
-    if (this->boundaries.size() && this->boundaries.back()->getCurrentStep() == BOUNDARY_HEADERS)
+    if (this->multipartData.size() && this->multipartData.back()->getCurrentStep() == MULTIPART_HEADERS)
     {
-        size_t pos = this->body.find("\r\n\r\n");
+        size_t pos = data.find("\r\n\r\n");
         if (pos != std::string::npos)
         {
-            std::string boundaryHeaders = this->body.substr(0, pos);
-            this->body.erase(0, pos + 4);
-            this->parseBoundaryHeaders(boundaryHeaders);
-            this->boundaries.back()->setCurrentStep(BOUNDARY_BODY);
+            std::string multipartHeaders = data.substr(0, pos);
+            data.erase(0, pos + 4);
+            this->parseMultipartHeaders(multipartHeaders);
+            this->multipartData.back()->setCurrentStep(MULTIPART_BODY);
         }
     }
-    if (this->boundaries.size() && this->boundaries.back()->getCurrentStep() == BOUNDARY_BODY)
+    if (this->multipartData.size() && this->multipartData.back()->getCurrentStep() == MULTIPART_BODY)
     {
-        size_t endBoundary = this->body.find("\r\n" + this->boundaryKey);
+        size_t endBoundary = data.find("\r\n" + this->boundaryKey);
         if (endBoundary != std::string::npos)
         {
-            std::string fileContent = this->body.substr(0, endBoundary);
-            this->boundaries.back()->writeToFile(fileContent);
-            this->body.erase(0, endBoundary + 2);
-            this->boundaries.back()->setCurrentStep(BOUNDARY_DONE);
+            std::string fileContent = data.substr(0, endBoundary);
+            this->multipartData.back()->writeToFile(fileContent);
+            data.erase(0, endBoundary + 2);
+            this->multipartData.back()->setCurrentStep(MULTIPART_DONE);
             return;
         }
-        size_t crlf = this->body.find("\r");
+        size_t crlf = data.find("\r");
         while (crlf != std::string::npos)
         {
-            if (crlf == this->body.size() - 1)
+            if (crlf == data.size() - 1)
                 return;
 
-            if (crlf + 1 < this->body.size())
+            if (crlf + 1 < data.size())
             {
-                char nextChar = this->body[crlf + 1];
+                char nextChar = data[crlf + 1];
 
                 if (nextChar != '\n')
                 {
-                    this->boundaries.back()->writeToFile(this->body.substr(0, crlf + 1));
-                    this->body.erase(0, crlf + 1);
+                    this->multipartData.back()->writeToFile(data.substr(0, crlf + 1));
+                    data.erase(0, crlf + 1);
                 }
-                else if (crlf + 2 >= this->body.size())
+                else if (crlf + 2 >= data.size())
                     break;
                 else
                 {
-                    char afterNewline = this->body[crlf + 2];
+                    char afterNewline = data[crlf + 2];
 
                     if (afterNewline != '-')
                     {
-                        this->boundaries.back()->writeToFile(this->body.substr(0, crlf + 2));
-                        this->body.erase(0, crlf + 2);
+                        this->multipartData.back()->writeToFile(data.substr(0, crlf + 2));
+                        data.erase(0, crlf + 2);
                     }
                     else
                     {
-                        if (this->body.substr(crlf + 2).size() > this->boundaryKey.size())
+                        if (data.substr(crlf + 2).size() > this->boundaryKey.size())
                         {
-                            size_t isBoundaryKey = this->body.substr(crlf).find(this->boundaryKey);
+                            size_t isBoundaryKey = data.substr(crlf).find(this->boundaryKey);
                             if (isBoundaryKey != 0)
                             {
-                                this->boundaries.back()->writeToFile(this->body.substr(0, crlf + 2));
-                                this->body.erase(0, crlf + 2);
+                                this->multipartData.back()->writeToFile(data.substr(0, crlf + 2));
+                                data.erase(0, crlf + 2);
                             }
                             else
                                 break;
@@ -445,125 +353,16 @@ void Request::parseBoundary()
                 }
             }
 
-            crlf = this->body.find("\r");
+            crlf = data.find("\r");
         }
-        if (crlf == std::string::npos && this->body.size() > this->boundaryKey.size() + 2)
+        if (crlf == std::string::npos && data.size() > this->boundaryKey.size() + 2)
         {
-            size_t endBoundary = this->body.find("\r\n" + this->boundaryKey + "\r\n");
-            size_t endRequest = this->body.find("\r\n" + this->boundaryKey + "--");
+            size_t endBoundary = data.find("\r\n" + this->boundaryKey + "\r\n");
+            size_t endRequest = data.find("\r\n" + this->boundaryKey + "--");
             if (endBoundary == std::string::npos && endRequest == std::string::npos)
             {
-                this->boundaries.back()->writeToFile(this->body);
-                this->body.clear();
-            }
-        }
-    }
-}
-
-void Request::parseChunkedBoundary()
-{
-    static bool newFile = false;
-    if (this->chunkData.find(this->boundaryKey + "--\r\n") == 0)
-    {
-        this->chunkData.clear();
-        if (this->boundaries.size())
-            this->boundaries.back()->closeFile();
-        this->currentStep = DONE;
-        return;
-    }
-    if (this->chunkData.find(this->boundaryKey + "\r\n") == 0)
-    {
-        if (!newFile)
-        {
-            newFile = true;
-            return;
-        }
-        newFile = false;
-        this->chunkData.erase(0, this->boundaryKey.size() + 2);
-
-        if (this->boundaries.size())
-            this->boundaries.back()->closeFile();
-        Boundary *boundary = new Boundary();
-
-        this->boundaries.push_back(boundary);
-    }
-    if (this->boundaries.size() && this->boundaries.back()->getCurrentStep() == BOUNDARY_HEADERS)
-    {
-        size_t pos = this->chunkData.find("\r\n\r\n");
-        if (pos != std::string::npos)
-        {
-            std::string boundaryHeaders = this->chunkData.substr(0, pos);
-            this->chunkData.erase(0, pos + 4);
-            this->parseBoundaryHeaders(boundaryHeaders);
-            this->boundaries.back()->setCurrentStep(BOUNDARY_BODY);
-        }
-    }
-    if (this->boundaries.size() && this->boundaries.back()->getCurrentStep() == BOUNDARY_BODY)
-    {
-        size_t endBoundary = this->chunkData.find("\r\n" + this->boundaryKey);
-        if (endBoundary != std::string::npos)
-        {
-            std::string fileContent = this->chunkData.substr(0, endBoundary);
-            this->boundaries.back()->writeToFile(fileContent);
-            this->chunkData.erase(0, endBoundary + 2);
-            this->boundaries.back()->setCurrentStep(BOUNDARY_DONE);
-            return;
-        }
-        size_t crlf = this->chunkData.find("\r");
-        while (crlf != std::string::npos)
-        {
-            if (crlf == this->chunkData.size() - 1)
-                return;
-
-            if (crlf + 1 < this->chunkData.size())
-            {
-                char nextChar = this->chunkData[crlf + 1];
-
-                if (nextChar != '\n')
-                {
-                    this->boundaries.back()->writeToFile(this->chunkData.substr(0, crlf + 1));
-                    this->chunkData.erase(0, crlf + 1);
-                }
-                else if (crlf + 2 >= this->chunkData.size())
-                    break;
-                else
-                {
-                    char afterNewline = this->chunkData[crlf + 2];
-
-                    if (afterNewline != '-')
-                    {
-                        this->boundaries.back()->writeToFile(this->chunkData.substr(0, crlf + 2));
-                        this->chunkData.erase(0, crlf + 2);
-                    }
-                    else
-                    {
-                        if (this->chunkData.substr(crlf + 2).size() > this->boundaryKey.size())
-                        {
-                            size_t isBoundaryKey = this->chunkData.substr(crlf).find(this->boundaryKey);
-                            if (isBoundaryKey != 0)
-                            {
-                                this->boundaries.back()->writeToFile(this->chunkData.substr(0, crlf + 2));
-                                this->chunkData.erase(0, crlf + 2);
-                            }
-                            else
-                                break;
-                        }
-                        else
-                            break;
-                    }
-                }
-            }
-
-            crlf = this->chunkData.find("\r");
-        }
-        if (crlf == std::string::npos && this->chunkData.size() > this->boundaryKey.size() + 2)
-        {
-            size_t endBoundary = this->chunkData.find("\r\n" + this->boundaryKey + "\r\n");
-            size_t endRequest = this->chunkData.find("\r\n" + this->boundaryKey + "--");
-            if (endBoundary == std::string::npos && endRequest == std::string::npos)
-            {
-                this->boundaries.back()->writeToFile(this->chunkData);
-                this->chunkData.clear();
+                this->multipartData.back()->writeToFile(data);
+                data.clear();
             }
         }
     }
@@ -574,17 +373,17 @@ void Request::parseBody()
     if (this->isChunked)
     {
         if (this->body.empty())
-            parseChunkedBoundary();
+            parseMultipart(CHUNKED);
         if (inChunk)
         {
             if (this->body.size() < this->chunkSize + 2)
                 return ;
             else
             {
-                if (this->isBoundary)
+                if (this->isMultipart)
                 {
                     this->chunkData += this->body.substr(0, this->chunkSize);
-                    parseChunkedBoundary();
+                    parseMultipart(CHUNKED);
                     this->body.erase(0, this->chunkSize + 2);
                 }
                 else
@@ -606,21 +405,19 @@ void Request::parseBody()
             this->inChunk = true;
             if (this->chunkSize < 0)
             {
-                this->state = INVALID_HEADERS;
-                this->statusCode = 400;
-                return;
+                this->message = "Invalid chunk size";
+                throw 400;
             }
             if (this->chunkSize == 0)
             {
                 this->body.clear();
-                this->currentStep = DONE;
-                return;
+                throw 200;
             }
         }
     }
-    else if (this->isBoundary)
+    else if (this->isMultipart)
     {
-        parseBoundary();
+        parseMultipart();
     }
     else if (this->isContentLength)
     {
@@ -630,13 +427,13 @@ void Request::parseBody()
             this->file.flush();
             this->file.close();
             this->body.clear();
-            this->currentStep = DONE;
+            throw 200;
         }
     }
     else
     {
-        this->statusCode = 400;
-        this->state = INVALID_HEADERS;
+        this->message = "Invalid headers: Content-Length is missing";
+        throw 400;
     }
 }
 
@@ -645,12 +442,12 @@ void Request::setBodyInformations()
     std::map<std::string, std::string>::iterator transferEncodingIt = this->headers.find("transfer-encoding");
     if (transferEncodingIt != this->headers.end())
     {
-        if (transferEncodingIt->second != "chunked")
+        std::string transferEncoding = transferEncodingIt->second;
+        std::transform(transferEncoding.begin(), transferEncoding.end(), transferEncoding.begin(), ::tolower);
+        if (transferEncoding != "chunked")
         {
-            std::cout << transferEncodingIt->second << std::endl;
-            this->state = INVALID_HEADERS;
-            this->statusCode = 400;
-            return;
+            this->message = "Unsupported Transfer-Encoding";
+            throw 501;
         }
         this->isChunked = true;
     }
@@ -662,9 +459,8 @@ void Request::setBodyInformations()
         this->contentLength = strtol(contentLengthIt->second.c_str(), &end, 10);
         if (contentLength < 0)
         {
-            this->state = INVALID_HEADERS;
-            this->statusCode = 400;
-            return;
+            this->message = "Invalid Content-Length";
+            throw 400;
         }
         this->isContentLength = true;
     }
@@ -677,55 +473,64 @@ void Request::setBodyInformations()
         if (boundaryPos != std::string::npos)
         {
             this->boundaryKey = "--" + contentType.substr(boundaryPos + 9);
-            this->isBoundary = true;
+            this->isMultipart = true;
             this->boundaryKey.erase(this->boundaryKey.size());
         }
     }
-    if (!this->isBoundary)
+    if (!this->isMultipart)
+    {
         this->file = std::ofstream(generateRandomFileName("./binary_file_"), std::ios::out | std::ios::binary | std::ios::trunc);
+        if (!this->file.is_open())
+        {
+            this->message = "Failed to open file";
+            throw 500;
+        }
+    }
 }
 
 void Request::parseRequest(const std::string &rawRequest)
-{
-    if (this->state != VALID || this->currentStep == DONE)
-        return;
-    this->requestData += rawRequest;
-    if (this->state == VALID && this->currentStep == REQ_LINE)
+{    
+    if (this->statusCode != 200 || this->currentStep == DONE)
+        return ;
+    try
     {
-        size_t pos = this->requestData.find("\r\n");
-        if (pos != std::string::npos)
+        this->requestData += rawRequest;
+        if (this->currentStep == REQ_LINE)
         {
-            this->reqLine = this->requestData.substr(0, pos);
-            this->requestData.erase(0, pos + 2);
-            this->parseRequestLine();
-            if (this->state != VALID)
-                return;
-            this->currentStep = HEADERS;
+            size_t pos = this->requestData.find("\r\n");
+            if (pos != std::string::npos)
+            {
+                this->reqLine = this->requestData.substr(0, pos);
+                this->requestData.erase(0, pos + 2);
+                this->parseRequestLine();
+                this->currentStep = HEADERS;
+            }
+        }
+        if (this->currentStep == HEADERS)
+        {
+            size_t pos = this->requestData.find("\r\n\r\n");
+            if (pos != std::string::npos)
+            {
+                this->headersData = this->requestData.substr(0, pos);
+                this->requestData.erase(0, pos + 4);
+                this->parseHeaders();
+                this->setBodyInformations();
+                this->currentStep = BODY;
+            }
+        }
+        if (this->currentStep == BODY)
+        {
+            this->fullBody += this->requestData;
+            this->body += this->requestData;
+            this->currentContentLength += requestData.size();
+            this->requestData.clear();
+            this->parseBody();
         }
     }
-    if (this->state == VALID && this->currentStep == HEADERS)
+    catch(const int &e)
     {
-        size_t pos = this->requestData.find("\r\n\r\n");
-        if (pos != std::string::npos)
-        {
-            this->headersData = this->requestData.substr(0, pos);
-            this->requestData.erase(0, pos + 4);
-            this->parseHeaders();
-            if (this->state != VALID)
-                return;
-            this->setBodyInformations();
-            this->currentStep = BODY;
-        }
-    }
-    if (this->state == VALID && this->currentStep == BODY)
-    {
-        this->fullBody += this->requestData;
-        this->body += this->requestData;
-        this->currentContentLength += requestData.size();
-        this->requestData.clear();
-        this->parseBody();
-        if (this->state != VALID)
-            return;
+        this->statusCode = e;
+        this->currentStep = DONE;
     }
 }
 

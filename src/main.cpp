@@ -6,11 +6,11 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 17:26:31 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/15 07:18:14 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "request.hpp"
+#include "Request.hpp"
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -66,9 +66,9 @@ int main()
 
     // std::cout << "Server listening on port " << PORT << "..." << std::endl;
 
-    Request req;
     while (true)
     {
+        Request req;
         // Accept connection
         new_socket = accept(server_fd, (struct sockaddr *)&address, &addrlen);
         if (new_socket < 0)
