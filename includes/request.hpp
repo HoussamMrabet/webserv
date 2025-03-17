@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 07:24:07 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/17 00:10:00 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,3 +89,4 @@ class Request
 
 void handleUriSpecialCharacters(std::string &uri);
 std::string generateRandomFileName(const std::string &prefix = "");
+void checkMediaType(const std::string &contentType);

@@ -1,16 +1,30 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Request-utils.cpp                                  :+:      :+:    :+:   */
+/*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/15 06:38:26 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 07:14:27 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/17 00:08:19 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
+
+void checkMediaType(const std::string &contentType)
+{
+    std::string types = "text/plain,text/html,text/css,text/xml,text/csv,text/markdown,";
+    types += "application/json,application/javascript,application/xml,application/xhtml+xml,";
+    types += "application/pdf,application/msword,application/zip,application/gzip,";
+    types += "application/gzip,application/octet-stream,application/x-www-form-urlencoded,";
+    types += "application/x-iso9660-image,image/png,image/jpeg,image/gif,image/x-icon,";
+    types += "audio/mp3,audio/mpeg,audio/wav,audio/webm,audio/aac,";
+    types += "video/mp4,video/webm,video/ogg,video/x-flv,multipart/form-data,";
+    types += "font/woff,font/ttf,font/otf,application/x-iso9660-image";
+    if (types.find(contentType) == std::string::npos && contentType.find("multipart/form-data") == std::string::npos)
+        throw "Unsupported Media Type";
+}
 
 void handleUriSpecialCharacters(std::string &uri)
 {

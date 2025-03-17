@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/15 07:46:04 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 07:46:12 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/17 00:09:45 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,5 +57,19 @@ void Request::parseHeaders()
     {
         this->message = "Invalid headers: Host is missing";
         throw 400;
+    }
+    
+    if (this->headers.find("content-type") != this->headers.end())
+    {
+        std::string contentType = this->headers["content-type"];
+        try
+        {
+            checkMediaType(contentType);
+        }
+        catch(const char *e)
+        {
+            this->message = e;
+            throw 415;
+        }
     }
 }

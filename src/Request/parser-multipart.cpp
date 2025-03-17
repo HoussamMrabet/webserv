@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/15 07:46:58 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 08:07:49 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/17 00:10:15 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,6 +79,15 @@ void Request::parseMultipartHeaders(const std::string &multipartHeaders)
             std::string contentType = it->second;
             std::transform(contentType.begin(), contentType.end(), contentType.begin(), ::tolower);
             this->multipartData.back()->setContentType(contentType);
+            try
+            {
+                checkMediaType(contentType);
+            }
+            catch(const char *e)
+            {
+                this->message = e;
+                throw 415;
+            }
         }
     }
     try

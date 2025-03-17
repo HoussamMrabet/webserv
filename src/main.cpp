@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 08:19:41 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/03/16 23:58:31 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@
 #include <fcntl.h>
 
 #define PORT 3000
-#define BUFFER_SIZE 1
+#define BUFFER_SIZE 1024
 
 int main()
 {
@@ -124,6 +124,14 @@ int main()
                 break;
             case 505:
                 response = "HTTP/1.1 505 HTTP Version Not Supported\r\nContent-Length: 29\r\n\r\nHTTP Version Not Supported";
+                send(new_socket, response.c_str(), response.length(), 0);
+                break;
+            case 413:
+                response = "HTTP/1.1 413 Payload Too Large\r\nContent-Length: 20\r\n\r\nPayload Too Large";
+                send(new_socket, response.c_str(), response.length(), 0);
+                break;
+            case 415:
+                response = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Length: 26\r\n\r\nUnsupported Media Type";
                 send(new_socket, response.c_str(), response.length(), 0);
                 break;
             default:
