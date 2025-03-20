@@ -6,7 +6,7 @@
 /*   By: voop <voop@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/09 06:24:37 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/20 10:51:29 by voop             ###   ########.fr       */
+/*   Updated: 2025/03/20 11:15:02 by voop             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ std::string addSpaces(std::string str) {
     for (size_t i = 0; i < str.size(); i++) {
         char c = str[i];
 
-        if (c == '{' || c == '}') {
+        if (c == '{' || c == '}' || c == ';') {
             if (!res.empty() && res[res.size() - 1] != ' ') {
                 res += ' ';
             }
@@ -35,8 +35,6 @@ std::string addSpaces(std::string str) {
             res += c;
         }
     }
-
-    std::cout << "Processed String: " << res << std::endl;
     return res;
 }
 
@@ -53,12 +51,12 @@ std::string openFile(std::string file) {
     while (std::getline(inFile, line)) {
         size_t found = line.find("#");
         if (found != std::string::npos) {
-            line = line.substr(0, found);  // Remove everything after #
+            line = line.substr(0, found); 
         }
 
-        if (line.empty()) continue;  // Skip empty lines
+        if (line.empty()) continue;  
 
-        line = addSpaces(line);  // Now apply addSpaces AFTER handling comments
+        line = addSpaces(line);  
 
         size_t pos = 0;
         while ((found = line.find('\t', pos)) != std::string::npos) {
@@ -66,11 +64,11 @@ std::string openFile(std::string file) {
             pos = found + 1;
         }
 
-        if (pos < line.length())  // Ensure pos is within range before substr()
+        if (pos < line.length())  
             buffFile += line.substr(pos) + " ";
     }
 
-    inFile.close();  // Explicitly close file
+    inFile.close();  
 
     std::cout << "Final Processed File Content: " << buffFile << std::endl;
 
