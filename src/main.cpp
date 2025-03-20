@@ -3,16 +3,19 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
+/*   By: voop <voop@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/09 06:52:00 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/03/20 10:54:46 by voop             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "webserv.hpp"
+#include <iostream>
 
 int main()
 {
-    openFile("config/default.conf");
+    std::string res = openFile("config/default.conf");
+    std::cout << "hello" << std::endl;
+    return (0);
 }
