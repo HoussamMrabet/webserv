@@ -6,14 +6,14 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/09 05:42:38 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/03/17 05:33:15 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
-#include <iostream>
-
+# include <iostream>
+# include <vector>
 
 /*
 
@@ -43,6 +43,7 @@ class Location {
 class Server {
 
 	private :
+		
 		std::string listen; // 8080 9999  array
 		std::string serverNames;
 		std::string root; // root folder

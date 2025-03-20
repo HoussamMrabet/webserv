@@ -6,14 +6,14 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/09 06:24:37 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/10 07:55:10 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/03/10 07:58:42 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
 #include <fstream>
 
-void openFile(std::string file) {
+std::string openFile(std::string file) {
 
 	std::string line;
 	std::string buffFile;
@@ -23,7 +23,7 @@ void openFile(std::string file) {
 	if (!inFile)
 	{
 		std::cout << "Cant open file : " << file << std::endl;
-		return ;
+		return "";
 	}
 	 while (std::getline(inFile, line))
 	 {
@@ -41,5 +41,5 @@ void openFile(std::string file) {
 		}
 		buffFile += line.substr(pos) + " ";
 	 }
-	 std::cout << buffFile << std::endl;
+	 return buffFile;
 }
