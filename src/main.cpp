@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: voop <voop@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/20 10:54:46 by voop             ###   ########.fr       */
+/*   Updated: 2025/03/21 10:57:05 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,12 @@
 
 int main()
 {
-    std::string res = openFile("config/default.conf");
-    std::cout << "hello" << std::endl;
+    std::vector<std::string> tokens = TokenizeFile::tokens("config/default.conf");
+    
+    for (std::vector<std::string>::const_iterator it = tokens.begin(); it != tokens.end(); ++it) {
+        std::cout << *it << std::endl;
+    }
+    
+    
     return (0);
 }

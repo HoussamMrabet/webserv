@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: voop <voop@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/20 10:23:06 by voop             ###   ########.fr       */
+/*   Updated: 2025/03/21 09:42:36 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,4 +60,4 @@ class Server {
 		Server &operator = (const Server &copy);
 		~Server();
 		
-};
+}; 
