@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/21 09:42:36 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/03/21 15:02:28 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,7 @@ class Location {
 class Server {
 
 	private :
-		std::vector<std::string> listen;         
+		std::vector<std::string> listen;   // ghdi nbdlha l vector dyal pairs       
     	std::vector<std::string> serverNames;    
     	std::string root;                        
     	std::vector<std::string> index;         
