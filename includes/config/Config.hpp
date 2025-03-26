@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/21 15:02:28 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/03/26 09:01:02 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,9 @@
 # include <iostream>
 # include <vector>
 # include <map>
-
+# include <utility>
+# include "LocationConf.hpp"
+# include "ServerConf.hpp"
 /*
 
 location /images/ {
@@ -40,24 +42,3 @@ class Location {
 	
 };
 */
-
-class Server {
-
-	private :
-		std::vector<std::string> listen;   // ghdi nbdlha l vector dyal pairs       
-    	std::vector<std::string> serverNames;    
-    	std::string root;                        
-    	std::vector<std::string> index;         
-    	std::map<int, std::string> errorPages;   
-    	std::vector<std::string> allowedMethods; 
-    	std::string uploadDir;                   
-    	bool autoIndex;                          
-    	std::string host;                       
-    	size_t bodySizeLimit;
-	public :
-		Server(); 
-		Server(const Server &copy);
-		Server &operator = (const Server &copy);
-		~Server();
-		
-}; 
