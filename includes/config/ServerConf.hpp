@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/26 09:06:28 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/03/26 09:21:49 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ class Server {
     	std::vector<std::string> serverNames;    
     	std::string root;                  
     	std::vector<std::string> index;         
-    	std::vector<std::string> errorPages;   
+    	std::map<int, std::string> errorPages;   
     	std::string uploadDir;                   
     	bool autoIndex;                          
     	std::string host;                       
