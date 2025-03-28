@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:43:14 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/26 09:24:06 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/03/26 15:03:46 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ class Location {
         size_t bodySizeLimit;
         std::string uploadDir;
         std::string redirectUrl;
+        bool    listing;
     public :
         Location();
         Location(const Server &server);
