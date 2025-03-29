@@ -6,16 +6,16 @@
 /*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/26 15:01:17 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/03/29 13:51:03 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once 
 
-#include "Config.hpp"
+#include "ConfigBuilder.hpp"
 
 
-class Server {
+class ServerConf {
 
 	private :
 		std::vector<std::pair<std::string, std::string>> listen;    // getaddrinfo     
@@ -24,17 +24,25 @@ class Server {
     	std::vector<std::string> index;         
     	std::map<int, std::string> errorPages;   
     	std::string uploadDir;                   
-    	bool autoIndex;                          
-    	std::string host;                       
+    	bool autoIndex;                                                 
     	size_t bodySizeLimit;
-        std::map<std::string, Location> locations; 
+        std::map<std::string, LocationConf> locations; 
 	public :
-		Server();
-        Server(unsigned int &start, std::vector<std::string> tokens); 
-		Server(const Server &copy);
-		Server &operator = (const Server &copy);
-		virtual ~Server();
+		ServerConf();
+        ServerConf(unsigned int &start, std::vector<std::string> tokens); 
+		ServerConf(const ServerConf &copy);
+		ServerConf &operator = (const ServerConf &copy);
+		virtual ~ServerConf();
         
+		void setListen(unsigned int &start, std::vector<std::string> tokens);
+		void setServerNames(unsigned int &start, std::vector<std::string> tokens);
+		void setRoot(unsigned int &start, std::vector<std::string> tokens);
+		void setIndex(unsigned int &start, std::vector<std::string> tokens);
+		void setErrorPages(unsigned int &start, std::vector<std::string> tokens);
+		void setUploadDir(unsigned int &start, std::vector<std::string> tokens);
+		void setAutoIndex(unsigned int &start, std::vector<std::string> tokens);
+		void setBodySizeLimit(unsigned int &start, std::vector<std::string> tokens);
+		void setLocations(std::map<std::string, LocationConf> locations);
 		
 };
 

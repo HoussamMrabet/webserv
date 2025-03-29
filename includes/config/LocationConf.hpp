@@ -6,15 +6,15 @@
 /*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:43:14 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/26 15:03:46 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/03/29 13:51:38 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once 
 
-#include "Config.hpp"
+#include "ConfigBuilder.hpp"
 
-class Location {
+class LocationConf {
     private :
         std::string root;                        
         std::vector<std::string> index;         
@@ -22,15 +22,22 @@ class Location {
         bool autoIndex;
         std::vector<std::string> allowedMethods;
         size_t bodySizeLimit;
-        std::string uploadDir;
         std::string redirectUrl;
         bool    listing;
     public :
-        Location();
-        Location(const Server &server);
-        Location(unsigned int &start, std::vector<std::string> tokens);
-        Location(const Location &copy);
-        Location &operator=(const Location &copy);
-        virtual ~Location();
+        LocationConf();
+        LocationConf(const ServerConf &server);
+        LocationConf(unsigned int &start, std::vector<std::string> tokens);
+        LocationConf(const LocationConf &copy);
+        LocationConf &operator=(const LocationConf &copy);
+        virtual ~LocationConf();
         
-};
+		void setRoot(unsigned int &start, std::vector<std::string> tokens);
+		void setIndex(unsigned int &start, std::vector<std::string> tokens);
+		void setErrorPages(unsigned int &start, std::vector<std::string> tokens);
+		void setAutoIndex(unsigned int &start, std::vector<std::string> tokens);
+		void setAllowedMethods(unsigned int &start, std::vector<std::string> tokens);
+        void setBodySizeLimit(unsigned int &start, std::vector<std::string> tokens);
+        void setRedirectUrl(unsigned int &start, std::vector<std::string> tokens);
+        void setListing(unsigned int &start, std::vector<std::string> tokens);
+    };
