@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 13:35:36 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/18 13:48:04 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,11 +25,11 @@ ServerConf &ServerConf::operator = (const ServerConf &copy) {
 		this->autoIndex = copy.getAutoIndex();
 		this->bodySizeLimit = copy.getBodySizeLimit();
 		this->errorPages = copy.getErrorPages();
-		this->index = copy.getAutoIndex();
+		this->index = copy.getIndex();
 		this->listen = copy.getListen();
 		this->locations = copy.getLocations();
 		this->root = copy.getRoot();
-		this->serverNames = copy.GetServerNames();
+		this->serverNames = copy.getServerNames();
 	}
 	return (*this);
 };
@@ -38,30 +38,30 @@ ServerConf::~ServerConf() {
 	
 }
 
-std::vector<std::pair<std::string, std::string> > ServerConf::getListen() {
+std::vector<std::pair<std::string, std::string> > ServerConf::getListen() const {
 	return (this->listen);
 }
-std::vector<std::string> ServerConf::getServerNames() {
+std::vector<std::string> ServerConf::getServerNames() const {
 	return (this->serverNames);
 }
-std::string getRoot() {
+std::string ServerConf::getRoot() const {
 	return (this->root);
 }
-std::vector<std::string> ServerConf::getIndex() {
+std::vector<std::string> ServerConf::getIndex() const {
 	return (this->index);
 }
-std::map<int, std::string> ServerConf::getErrorPages() {
+std::map<int, std::string> ServerConf::getErrorPages() const {
 	return (this->errorPages);
 }
-std::string ServerConf::getUploadDir() {
+std::string ServerConf::getUploadDir() const {
 	return (this->uploadDir);
 }
-bool ServerConf::getAutoIndex() {
+bool ServerConf::getAutoIndex() const {
 	return (this->autoIndex);
 }
-size_t ServerConf::getBodySizeLimit() {
+size_t ServerConf::getBodySizeLimit() const {
 	return (this->bodySizeLimit);
 }
-std::map<std::string, LocationConf> ServerConf::getLocations() {
+std::map<std::string, LocationConf> ServerConf::getLocations() const {
 	return (this->locations);
 }

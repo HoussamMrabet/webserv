@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 13:20:36 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/18 13:45:25 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,14 +43,14 @@ class ServerConf {
 		void setBodySizeLimit(std::vector<std::string>::const_iterator &it);
 		void setLocations(std::map<std::string, LocationConf> locations);
 		
-		std::vector<std::pair<std::string, std::string> > getListen();
-		std::vector<std::string> getServerNames();
-		std::string getRoot();
-		std::vector<std::string> getIndex();
-		std::map<int, std::string> getErrorPages();
-		std::string getUploadDir();
-		bool getAutoIndex();
-		size_t getBodySizeLimit();
-		std::map<std::string, LocationConf> getLocations();
+		std::vector<std::pair<std::string, std::string> > getListen() const;
+		std::vector<std::string> getServerNames() const;
+		std::string getRoot() const;
+		std::vector<std::string> getIndex() const;
+		std::map<int, std::string> getErrorPages() const;
+		std::string getUploadDir() const;
+		bool getAutoIndex() const;
+		size_t getBodySizeLimit() const;
+		std::map<std::string, LocationConf> getLocations() const;
 };
 
