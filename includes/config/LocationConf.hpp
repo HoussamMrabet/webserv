@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConf.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:43:14 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/29 13:51:38 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/18 07:10:38 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,6 @@ class LocationConf {
         bool    listing;
     public :
         LocationConf();
-        LocationConf(const ServerConf &server);
         LocationConf(unsigned int &start, std::vector<std::string> tokens);
         LocationConf(const LocationConf &copy);
         LocationConf &operator=(const LocationConf &copy);

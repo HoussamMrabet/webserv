@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigBuilder.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/29 13:22:52 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/18 07:18:50 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,17 +18,17 @@
 # include <utility>
 # include "LocationConf.hpp"
 # include "ServerConf.hpp"
+# include "TokenizeFile.hpp"
 
-
-class ConfBuilder {
+class ConfigBuilder {
 
 	private :
 	
 	public :
-		ConfBuilder();
-		ConfBuilder(const ConfBuilder &copy);
-		ConfBuilder &operator = (const ConfBuilder &copy);
-		virtual ~ConfBuilder();
+		ConfigBuilder();
+		ConfigBuilder(const ConfigBuilder &copy);
+		ConfigBuilder &operator = (const ConfigBuilder &copy);
+		virtual ~ConfigBuilder();
 
 		static std::vector<ServerConf> generateServers(std::string file);
 };

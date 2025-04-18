@@ -3,20 +3,20 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+         #
+#    By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/20 11:17:19 by hmrabet           #+#    #+#              #
-#    Updated: 2025/03/21 10:51:32 by mel-hamd         ###   ########.fr        #
+#    Updated: 2025/04/18 07:07:08 by mel-hamd         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = webserv
 
-SOURCE = src/main.cpp src/TokenizeFile.cpp # src/requests.cpp src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
+SOURCE = src/main.cpp src/TokenizeFile.cpp src/ConfigBuilder.cpp # src/requests.cpp src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
 
 OBJECT = $(SOURCE:.cpp=.o)
 
-HEADERS = includes/webserv.hpp includes/TokenizeFile.hpp  #includes/Response.hpp includes/methods/Delete.hpp includes/methods/Get.hpp includes/methods/Post.hpp includes/methods/Put.hpp  # includes/server.hpp includes/request.hpp includes/response.hpp includes/cgi.hpp  
+HEADERS = includes/TokenizeFile.hpp  includes/config/ConfigBuilder.hpp  includes/webserv.hpp #includes/Response.hpp includes/methods/Delete.hpp includes/methods/Get.hpp includes/methods/Post.hpp includes/methods/Put.hpp  # includes/server.hpp includes/request.hpp includes/response.hpp includes/cgi.hpp  
 
 INCLUDES = -Iincludes
 

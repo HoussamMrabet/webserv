@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConf.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/03/29 13:51:03 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/18 07:11:24 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 class ServerConf {
 
 	private :
-		std::vector<std::pair<std::string, std::string>> listen;    // getaddrinfo     
+		std::vector<std::pair<std::string, std::string> > listen;    // getaddrinfo     
     	std::vector<std::string> serverNames;    
     	std::string root;                  
     	std::vector<std::string> index;         
