@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 15:10:10 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/18 16:35:01 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,13 @@
 # include <stack>
 # include <utility>
 # include "LocationConf.hpp"
-# include "ServerConf.hpp"
+// # include "ServerConf.hpp"
 # include "TokenizeFile.hpp"
+#include "ServerConf.hpp"
+#include "LocationConf.hpp"
 
+
+class ServerConf;
 
 class ConfigBuilder {
 
