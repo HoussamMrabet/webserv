@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 13:45:25 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/18 14:59:40 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ class ServerConf {
 		ServerConf &operator = (const ServerConf &copy);
 		virtual ~ServerConf();
         
-		void setListen(std::vector<std::string>::const_iterator &it);
+		void setListen(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens);
 		void setServerNames(std::vector<std::string>::const_iterator &it);
 		void setRoot(std::vector<std::string>::const_iterator &it);
 		void setIndex(std::vector<std::string>::const_iterator &it);

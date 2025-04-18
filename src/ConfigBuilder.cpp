@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 10:41:24 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/18 14:58:49 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 			std::cout << "there is a server !" << std::endl;
 			stk.push('{');
 			it++;
+			ConfigBuilder::buildServer(it, tokens);
 			continue ;
 		}
 		else 
@@ -60,7 +61,7 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 	{
 		if (*it == "listen") {
 			it++;
-			server.setListen(it);
+			server.setListen(it, tokens);
 		}
 		else if (*it == "server_name") {
 			server.setServerNames(it);
@@ -94,8 +95,8 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 	return (server);
 }
 
-bool ConfigBuilder::checkDirective(std::vector<std::string>::const_iterator &it) {
-	if (*it == "{" || *it == "}")
+bool ConfigBuilder::checkDirective(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens) {
+	if (*it == "{" || *it == "}" || it == tokens.end())
 		return (true);
 	return (false);
 }

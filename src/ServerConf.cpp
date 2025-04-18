@@ -6,11 +6,11 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 13:48:04 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/18 15:11:46 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ServerConf.hpp"
+# include "ServerConf.hpp"
 
 
 
@@ -18,7 +18,7 @@ ServerConf::ServerConf() {
 	
 };
 ServerConf::ServerConf(const ServerConf &copy) {
-	
+	*this = copy;
 }
 ServerConf &ServerConf::operator = (const ServerConf &copy) {
 	if (this->listen != copy.getListen()) {
@@ -65,3 +65,14 @@ size_t ServerConf::getBodySizeLimit() const {
 std::map<std::string, LocationConf> ServerConf::getLocations() const {
 	return (this->locations);
 }
+
+void ServerConf::setListen(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens) {
+	if (!ConfigBuilder::checkDirective(it,   tokens))
+	{
+		while (it != tokens.end() && *it != ";")
+		{
+			std::cout << *it << std::endl;
+		}
+	}
+}
+		
