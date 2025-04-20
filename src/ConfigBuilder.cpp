@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 10:53:37 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 11:41:20 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 		}
 	}
 	if (!stk.empty())
-		std::cout << "Error you didnt close { of server " << stk.size()<< std::endl;
+		throw ConfigBuilder::ErrorConfig("Config file : You have to open and close curly bracets { }");;
 	return (res);
 }
 
@@ -137,6 +137,8 @@ bool ConfigBuilder::checkIp(std::string str) {
 	std::string buff;
 	int test;
 
+	if (str == "localhost")
+		return (false);
 	while (std::getline(ss, buff, '.')) {
 		count++;
 		if (count > 4)
