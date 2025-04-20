@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 06:06:14 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 10:51:14 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 
 
 ServerConf::ServerConf() {
-	
+	this->ready = false;
 };
 ServerConf::ServerConf(const ServerConf &copy) {
 	*this = copy;
@@ -66,6 +66,10 @@ std::map<std::string, LocationConf> ServerConf::getLocations() const {
 	return (this->locations);
 }
 
+bool ServerConf::getReady() const {
+	return (this->ready);
+}
+
 void ServerConf::setListen(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens) {
 	if (!ConfigBuilder::checkDirective(it,   tokens))
 	{
@@ -73,10 +77,12 @@ void ServerConf::setListen(std::vector<std::string>::const_iterator &it,  std::v
 		{
 			if (ConfigBuilder::checkDirective(it,   tokens))
 				throw ServerConf::ParseError("Config file : syntax error !");
-			std::cout << *it << std::endl;
+			this->listen.push_back(ServerConf::parseListen(*it));
 			it++;
 		}
 	}
+	else
+		throw ServerConf::ParseError("Confi file : empty value not accepted !");
 }
 
 
@@ -87,8 +93,19 @@ std::pair<std::string, std::string> ServerConf::parseListen(std::string str) {
 	if ((pos = str.find(":")) != std::string::npos) {
 		std::string  val1 = str.substr(0, pos);
 		std::string val2 = str.substr(pos + 1);
+		if (ConfigBuilder::checkPort(val2))
+			throw ServerConf::InvalidValue("Config file : Not valid port at " + str );
+		if (ConfigBuilder::checkIp(val1))
+			throw ServerConf::InvalidValue("Config file : Not valid Ip address at " + str );
+		res = make_pair(val1, val2);
 	}
 	else {
-		
+		if (!ConfigBuilder::checkPort(str))
+			res = make_pair("127.0.0.1", str);
+		else if (!ConfigBuilder::checkIp(str))
+			res = make_pair(str, "8080");
+		else
+			throw ServerConf::InvalidValue("Config file : Not valid value at " + str);
 	}
+	return (res);
 }

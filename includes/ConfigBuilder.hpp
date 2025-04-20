@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 07:01:45 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 10:40:04 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,9 +39,26 @@ class ConfigBuilder {
 		virtual ~ConfigBuilder();
 
 		static std::vector<ServerConf> generateServers(std::string file);
-		static ServerConf buildServer(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
+		static ServerConf buildServer(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens, std::stack<char> &stk);
 		static bool checkDirective(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens);
 		static bool checkPort(std::string str);
 		static bool checkIp(std::string str);
+
+		class ErrorConfig : public std::exception {
+			private :
+				const std::string msg;
+			public :
+				ErrorConfig(std::string msg) : msg(msg) {
+
+				}
+
+				const char* what() const throw() {
+					return (this->msg.c_str());
+				}
+
+				~ErrorConfig() throw() {
+					
+				}
+		};
 
 };

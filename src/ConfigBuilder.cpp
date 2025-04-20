@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 07:11:05 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 10:53:37 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,26 +38,26 @@ ConfigBuilder::~ConfigBuilder() {
 std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 	std::vector<ServerConf>  res;
 	std::vector<std::string> tokens = TokenizeFile::tokens(file);
-	// std::stack<char> stk;
+	std::stack<char> stk;
 	for (std::vector<std::string>::const_iterator it = tokens.begin(); it != tokens.end(); ++it ) {
 		if (*it == "server" && (it + 1 ) != tokens.end() && *(it + 1) == "{" ) {
-			std::cout << "there is a server !" << std::endl;
+			// std::cout << "there is a server !" << std::endl;
 			it++;
-			ConfigBuilder::buildServer(it, tokens);
+			ConfigBuilder::buildServer(it, tokens, stk);
 			if (it == tokens.end())
 				break;
 		}
 		else 
-			{
-				std::cout << "Error" << std::endl;
-				break;
-			}
-		
+		{
+				throw ConfigBuilder::ErrorConfig("Config file : Error near to : " + std::string(*it));
+		}
 	}
+	if (!stk.empty())
+		std::cout << "Error you didnt close { of server " << stk.size()<< std::endl;
 	return (res);
 }
 
-ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens) {
+ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens, std::stack<char> &stk) {
 	ServerConf server;
 
 	while (it != tokens.end())
@@ -91,16 +91,26 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 		else if (*it == "location") {
 			
 		}
+		else if (*it == "{") {
+			stk.push('{');
+		}
+		else if (*it == "}") {
+			stk.pop();
+		}
 		else {
 			
 		}
+		if (stk.size() == 0)
+			break;
 		it++;
 	}
+	// if (server.getReady() == false)
+	// 	throw ConfigBuilder::ErrorConfig("Error : your server should have directives to be able to run !");
 	return (server);
 }
 
 bool ConfigBuilder::checkDirective(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens) {
-	if (*it == "{" || *it == "}" || it == tokens.end())
+	if (it == tokens.end()  || *it == "{" || *it == "}" || *it == ";")
 		return (true);
 	return (false);
 }
@@ -108,8 +118,8 @@ bool ConfigBuilder::checkDirective(std::vector<std::string>::const_iterator &it,
 bool ConfigBuilder::checkPort(std::string str) {
 	if (str.empty())
 		return (true);
-	for (int i = 0 ; i < str.length() ; i++) {
-		if (i  < 48 || i > 57)
+	for (size_t i = 0 ; i < str.length() ; i++) {
+		if (str[i]  < 48 || str[i] > 57)
 			return (true);
 	}
 	if (str.length() > 5)
@@ -124,4 +134,24 @@ bool ConfigBuilder::checkIp(std::string str) {
 	
 	std::stringstream ss(str);
 	int count = 0;
+	std::string buff;
+	int test;
+
+	while (std::getline(ss, buff, '.')) {
+		count++;
+		if (count > 4)
+			return (true);
+		if (buff.length() > 3)
+			return (true);
+		for (size_t i = 0; i < buff.length() ; i++) {
+			if (buff[i]  < 48 || buff[i] > 57)
+				return (true);
+		}
+		test = std::atoi(buff.c_str());
+		if (test < 0 || test > 255 )
+			return (true);
+	}
+	if (count != 4)
+		return (true);
+	return (false);
 }
