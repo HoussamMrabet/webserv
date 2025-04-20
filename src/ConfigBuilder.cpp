@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 15:04:10 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 17:23:40 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,32 +62,34 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 
 	while (it != tokens.end())
 	{
+		std::cout << *it << std::endl;
 		if (*it == "listen") {
 			it++;
 			server.setListen(it, tokens);
 			continue ;
 		}
 		else if (*it == "server_name") {
-			server.setServerNames(it);
+			server.setServerNames(it, tokens);
+			continue;
 		}
-		// else if (*it == "root") {
-		// 	server.setRoot(it);
-		// }
-		// else if (*it == "index") {
-		// 	server.setIndex(it);
-		// }
-		// else if (*it == "error_page") {
-		// 	server.setErrorPages(it);
-		// }
-		// else if (*it == "upload_directory") {
-		// 	server.setUploadDir(it);
-		// }
-		// else if (*it == "auto_index") {
-		// 	server.setAutoIndex(it);
-		// }
-		// else if (*it == "client_max_body_size") {
-		// 	server.setBodySizeLimit(it);
-		// }
+		else if (*it == "root") {
+			// server.setRoot(it);
+		}
+		else if (*it == "index") {
+			// server.setIndex(it);
+		}
+		else if (*it == "error_page") {
+			// server.setErrorPages(it);
+		}
+		else if (*it == "upload_directory") {
+			// server.setUploadDir(it);
+		}
+		else if (*it == "auto_index") {
+			// server.setAutoIndex(it);
+		}
+		else if (*it == "client_max_body_size") {
+			// server.setBodySizeLimit(it);
+		}
 		else if (*it == "location") {
 			
 		}
@@ -96,6 +98,9 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 		}
 		else if (*it == "}") {
 			stk.pop();
+		}
+		else if (*it == ";") {
+			throw ConfigBuilder::ErrorConfig("error");
 		}
 		else {
 			

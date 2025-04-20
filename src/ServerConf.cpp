@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 16:55:34 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 17:21:38 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,24 @@ void ServerConf::setListen(std::vector<std::string>::const_iterator &it,  std::v
 			this->listen.push_back(ServerConf::parseListen(*it));
 			it++;
 		}
+		it++;
+	}
+	else
+		throw ServerConf::ParseError("Confi file : empty value not accepted !");
+}
+
+
+void ServerConf::setServerNames(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens) {
+	if (!ConfigBuilder::checkDirective(it,   tokens))
+	{
+		while (*it != ";")
+		{
+			if (ConfigBuilder::checkDirective(it,   tokens))
+				throw ServerConf::ParseError("Config file : syntax error !");
+			this->serverNames.insert(*it);
+			it++;
+		}
+		it++;
 	}
 	else
 		throw ServerConf::ParseError("Confi file : empty value not accepted !");
