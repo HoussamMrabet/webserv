@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/04/18 07:19:38 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 05:26:05 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,13 @@ int main()
     // {
     //     std::cerr << e.what() << '\n';
     // }
+	try {
+    	ConfigBuilder::generateServers("config/default.conf");
+	}
+	catch (const std::exception& ex) {
+		std::cerr << ex.what() << std::endl;
+	}
     
-    ConfigBuilder::generateServers("config/default.conf");
     
     
     return (0);

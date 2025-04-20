@@ -6,13 +6,14 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 05:13:07 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 07:01:45 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
 # include <exception>
+# include <sstream>
 # include <iostream>
 # include <vector>
 # include <map>
@@ -40,4 +41,7 @@ class ConfigBuilder {
 		static std::vector<ServerConf> generateServers(std::string file);
 		static ServerConf buildServer(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
 		static bool checkDirective(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens);
+		static bool checkPort(std::string str);
+		static bool checkIp(std::string str);
+
 };

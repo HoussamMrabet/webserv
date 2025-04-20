@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 05:17:55 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 05:54:12 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,8 @@ class ServerConf {
 		size_t getBodySizeLimit() const;
 		std::map<std::string, LocationConf> getLocations() const;
 
+		static std::pair<std::string, std::string> parseListen(std::string str);
+
 		class ParseError : public std::exception {
 			private :
 				std::string message;
@@ -66,6 +68,22 @@ class ServerConf {
 					return (this->message.c_str());
 				}
 				~ParseError() throw() {
+					
+				}
+
+		};
+
+		class InvalidValue : public std::exception {
+			private :
+				std::string message;
+			public :
+				InvalidValue(const std::string str) {
+					this->message = str;
+				}
+				const char* what() const throw() {
+					return (this->message.c_str());
+				}
+				~InvalidValue() throw() {
 					
 				}
 

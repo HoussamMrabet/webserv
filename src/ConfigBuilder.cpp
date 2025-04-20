@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 17:43:22 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 07:11:05 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,4 +103,25 @@ bool ConfigBuilder::checkDirective(std::vector<std::string>::const_iterator &it,
 	if (*it == "{" || *it == "}" || it == tokens.end())
 		return (true);
 	return (false);
+}
+
+bool ConfigBuilder::checkPort(std::string str) {
+	if (str.empty())
+		return (true);
+	for (int i = 0 ; i < str.length() ; i++) {
+		if (i  < 48 || i > 57)
+			return (true);
+	}
+	if (str.length() > 5)
+		return (true);
+	int num = std::atoi(str.c_str());
+	if (num < 1 || num > 65535)
+		return (true);
+	return (false);
+}
+
+bool ConfigBuilder::checkIp(std::string str) {
+	
+	std::stringstream ss(str);
+	int count = 0;
 }
