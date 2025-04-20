@@ -6,12 +6,13 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 16:35:01 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 05:13:07 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
+# include <exception>
 # include <iostream>
 # include <vector>
 # include <map>

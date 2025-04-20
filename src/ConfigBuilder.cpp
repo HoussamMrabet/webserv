@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 17:00:41 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/18 17:43:22 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,7 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 		else 
 			{
 				std::cout << "Error" << std::endl;
+				break;
 			}
 		
 	}

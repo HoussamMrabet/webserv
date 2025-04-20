@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 16:35:49 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 05:17:55 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,5 +54,21 @@ class ServerConf {
 		bool getAutoIndex() const;
 		size_t getBodySizeLimit() const;
 		std::map<std::string, LocationConf> getLocations() const;
+
+		class ParseError : public std::exception {
+			private :
+				std::string message;
+			public :
+				ParseError(const std::string str) {
+					this->message = str;
+				}
+				const char* what() const throw() {
+					return (this->message.c_str());
+				}
+				~ParseError() throw() {
+					
+				}
+
+		};
 };
 
