@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 17:21:38 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 17:50:17 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,4 +126,10 @@ std::pair<std::string, std::string> ServerConf::parseListen(std::string str) {
 			throw ServerConf::InvalidValue("Config file : Not valid value at " + str);
 	}
 	return (res);
+}
+
+
+std::ostream& operator << (std::ostream& os, const ServerConf server) {
+	
+	return (os);
 }

@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 16:59:53 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 17:44:42 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,3 +93,4 @@ class ServerConf {
 		};
 };
 
+std::ostream& operator << (std::ostream& os, const ServerConf server);
