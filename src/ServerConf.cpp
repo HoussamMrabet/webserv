@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 10:51:14 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 16:55:34 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ ServerConf::~ServerConf() {
 std::vector<std::pair<std::string, std::string> > ServerConf::getListen() const {
 	return (this->listen);
 }
-std::vector<std::string> ServerConf::getServerNames() const {
+std::set<std::string> ServerConf::getServerNames() const {
 	return (this->serverNames);
 }
 std::string ServerConf::getRoot() const {

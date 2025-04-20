@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 11:41:20 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 15:04:10 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,9 +67,9 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 			server.setListen(it, tokens);
 			continue ;
 		}
-		// else if (*it == "server_name") {
-		// 	server.setServerNames(it);
-		// }
+		else if (*it == "server_name") {
+			server.setServerNames(it);
+		}
 		// else if (*it == "root") {
 		// 	server.setRoot(it);
 		// }

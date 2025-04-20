@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 10:50:28 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/20 16:56:23 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,8 +21,8 @@ class ServerConf {
 
 	private :
 		std::vector<std::pair<std::string, std::string> > listen;    // getaddrinfo     
-    	std::vector<std::string> serverNames;    
-    	std::string root;                  
+    	std::set<std::string> serverNames;    
+    	std::string root;                   
     	std::vector<std::string> index;         
     	std::map<int, std::string> errorPages;   
     	std::string uploadDir;                   
@@ -47,7 +47,7 @@ class ServerConf {
 		void setLocations(std::map<std::string, LocationConf> locations);
 		
 		std::vector<std::pair<std::string, std::string> > getListen() const;
-		std::vector<std::string> getServerNames() const;
+		std::set<std::string> getServerNames() const;
 		std::string getRoot() const;
 		std::vector<std::string> getIndex() const;
 		std::map<int, std::string> getErrorPages() const;
