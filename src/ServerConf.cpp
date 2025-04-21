@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 07:00:35 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 09:47:02 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,7 +76,7 @@ void ServerConf::printListen(std::ostream& os) const {
 	}
 }
 void  ServerConf::printServerNames(std::ostream& os) const {
-	for (std::set<std::string>::iterator it = this->serverNames.begin() ; it !=  serverNames.end() ; it++) {
+	for (std::set<std::string>::const_iterator it = this->serverNames.begin() ; it !=  serverNames.end() ; it++) {
 		os << "--> " << *it << std::endl;
 	}
 }
@@ -84,12 +84,14 @@ void  ServerConf::printRoot(std::ostream& os) const {
 	os << "-->" << this->root << std::endl;
 }
 void  ServerConf::printIndex(std::ostream& os) const {
-	for (std::vector<std::string>::iterator it = this->index.begin(); it != this->index.end() ; it++) {
+	for (std::vector<std::string>::const_iterator it = this->index.begin(); it != this->index.end() ; it++) {
 		os << "--> " << *it << std::endl;
 	}
 }
 void  ServerConf::printErrorPages(std::ostream& os) const {
-	os << "" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = this->errorPages.begin(); it != this->errorPages.end(); it++) {
+		os << "--> " << it->first << " " << it->second << std::endl;
+	}
 }
 void ServerConf::printUploadDir(std::ostream& os) const {
 	os << "" << std::endl;
@@ -112,6 +114,8 @@ void ServerConf::printReady(std::ostream& os) const {
 void ServerConf::setListen(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens) {
 	if (!ConfigBuilder::checkDirective(it,   tokens))
 	{
+		if (*it == ";")
+			throw ServerConf::ParseError("Confi file : empty value not accepted !");
 		while (*it != ";")
 		{
 			if (ConfigBuilder::checkDirective(it,   tokens))
@@ -122,25 +126,93 @@ void ServerConf::setListen(std::vector<std::string>::const_iterator &it,  std::v
 		it++;
 	}
 	else
-		throw ServerConf::ParseError("Confi file : empty value not accepted !");
+		throw ServerConf::ParseError("Confi file : Syntax error !");
 }
 
 
 void ServerConf::setServerNames(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens) {
 	if (!ConfigBuilder::checkDirective(it,   tokens))
 	{
+		if (*it == ";")
+			throw ServerConf::ParseError("Confi file : empty value not accepted !");
 		while (*it != ";")
 		{
 			if (ConfigBuilder::checkDirective(it,   tokens))
 				throw ServerConf::ParseError("Config file : syntax error !");
+			// std::cout << *it << std::endl;
 			this->serverNames.insert(*it);
 			it++;
 		}
 		it++;
 	}
 	else
-		throw ServerConf::ParseError("Confi file : empty value not accepted !");
+		throw ServerConf::ParseError("Config file : Syntax error !");
 }
+
+void ServerConf::setRoot(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens) {
+	if (!ConfigBuilder::checkDirective(it,   tokens))
+	{
+		if (*it == ";")
+			throw ServerConf::ParseError("Config file : empty value not accepted !");
+		this->root = *it;
+		it++;
+		if (*it != ";")
+			throw ServerConf::ParseError("Config file : Root directive cant have multiple values !") ;
+		it++;
+	}
+	else
+		throw ServerConf::ParseError("Config file : Syntax error !");
+}
+
+void ServerConf::setIndex(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens) {
+	if (!ConfigBuilder::checkDirective(it,   tokens))
+	{
+		if (*it == ";")
+			throw ServerConf::ParseError("Confi file : empty value not accepted !");
+		while (*it != ";")
+		{
+			if (ConfigBuilder::checkDirective(it,   tokens))
+				throw ServerConf::ParseError("Config file : syntax error !");
+			// std::cout << *it << std::endl;
+			this->index.push_back(*it);
+			it++;
+		}
+		it++;
+	}
+	else
+		throw ServerConf::ParseError("Config file : Syntax error !");
+}
+
+
+void ServerConf::setErrorPages(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens) {
+	int  test;
+	std::string tmp;
+	if (!ConfigBuilder::checkDirective(it,   tokens))
+	{
+		if (*it == ";")
+			throw ServerConf::ParseError("Config file : empty value not accepted !");
+		if ((*it).length() != 3)
+			throw ServerConf::ParseError("Config file : value : "+(*it)+" not accepted in  error_page !");
+		test = std::atoi((*it).c_str());
+		if (test < 400 || test >= 600)
+			throw ServerConf::ParseError("Config file : value : "+(*it)+" not accepted in  error_page status code 4** or 5** !"); 
+		
+		tmp = *it;
+		it++;
+		if (ConfigBuilder::checkDirective(it,   tokens))
+			throw ServerConf::ParseError("Config file : Root directive cant have multiple values !") ;
+		if (*it == ";")
+			throw ServerConf::ParseError("Config file : empty second value not accepted !");
+		this->errorPages.insert(std::make_pair(tmp, *it));
+		it++;
+		if (*it != ";")
+			throw ServerConf::ParseError("Config file : Root directive cant have multiple values !") ;
+		it++;
+	}
+	else
+		throw ServerConf::ParseError("Confi file : Syntax error !");
+}
+
 
 
 std::pair<std::string, std::string> ServerConf::parseListen(std::string str) {
@@ -174,5 +246,11 @@ std::ostream& operator << (std::ostream& os, const ServerConf server) {
 		server.printListen(os);
 		os << "#" << "Server Names : " << std::endl;
 		server.printServerNames(os);
+		os << "#" << "Root : " << std::endl;
+		server.printRoot(os);
+		os << "#" << "Index : " << std::endl;
+		server.printIndex(os);
+		os << "#" << "Error pages : " << std::endl;
+		server.printErrorPages(os);
 	return (os);
 }

@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 06:51:16 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 09:29:41 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,7 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 				throw ConfigBuilder::ErrorConfig("Config file : Error near to : " + std::string(*it));
 		}
 	}
+	std::cout << "...... " << stk.size() << std::endl;
 	if (!stk.empty())
 		throw ConfigBuilder::ErrorConfig("Config file : You have to open and close curly bracets { }");;
 	return (res);
@@ -68,20 +69,27 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 		if (*it == "listen") {
 			it++;
 			server.setListen(it, tokens);
-			continue ;
+			continue; 
 		}
 		else if (*it == "server_name") {
+			it++;
 			server.setServerNames(it, tokens);
 			continue;
 		}
 		else if (*it == "root") {
-			// server.setRoot(it);
+			it++;
+			server.setRoot(it, tokens);
+			continue;
 		}
 		else if (*it == "index") {
-			// server.setIndex(it);
+			it++;
+			server.setIndex(it, tokens);
+			continue ;
 		}
 		else if (*it == "error_page") {
-			// server.setErrorPages(it);
+			it++;
+			server.setErrorPages(it, tokens);
+			continue;
 		}
 		else if (*it == "upload_directory") {
 			// server.setUploadDir(it);
@@ -101,9 +109,9 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 		else if (*it == "}") {
 			stk.pop();
 		}
-		// else if (*it == ";") {
-		// 	throw ConfigBuilder::ErrorConfig("error");
-		// }
+		else if (*it == ";") {
+			throw ConfigBuilder::ErrorConfig("error");
+		}
 		else {
 			
 		}
@@ -117,7 +125,7 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 }
 
 bool ConfigBuilder::checkDirective(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens) {
-	if (it == tokens.end()  || *it == "{" || *it == "}" || *it == ";")
+	if (it == tokens.end()  || *it == "{" || *it == "}")
 		return (true);
 	return (false);
 }

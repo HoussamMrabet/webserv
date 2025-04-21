@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 06:31:57 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 09:29:10 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,13 +38,13 @@ class ServerConf {
         
 		void setListen(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens);
 		void setServerNames(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
-		void setRoot(std::vector<std::string>::const_iterator &it);
-		void setIndex(std::vector<std::string>::const_iterator &it);
-		void setErrorPages(std::vector<std::string>::const_iterator &it);
-		void setUploadDir(std::vector<std::string>::const_iterator &it);
-		void setAutoIndex(std::vector<std::string>::const_iterator &it);
-		void setBodySizeLimit(std::vector<std::string>::const_iterator &it);
-		void setLocations(std::map<std::string, LocationConf> locations);
+		void setRoot(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
+		void setIndex(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
+		void setErrorPages(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
+		void setUploadDir(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
+		void setAutoIndex(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
+		void setBodySizeLimit(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
+		void setLocations(std::map<std::string, LocationConf> locations, std::vector<std::string> &tokens);
 		
 		std::vector<std::pair<std::string, std::string> > getListen() const;
 		std::set<std::string> getServerNames() const;
