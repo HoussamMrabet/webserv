@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 15:12:55 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 16:08:09 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,10 +98,13 @@ void ServerConf::printUploadDir(std::ostream& os) const {
 		os << "-->" << this->uploadDir << std::endl;
 }
 void  ServerConf::printAutoIndex(std::ostream& os) const {
-	os << "" << std::endl;
+	if (this->autoIndex)
+		os << "-->" << "auto index : on"<< std::endl;
+	else
+		os << "-->" << "auto index : off"<< std::endl;
 }
 void ServerConf::printBodySizeLimit(std::ostream& os) const {
-	os << "" << std::endl;
+	os << "-->" << this->bodySizeLimit << std::endl;
 }
 void ServerConf::printLocations(std::ostream& os) const {
 	os << "" << std::endl;
@@ -248,6 +251,26 @@ void ServerConf::setErrorPages(std::vector<std::string>::const_iterator &it,  st
 		throw ServerConf::ParseError("Confi file : Syntax error !");
 }
 
+void ServerConf::setBodySizeLimit(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens) {
+	if (!ConfigBuilder::checkDirective(it,   tokens))
+	{
+		if (*it == ";")
+			throw ServerConf::ParseError("Config file : empty value not accepted !");
+		// if ()
+		// 	throw ServerConf::ParseError("Config file : auto_index must be on or off!");
+		// if (*it == "on")
+		// 	this->autoIndex = true;
+		// else
+		// 	this->autoIndex = false;
+		it++;
+		if (*it != ";")
+			throw ServerConf::ParseError("Config file : auto_index directive cant have multiple values !") ;
+		it++;
+	}
+	else
+		throw ServerConf::ParseError("Config file : Syntax error !");
+}
+
 
 
 std::pair<std::string, std::string> ServerConf::parseListen(std::string str) {
@@ -288,8 +311,13 @@ std::ostream& operator << (std::ostream& os, const ServerConf server) {
 		server.printIndex(os);
 		os << "#" << "Error pages : " << std::endl;
 		server.printErrorPages(os);
-		os << "#" << "Upload directory : " << server.getUploadDir() << std::endl;
+		os << "#" << "Upload directory : " << std::endl;
 		server.printUploadDir(os);
+		os << "#" << " Auto Index " << std::endl;
+		server.printAutoIndex(os);
+		os << "#" << "Body size limite : " << std::endl;
+		server.printBodySizeLimit(os);
+
 
 	return (os);
 }

@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 05:37:46 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 16:11:57 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,7 @@ class ConfigBuilder {
 		static bool checkDirective(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens);
 		static bool checkPort(std::string str);
 		static bool checkIp(std::string str);
+		static bool checkSizeLimite(std::string str); 
 
 		class ErrorConfig : public std::exception {
 			private :
