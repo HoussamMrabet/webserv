@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 09:29:10 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 15:07:41 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,7 +97,7 @@ class ServerConf {
 					return (this->message.c_str());
 				}
 				~InvalidValue() throw() {
-					
+
 				}
 
 		};

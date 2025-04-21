@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 09:29:41 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 15:11:41 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,6 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 				throw ConfigBuilder::ErrorConfig("Config file : Error near to : " + std::string(*it));
 		}
 	}
-	std::cout << "...... " << stk.size() << std::endl;
 	if (!stk.empty())
 		throw ConfigBuilder::ErrorConfig("Config file : You have to open and close curly bracets { }");;
 	return (res);
@@ -65,7 +64,6 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 
 	while (it != tokens.end())
 	{
-		// std::cout << *it << std::endl;
 		if (*it == "listen") {
 			it++;
 			server.setListen(it, tokens);
@@ -92,13 +90,19 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 			continue;
 		}
 		else if (*it == "upload_directory") {
-			// server.setUploadDir(it);
+			it++;
+			server.setUploadDir(it, tokens);
+			continue;
 		}
 		else if (*it == "auto_index") {
-			// server.setAutoIndex(it);
+			it++;
+			server.setAutoIndex(it, tokens);
+			continue;
 		}
 		else if (*it == "client_max_body_size") {
-			// server.setBodySizeLimit(it);
+			// it++;
+			// server.setBodySizeLimit(it, tokens);
+			// continue;
 		}
 		else if (*it == "location") {
 			
@@ -110,10 +114,10 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 			stk.pop();
 		}
 		else if (*it == ";") {
-			throw ConfigBuilder::ErrorConfig("error");
+			throw ConfigBuilder::ErrorConfig("Config file : error et \";\"");
 		}
 		else {
-			
+			throw ConfigBuilder::ErrorConfig("Config file : the directive "+(*it)+" is not supported !");
 		}
 		if (stk.size() == 0)
 			break;
@@ -121,6 +125,8 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 	}
 	// if (server.getReady() == false)
 	// 	throw ConfigBuilder::ErrorConfig("Error : your server should have directives to be able to run !");
+	// std::cout << server.getUploadDir() << std::endl << server << std::endl;
+	// std::cout << "_____________________________" <<std::endl;
 	return (server);
 }
 

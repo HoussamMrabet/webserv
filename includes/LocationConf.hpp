@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:43:14 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/18 16:33:49 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 12:50:59 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,7 @@
 class LocationConf {
     private :
         std::string root;                        
-        std::vector<std::string> index;         
-        std::map<int,std::string> errorPages;  
+        std::vector<std::string> index;           
         bool autoIndex;
         std::vector<std::string> allowedMethods;
         size_t bodySizeLimit;

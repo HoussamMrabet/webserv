@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 09:47:02 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 15:12:55 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ ServerConf &ServerConf::operator = (const ServerConf &copy) {
 		this->locations = copy.getLocations();
 		this->root = copy.getRoot();
 		this->serverNames = copy.getServerNames();
+		this->uploadDir = copy.getUploadDir();
 	}
 	return (*this);
 };
@@ -94,7 +95,7 @@ void  ServerConf::printErrorPages(std::ostream& os) const {
 	}
 }
 void ServerConf::printUploadDir(std::ostream& os) const {
-	os << "" << std::endl;
+		os << "-->" << this->uploadDir << std::endl;
 }
 void  ServerConf::printAutoIndex(std::ostream& os) const {
 	os << "" << std::endl;
@@ -173,10 +174,44 @@ void ServerConf::setIndex(std::vector<std::string>::const_iterator &it, std::vec
 		{
 			if (ConfigBuilder::checkDirective(it,   tokens))
 				throw ServerConf::ParseError("Config file : syntax error !");
-			// std::cout << *it << std::endl;
 			this->index.push_back(*it);
 			it++;
 		}
+		it++;
+	}
+	else
+		throw ServerConf::ParseError("Config file : Syntax error !");
+}
+
+void ServerConf::setUploadDir(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens) {
+	if (!ConfigBuilder::checkDirective(it,   tokens))
+	{
+		if (*it == ";")
+			throw ServerConf::ParseError("Config file : empty value not accepted !");
+		this->uploadDir = *it;
+		it++;
+		if (*it != ";")
+			throw ServerConf::ParseError("Config file : Upload_directory directive cant have multiple values !") ;
+		it++;
+	}
+	else
+		throw ServerConf::ParseError("Config file : Syntax error !");
+}
+
+void ServerConf::setAutoIndex(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens) {
+	if (!ConfigBuilder::checkDirective(it,   tokens))
+	{
+		if (*it == ";")
+			throw ServerConf::ParseError("Config file : empty value not accepted !");
+		if (*it != "off" && *it != "on")
+			throw ServerConf::ParseError("Config file : auto_index must be on or off!");
+		if (*it == "on")
+			this->autoIndex = true;
+		else
+			this->autoIndex = false;
+		it++;
+		if (*it != ";")
+			throw ServerConf::ParseError("Config file : auto_index directive cant have multiple values !") ;
 		it++;
 	}
 	else
@@ -241,6 +276,7 @@ std::pair<std::string, std::string> ServerConf::parseListen(std::string str) {
 
 
 std::ostream& operator << (std::ostream& os, const ServerConf server) {
+		// std::cout << server.getUploadDir() << std::endl;
 		os << "Server Class : " << std::endl;
 		os << "#" << "Listen : " << std::endl;
 		server.printListen(os);
@@ -252,5 +288,8 @@ std::ostream& operator << (std::ostream& os, const ServerConf server) {
 		server.printIndex(os);
 		os << "#" << "Error pages : " << std::endl;
 		server.printErrorPages(os);
+		os << "#" << "Upload directory : " << server.getUploadDir() << std::endl;
+		server.printUploadDir(os);
+
 	return (os);
 }
