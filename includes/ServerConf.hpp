@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 17:44:42 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 06:31:57 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ class ServerConf {
     	std::set<std::string> serverNames;    
     	std::string root;                   
     	std::vector<std::string> index;         
-    	std::map<int, std::string> errorPages;   
+    	std::map<std::string, std::string> errorPages;   
     	std::string uploadDir;                   
     	bool autoIndex;                                                 
     	size_t bodySizeLimit;
@@ -50,13 +50,23 @@ class ServerConf {
 		std::set<std::string> getServerNames() const;
 		std::string getRoot() const;
 		std::vector<std::string> getIndex() const;
-		std::map<int, std::string> getErrorPages() const;
+		std::map<std::string, std::string> getErrorPages() const;
 		std::string getUploadDir() const;
 		bool getAutoIndex() const;
 		size_t getBodySizeLimit() const;
 		std::map<std::string, LocationConf> getLocations() const;
-
 		bool getReady() const;
+
+		void printListen(std::ostream& os) const;
+		void printServerNames(std::ostream& os) const;
+		void printRoot(std::ostream& os) const;
+		void printIndex(std::ostream& os) const;
+		void printErrorPages(std::ostream& os) const;
+		void printUploadDir(std::ostream& os) const;
+		void printAutoIndex(std::ostream& os) const;
+		void printBodySizeLimit(std::ostream& os) const;
+		void printLocations(std::ostream& os) const;
+		void printReady(std::ostream& os) const;
 
 		static std::pair<std::string, std::string> parseListen(std::string str);
 

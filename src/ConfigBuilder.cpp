@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 17:23:40 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 06:51:16 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,13 +37,15 @@ ConfigBuilder::~ConfigBuilder() {
 
 std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 	std::vector<ServerConf>  res;
+	ServerConf temp;
 	std::vector<std::string> tokens = TokenizeFile::tokens(file);
 	std::stack<char> stk;
 	for (std::vector<std::string>::const_iterator it = tokens.begin(); it != tokens.end(); ++it ) {
 		if (*it == "server" && (it + 1 ) != tokens.end() && *(it + 1) == "{" ) {
 			// std::cout << "there is a server !" << std::endl;
 			it++;
-			ConfigBuilder::buildServer(it, tokens, stk);
+			temp = ConfigBuilder::buildServer(it, tokens, stk);
+			res.push_back(temp);
 			if (it == tokens.end())
 				break;
 		}
@@ -62,7 +64,7 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 
 	while (it != tokens.end())
 	{
-		std::cout << *it << std::endl;
+		// std::cout << *it << std::endl;
 		if (*it == "listen") {
 			it++;
 			server.setListen(it, tokens);
@@ -99,9 +101,9 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 		else if (*it == "}") {
 			stk.pop();
 		}
-		else if (*it == ";") {
-			throw ConfigBuilder::ErrorConfig("error");
-		}
+		// else if (*it == ";") {
+		// 	throw ConfigBuilder::ErrorConfig("error");
+		// }
 		else {
 			
 		}

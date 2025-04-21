@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 17:50:17 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 07:00:35 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ std::string ServerConf::getRoot() const {
 std::vector<std::string> ServerConf::getIndex() const {
 	return (this->index);
 }
-std::map<int, std::string> ServerConf::getErrorPages() const {
+std::map<std::string, std::string> ServerConf::getErrorPages() const {
 	return (this->errorPages);
 }
 std::string ServerConf::getUploadDir() const {
@@ -69,6 +69,45 @@ std::map<std::string, LocationConf> ServerConf::getLocations() const {
 bool ServerConf::getReady() const {
 	return (this->ready);
 }
+
+void ServerConf::printListen(std::ostream& os) const {
+	for (size_t i = 0; i < this->listen.size(); i++) {
+		os << "--> " << listen[i].first << ":" << listen[i].second << std::endl;
+	}
+}
+void  ServerConf::printServerNames(std::ostream& os) const {
+	for (std::set<std::string>::iterator it = this->serverNames.begin() ; it !=  serverNames.end() ; it++) {
+		os << "--> " << *it << std::endl;
+	}
+}
+void  ServerConf::printRoot(std::ostream& os) const {
+	os << "-->" << this->root << std::endl;
+}
+void  ServerConf::printIndex(std::ostream& os) const {
+	for (std::vector<std::string>::iterator it = this->index.begin(); it != this->index.end() ; it++) {
+		os << "--> " << *it << std::endl;
+	}
+}
+void  ServerConf::printErrorPages(std::ostream& os) const {
+	os << "" << std::endl;
+}
+void ServerConf::printUploadDir(std::ostream& os) const {
+	os << "" << std::endl;
+}
+void  ServerConf::printAutoIndex(std::ostream& os) const {
+	os << "" << std::endl;
+}
+void ServerConf::printBodySizeLimit(std::ostream& os) const {
+	os << "" << std::endl;
+}
+void ServerConf::printLocations(std::ostream& os) const {
+	os << "" << std::endl;
+}
+
+void ServerConf::printReady(std::ostream& os) const {
+	os << "" << std::endl;
+}
+
 
 void ServerConf::setListen(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens) {
 	if (!ConfigBuilder::checkDirective(it,   tokens))
@@ -130,6 +169,10 @@ std::pair<std::string, std::string> ServerConf::parseListen(std::string str) {
 
 
 std::ostream& operator << (std::ostream& os, const ServerConf server) {
-	
+		os << "Server Class : " << std::endl;
+		os << "#" << "Listen : " << std::endl;
+		server.printListen(os);
+		os << "#" << "Server Names : " << std::endl;
+		server.printServerNames(os);
 	return (os);
 }

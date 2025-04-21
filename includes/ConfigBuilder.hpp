@@ -6,12 +6,13 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/21 21:06:21 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/20 16:51:57 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/21 05:37:46 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
+# include <iomanip>
 # include <exception>
 # include <sstream>
 # include <iostream>
