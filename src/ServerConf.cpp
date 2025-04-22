@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 16:08:09 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/22 06:06:36 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -256,15 +256,20 @@ void ServerConf::setBodySizeLimit(std::vector<std::string>::const_iterator &it, 
 	{
 		if (*it == ";")
 			throw ServerConf::ParseError("Config file : empty value not accepted !");
-		// if ()
-		// 	throw ServerConf::ParseError("Config file : auto_index must be on or off!");
-		// if (*it == "on")
-		// 	this->autoIndex = true;
-		// else
-		// 	this->autoIndex = false;
+		char *stops = NULL;
+		unsigned long res;
+		errno = 0;
+		res = std::strtoul((*it).c_str(), &stops, 10);
+		if (stops &&  *stops !='\0')
+			throw ServerConf::ParseError("Config file : cant convert the client_max_body_size !");
+		if (errno == ERANGE)
+			throw ServerConf::ParseError("Config file : client_max_body_size overflow !");
+		if ((*it)[0] == '-')
+				throw ServerConf::ParseError("Config file : cant convert the client_max_body_size cause its Negative !");
+		this->bodySizeLimit = res;
 		it++;
 		if (*it != ";")
-			throw ServerConf::ParseError("Config file : auto_index directive cant have multiple values !") ;
+			throw ServerConf::ParseError("Config file : client_max_body_size directive cant have multiple values !") ;
 		it++;
 	}
 	else

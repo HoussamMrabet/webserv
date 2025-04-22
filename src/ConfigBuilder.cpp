@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 16:12:29 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/22 05:44:38 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,10 +177,4 @@ bool ConfigBuilder::checkIp(std::string str) {
 	if (count != 4)
 		return (true);
 	return (false);
-}
-
-bool ConfigBuilder::checkSizeLimite(std::string str) {
-	unsigned int test;
-
-	
 }
