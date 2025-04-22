@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:43:14 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/22 11:47:04 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/22 13:27:16 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,4 +48,13 @@ class LocationConf {
         std::string getRedirectUrl() const;
         bool    getListing() const;
 		
+
+		void printName(std::ostream& os) const;
+		void printRoot(std::ostream& os) const;
+		void printIndex(std::ostream& os) const;
+		void printAutoIndex(std::ostream& os) const;
+		void printAllowedMethods(std::ostream& os) const;
+		void printBodySizeLimit(std::ostream& os) const;
+		void printRedirectUrl(std::ostream& os) const;
+		void prontListing(std::ostream& os) const;
     };

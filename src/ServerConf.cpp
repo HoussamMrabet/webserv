@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/22 12:58:07 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/22 15:00:15 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,15 +101,27 @@ void ServerConf::printUploadDir(std::ostream& os) const {
 }
 void  ServerConf::printAutoIndex(std::ostream& os) const {
 	if (this->autoIndex)
-		os << "-->" << "auto index : on"<< std::endl;
+		os << "--> " << "auto index : on"<< std::endl;
 	else
-		os << "-->" << "auto index : off"<< std::endl;
+		os << "--> " << "auto index : off"<< std::endl;
 }
 void ServerConf::printBodySizeLimit(std::ostream& os) const {
-	os << "-->" << this->bodySizeLimit << std::endl;
+	os << "--> " << this->bodySizeLimit << std::endl;
 }
 void ServerConf::printLocations(std::ostream& os) const {
-	os << "" << std::endl;
+	for (std::map<std::string, LocationConf>::const_iterator it = this->locations.begin();  it != this->locations.end() ; it++)
+	{
+		os << "----------------------------" << std::endl;
+		it->second.printName(os);
+		it->second.printRoot(os);
+		it->second.printIndex(os);
+		it->second.printAutoIndex(os);
+		it->second.printAllowedMethods(os);
+		it->second.printBodySizeLimit(os);
+		it->second.printRedirectUrl(os);
+		it->second.prontListing(os);
+		os << "----------------------------" << std::endl;
+	}
 }
 
 void ServerConf::printReady(std::ostream& os) const {
@@ -145,7 +157,6 @@ void ServerConf::setServerNames(std::vector<std::string>::const_iterator &it, st
 		{
 			if (ConfigBuilder::checkDirective(it,   tokens))
 				throw ServerConf::ParseError("Config file : syntax error !");
-			// std::cout << *it << std::endl;
 			this->serverNames.insert(*it);
 			it++;
 		}
@@ -288,7 +299,6 @@ void ServerConf::setLocations(std::vector<std::string>::const_iterator &it, std:
 		if (!ConfigBuilder::checkDirective(it,   tokens))
 			throw ServerConf::ParseError("Config file : Syntax Error !");
 		while(it != tokens.end()) {
-			std::cout << *it << std::endl;
 			if (*it == "root") {
 				it++;
 				location.setRoot(it, tokens);
@@ -342,7 +352,8 @@ void ServerConf::setLocations(std::vector<std::string>::const_iterator &it, std:
 			it++;
 			if (stk.size() == 1)
 				break;
-		}	
+		}
+		this->locations.insert(std::make_pair(location.getName(), location));
 	}
 	else
 		throw ServerConf::ParseError("Config file : Syntax error !");
@@ -392,7 +403,7 @@ std::ostream& operator << (std::ostream& os, const ServerConf server) {
 		server.printAutoIndex(os);
 		os << "#" << "Body size limite : " << std::endl;
 		server.printBodySizeLimit(os);
-		// os << "#" << "Locations : " << std::endl;
-		// server.printLocations(os);
+		os << "#" << "Locations : " << std::endl;
+		server.printLocations(os);
 	return (os);
 }

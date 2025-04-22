@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 16:33:00 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/22 12:56:48 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/22 14:57:54 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -183,4 +183,79 @@ void LocationConf::setRedirectUrl(std::vector<std::string>::const_iterator &it, 
 	}
 	else
 		throw ServerConf::ParseError("Config file : Syntax error !");
+}
+
+
+const std::string LocationConf::getName() const {
+	return (this->name);
+}
+
+std::string LocationConf::getRoot() const {
+	return (this->root);
+}                        
+
+std::vector<std::string> LocationConf::getIndex() const {
+	return (this->index);
+}         
+
+bool LocationConf::getAutoIndex() const {
+	return (this->autoIndex);
+}
+
+std::vector<std::string> LocationConf::getAllowedMethods() const {
+	return (this->allowedMethods);
+}
+
+size_t LocationConf::getBodySizeLimit() const {
+	return (this->bodySizeLimit);
+}
+
+std::string LocationConf::getRedirectUrl() const {
+	return (this->redirectUrl);
+}
+
+bool    LocationConf::getListing() const {
+	return (this->listing);
+}
+
+
+void LocationConf::printName(std::ostream& os) const {
+	os << "location : " << this->getName() << std::endl;
+}
+void LocationConf::printRoot(std::ostream& os) const {
+	os << "|->root : " << this->getRoot() << std::endl;
+}
+void LocationConf::printIndex(std::ostream& os) const {
+	os << "|-> index : " ;
+	for (std::vector<std::string>::const_iterator it = this->index.begin(); it != this->index.end() ; it++) {
+		os << *it << " | ";
+	}
+	os << std::endl;
+}
+void LocationConf::printAutoIndex(std::ostream& os) const {
+	os << "|-> index : " ;
+	if (this->autoIndex)
+		os << "on" << std::endl;
+	else
+		os << "off" << std::endl;
+}
+void LocationConf::printAllowedMethods(std::ostream& os) const {
+	os << "|-> allowed methods : " ;
+	for (std::vector<std::string>::const_iterator it = this->allowedMethods.begin(); it != this->allowedMethods.end() ; it++) {
+		os << *it << " | ";
+	}
+	os << std::endl;
+}
+void LocationConf::printBodySizeLimit(std::ostream& os) const {
+	os << "|-> body size limit : "  << this->bodySizeLimit << std::endl;
+}
+void LocationConf::printRedirectUrl(std::ostream& os) const {
+	os << "|-> redirect URL : "  << this->redirectUrl << std::endl;
+}
+void LocationConf::prontListing(std::ostream& os) const {
+	os << "|-> listing : " ;
+	if (this->listing)
+		os << "on" << std::endl;
+	else
+		os << "off" << std::endl;
 }
