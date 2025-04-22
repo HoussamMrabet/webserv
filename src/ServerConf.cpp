@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/22 07:08:07 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/22 12:58:07 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@
 
 ServerConf::ServerConf() {
 	this->ready = false;
+	this->bodySizeLimit = 1024;
+	this->autoIndex = false;
 };
 ServerConf::ServerConf(const ServerConf &copy) {
 	*this = copy;
@@ -276,19 +278,75 @@ void ServerConf::setBodySizeLimit(std::vector<std::string>::const_iterator &it, 
 		throw ServerConf::ParseError("Config file : Syntax error !");
 }
 
-void ServerConf::setLocations(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens, std::stack<char> &stk, const ServerConf server) {
+void ServerConf::setLocations(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens, std::stack<char> &stk) {
 	if (!ConfigBuilder::checkDirective(it,   tokens))
 	{
-		if (*it == ";")
+		if (*it == ";") 
 			throw ServerConf::ParseError("Config file : empty value not accepted !");
-		//setup locations here !
+		LocationConf location(*this, *it);
 		it++;
+		if (!ConfigBuilder::checkDirective(it,   tokens))
+			throw ServerConf::ParseError("Config file : Syntax Error !");
+		while(it != tokens.end()) {
+			std::cout << *it << std::endl;
+			if (*it == "root") {
+				it++;
+				location.setRoot(it, tokens);
+				continue ; 
+			}
+			else if (*it == "auto_index")
+			{
+				it++;
+				location.setAutoIndex(it, tokens);
+				continue ; 
+			}
+			else if (*it == "index")
+			{
+				it++;
+				location.setIndex(it, tokens);
+				continue ; 
+			}
+			else if (*it == "allowed_methods")
+			{
+				it++;
+				location.setAllowedMethods(it, tokens);
+				continue;
+			}
+			else if (*it == "client_max_body_size") {
+				it++;
+				location.setBodySizeLimit(it, tokens);
+				continue;
+			}
+			else if (*it == "listing") {
+				it++;
+				location.setListing(it, tokens);
+				continue;
+			}
+			else if (*it == "return") {
+				it++;
+				location.setRedirectUrl(it, tokens);
+				continue;
+			}
+			else if (*it == "{") {
+				stk.push('{');
+			}
+			else if (*it == "}") {
+				stk.pop();
+			}
+			else if (*it == ";") {
+				throw ConfigBuilder::ErrorConfig("Config file : error et \";\"");
+			}
+			else {
+				throw ConfigBuilder::ErrorConfig("Config file : the directive "+(*it)+" is not supported !");
+			}
+			it++;
+			if (stk.size() == 1)
+				break;
+		}	
 	}
 	else
 		throw ServerConf::ParseError("Config file : Syntax error !");
 }
-
-
 
 
 std::pair<std::string, std::string> ServerConf::parseListen(std::string str) {
@@ -317,7 +375,6 @@ std::pair<std::string, std::string> ServerConf::parseListen(std::string str) {
 
 
 std::ostream& operator << (std::ostream& os, const ServerConf server) {
-		// std::cout << server.getUploadDir() << std::endl;
 		os << "Server Class : " << std::endl;
 		os << "#" << "Listen : " << std::endl;
 		server.printListen(os);
@@ -335,7 +392,7 @@ std::ostream& operator << (std::ostream& os, const ServerConf server) {
 		server.printAutoIndex(os);
 		os << "#" << "Body size limite : " << std::endl;
 		server.printBodySizeLimit(os);
-
-
+		// os << "#" << "Locations : " << std::endl;
+		// server.printLocations(os);
 	return (os);
 }

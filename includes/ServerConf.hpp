@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:41:18 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/22 06:58:11 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/22 09:56:25 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,7 @@ class ServerConf {
 		void setUploadDir(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
 		void setAutoIndex(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
 		void setBodySizeLimit(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
-		void setLocations(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens, std::stack<char> &stk,  const ServerConf server);
+		void setLocations(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens, std::stack<char> &stk);
 		
 		std::vector<std::pair<std::string, std::string> > getListen() const;
 		std::set<std::string> getServerNames() const;

@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/22 05:44:38 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/22 12:35:53 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,7 +105,9 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 			continue;
 		}
 		else if (*it == "location") {
-			
+			it++;
+			server.setLocations(it, tokens, stk);
+			continue;
 		}
 		else if (*it == "{") {
 			stk.push('{');
@@ -135,6 +137,7 @@ bool ConfigBuilder::checkDirective(std::vector<std::string>::const_iterator &it,
 		return (true);
 	return (false);
 }
+
 
 bool ConfigBuilder::checkPort(std::string str) {
 	if (str.empty())
