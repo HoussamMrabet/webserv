@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 08:43:14 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/21 12:50:59 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/22 07:08:07 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 
 class LocationConf {
     private :
+		const std::string name;
         std::string root;                        
         std::vector<std::string> index;           
         bool autoIndex;
@@ -25,6 +26,7 @@ class LocationConf {
         bool    listing;
     public :
         LocationConf();
+		LocationConf(const ServerConf server, std::string name);
      	virtual ~LocationConf();
         
 		void setRoot(unsigned int &start, std::vector<std::string> tokens);

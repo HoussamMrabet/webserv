@@ -6,7 +6,7 @@
 /*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 10:48:31 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/22 06:06:36 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/04/22 07:08:07 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -275,6 +275,19 @@ void ServerConf::setBodySizeLimit(std::vector<std::string>::const_iterator &it, 
 	else
 		throw ServerConf::ParseError("Config file : Syntax error !");
 }
+
+void ServerConf::setLocations(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens, std::stack<char> &stk, const ServerConf server) {
+	if (!ConfigBuilder::checkDirective(it,   tokens))
+	{
+		if (*it == ";")
+			throw ServerConf::ParseError("Config file : empty value not accepted !");
+		//setup locations here !
+		it++;
+	}
+	else
+		throw ServerConf::ParseError("Config file : Syntax error !");
+}
+
 
 
 
