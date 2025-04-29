@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   request.cpp                                        :+:      :+:    :+:   */
+/*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 07:42:32 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/04/29 18:22:17 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,8 +58,13 @@ std::string Request::getHeader(const std::string &key) const
 {
     std::map<std::string, std::string>::const_iterator it = this->headers.find(key);
     if (it != this->headers.end())
-        return it->second;
+    return it->second;
     return "";
+}
+
+std::string Request::getHost() const
+{
+    return (getHeader("host"));
 }
 
 bool Request::isDone() const

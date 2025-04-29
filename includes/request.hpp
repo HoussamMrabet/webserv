@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/17 00:10:00 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/04/29 18:18:06 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,7 @@ class Request
         t_method    method;
         std::string reqLine;
         std::string uri;
+        std::string host;
         std::string httpVersion;
         std::map<std::string, std::string> headers;
         std::string body;
@@ -63,7 +64,7 @@ class Request
         std::vector<Multipart *> multipartData;
         size_t chunkSize;
         std::string chunkData;
-        bool   inChunk;;
+        bool   inChunk;
         void parseRequestLine();
         void parseHeaders();
         void parseBody();
@@ -80,6 +81,7 @@ class Request
         std::map<std::string, std::string> getHeaders() const;
         std::string getBody() const;
         std::string getHeader(const std::string &key) const;
+        std::string getHost() const;
         int getStatusCode() const;
 
         bool isDone() const;
