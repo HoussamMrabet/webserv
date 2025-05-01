@@ -3,19 +3,11 @@
 /*                                                        :::      ::::::::   */
 /*   response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:26 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/02/17 15:41:17 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/01/19 15:16:27 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
-
-
-class Response {
-	private :
-	
-	public :
-		
-};
