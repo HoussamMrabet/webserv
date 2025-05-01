@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
+/*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
 /*   Updated: 2025/04/29 18:22:55 by hmrabet          ###   ########.fr       */
@@ -24,6 +24,7 @@
 
 int main()
 {
+<<<<<<< HEAD
     int server_fd, new_socket;
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
@@ -146,4 +147,33 @@ int main()
     }
 
     return 0;
+// =======
+//     // try
+//     // {
+//     //     std::vector<std::string> tokens = TokenizeFile::tokens("config/default.conf");
+    
+//     //     for (std::vector<std::string>::const_iterator it = tokens.begin(); it != tokens.end(); ++it) {
+//     //         std::cout << *it << std::endl;
+//     //     }
+//     // }
+//     // catch(const std::exception& e)
+//     // {
+//     //     std::cerr << e.what() << '\n';
+//     // }
+// 	try {
+
+//     	std::vector<ServerConf> servers = ConfigBuilder::generateServers("config/default.conf");
+// 		std::cout << servers.size() << std::endl;
+// 		for (std::vector<ServerConf>::iterator it = servers.begin(); it != servers.end() ; it++) {
+// 			std::cout << *it << std::endl;
+// 		}
+// 	}
+// 	catch (const std::exception& ex) {
+// 		std::cerr << ex.what() << std::endl;
+// 	}
+    
+    
+    
+//     return (0);
+// >>>>>>> config
 }
