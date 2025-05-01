@@ -3,22 +3,29 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+         #
+#    By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/20 11:17:19 by hmrabet           #+#    #+#              #
-#    Updated: 2025/01/20 11:26:24 by hmrabet          ###   ########.fr        #
+#    Updated: 2025/03/15 08:09:16 by hmrabet          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = webserv
 
-SOURCE = src/main.cpp src/server.cpp # src/requests.cpp src/response.cpp src/cgi.cpp src/utils.cpp
+SOURCE = src/main.cpp \
+		src/Request/Request.cpp src/Request/parser.cpp src/Request/parser-request_line.cpp \
+		src/Request/parser-headers.cpp src/Request/parser-body.cpp src/Request/parser-multipart.cpp \
+		src/Request/utils.cpp src/Multipart.cpp \
+		src/Socket.cpp src/TokenizeFile.cpp src/LocationConf.cpp src/ServerConf.cpp src/ConfigBuilder.cpp 
+# src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
 
 OBJECT = $(SOURCE:.cpp=.o)
 
-HEADERS = includes/webserv.hpp includes/server.hpp # includes/request.hpp includes/response.hpp includes/cgi.hpp
+HEADERS = includes/WebServ.hpp includes/Request.hpp includes/Multipart.hpp includes/Server.hpp \
+		  includes/response.hpp includes/cgi.hpp \
+		  includes/Socket.hpp includes/ServerConf.hpp includes/LocationConf.hpp includes/TokenizeFile.hpp  includes/ConfigBuilder.hpp  includes/webserv.hpp
 
-INCLUDES = -Iincludes
+INCLUDES = -Iincludes -Iincludes/
 
 OBJ_DIR = obj
 
@@ -36,14 +43,14 @@ endef
 all : $(NAME)
 
 $(NAME) : $(OBJECT)
-	$(CPP) $^ -o $(NAME)
+	$(CPP) -I$(INCLUDES) $^ -o $(NAME)
 	@echo "$(GREEN)Your program is ready!$(RESET)"
 
 %.o : %.cpp Makefile $(HEADERS)
 	@echo "$(GREEN) $<"
 	@$(PRINT_LOADING)
 	$(CPP) $(INCLUDES) -c $< -o $@
-	
+
 clean :
 	@rm -f $(OBJECT)
 

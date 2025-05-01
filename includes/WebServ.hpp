@@ -6,11 +6,9 @@
 // #include "response.hpp"
 // #include "cgi.hpp"
 
-#include <cstdlib>
-#include <iostream>
-#include "cgi.hpp"
-#include "ConfigBuilder.hpp"
-#include "TokenizeFile.hpp"
+
+
+
 
 // #include <iostream> // For cout
 // #include <cstring> // for strerror
@@ -75,7 +73,7 @@ class WebServ{
         // struct pollfd addnew();
     
     public:
-        // static addSocket(Socket& s);
+        static addSocket(Socket& s);
         // Server(std::string ipAddress, int port);
         // ~Server();
 };
