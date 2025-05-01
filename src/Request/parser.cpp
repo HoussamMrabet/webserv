@@ -20,7 +20,7 @@ void Request::setBodyInformations()
     {
         char *end;
         this->contentLength = strtol(contentLengthIt->second.c_str(), &end, 10);
-        if (contentLength < 0)
+        if ((signed)contentLength < 0) ////////!!!!
         {
             this->message = "Invalid Content-Length";
             throw 400;
@@ -42,7 +42,7 @@ void Request::setBodyInformations()
     }
     if (!this->isMultipart)
     {
-        this->file = std::ofstream(generateRandomFileName("./binary_file_"), std::ios::out | std::ios::binary | std::ios::trunc);
+        this->file.open(generateRandomFileName("./binary_file_").c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
         if (!this->file.is_open())
         {
             this->message = "Failed to open file";

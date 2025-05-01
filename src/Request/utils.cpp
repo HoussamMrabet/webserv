@@ -59,7 +59,7 @@ std::string generateRandomFileName(const std::string &prefix)
     for (int i = 0; i < len; ++i)
         tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
 
-    std::ifstream file(prefix + tmp_s);
+    std::ifstream file((prefix + tmp_s).c_str());
     if (file.good())
         return (generateRandomFileName());
     return (prefix + tmp_s);

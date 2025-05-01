@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Request.hpp"
+#include "../includes/Request.hpp"
 
 void Request::parseHeaders()
 {
@@ -46,7 +46,7 @@ void Request::parseHeaders()
                 for (size_t i = 0; i < key.size(); i++)
                     key[i] = std::tolower(key[i]);
 
-                this->headers[key] = value.back() == '\r' ? value.substr(0, value.size() - 1) : value;
+                this->headers[key] = value[value.size() - 1] == '\r' ? value.substr(0, value.size() - 1) : value;
             }
             else
                 this->headers[key] = "";

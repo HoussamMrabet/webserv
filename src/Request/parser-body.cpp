@@ -47,7 +47,7 @@ void Request::parseBody()
             char *end;
             this->chunkSize = strtol(chunkSizeStr.c_str(), &end, 16);
             this->inChunk = true;
-            if (this->chunkSize < 0)
+            if ((signed)this->chunkSize < 0)
             {
                 this->message = "Invalid chunk size";
                 throw 400;

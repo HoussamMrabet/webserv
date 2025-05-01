@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   request.hpp                                        :+:      :+:    :+:   */
+/*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -15,8 +15,10 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <cstdlib>
 #include <map>
 #include <vector>
+#include  <algorithm>
 #include "Multipart.hpp"
 
 #define CHUNKED true

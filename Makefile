@@ -16,11 +16,14 @@ SOURCE = src/main.cpp \
 		src/Request/Request.cpp src/Request/parser.cpp src/Request/parser-request_line.cpp \
 		src/Request/parser-headers.cpp src/Request/parser-body.cpp src/Request/parser-multipart.cpp \
 		src/Request/utils.cpp src/Multipart.cpp \
-		# src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
+		src/Socket.cpp
+# src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
 
 OBJECT = $(SOURCE:.cpp=.o)
 
-HEADERS = includes/webserv.hpp includes/Request.hpp includes/Multipart.hpp # includes/server.hpp  includes/response.hpp includes/cgi.hpp
+HEADERS = includes/WebServ.hpp includes/Request.hpp includes/Multipart.hpp includes/Server.hpp \
+		  includes/response.hpp includes/cgi.hpp \
+		  includes/Socket.hpp
 
 INCLUDES = -Iincludes
 

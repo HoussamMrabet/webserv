@@ -23,7 +23,7 @@ Multipart::~Multipart()
 void Multipart::setFileName(const std::string &fileName)
 {
     this->fileName = fileName;
-    this->file = std::ofstream("./" + fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+    this->file.open(("./" + fileName).c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
     if (!this->file.is_open())
         throw "Failed to open file";
 }
