@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <cstdlib>
 #include <iostream>
 // #include "server.hpp"
 // #include "request.hpp"

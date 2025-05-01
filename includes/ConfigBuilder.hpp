@@ -26,6 +26,7 @@
 #include "LocationConf.hpp"
 #include "ServerConf.hpp"
 # include "LocationConf.hpp"
+# include <cstdlib>
 
 
 class ServerConf;
