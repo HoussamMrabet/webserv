@@ -9,6 +9,7 @@
 #include <cerrno> // for errno, check if c++11
 #include <cstdlib> // For exit() and EXIT_FAILURE
 #include <vector>
+// #include "ServerConf.hpp"
 
 // creat one socket 
         
@@ -22,7 +23,7 @@
         std::string _host;
         std::string _port;
         int _fd;
-        std::vector<std::string> _serverNames;
+        // std::vector<std::string> _serverNames;
         struct sockaddr_in _address; // can be removed
 
  };

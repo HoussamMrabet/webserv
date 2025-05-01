@@ -1,6 +1,7 @@
 #include "../includes/Socket.hpp"
 
-Socket::Socket(std::string host, std::string port): _host(host), _port(port) 
+Socket::Socket(std::string host, std::string port): _host(host), _port(port)
+                                                   // _serverNames()
 {
     std::cout << "Creating Socket!" << std::endl;
     // start socket:
