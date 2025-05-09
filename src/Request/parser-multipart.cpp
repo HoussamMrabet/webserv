@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   parser-multipart.cpp                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cmasnaou <cmasnaou@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/15 07:46:58 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/05/09 09:20:23 by cmasnaou         ###   ########.fr       */
+/*   Updated: 2025/03/17 00:10:15 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../includes/Request.hpp"
+#include "Request.hpp"
 
 void Request::parseMultipartHeaders(const std::string &multipartHeaders)
 {

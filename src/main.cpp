@@ -6,14 +6,11 @@
 /*   By: cmasnaou <cmasnaou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/05/09 08:42:00 by cmasnaou         ###   ########.fr       */
+/*   Updated: 2025/05/09 09:46:17 by cmasnaou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Request.hpp"
-#include "../includes/Socket.hpp"
-#include "../includes/WebServ.hpp"
-#include "../includes/ServerConf.hpp"
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -21,6 +18,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <fcntl.h>
+#include "WebServ.hpp"
 #include <vector>
 
 #define PORT 3000
@@ -164,47 +162,54 @@ int main()
     // {
     //     std::cerr << e.what() << '\n';
     // // }
-	try {
-        
-        std::map<std::pair<std::string, std::string>, int > map;
-    	std::vector<ServerConf> servers = ConfigBuilder::generateServers("config/default.conf");
-		for (size_t i = 0; i < servers.size(); i++) {
-        std::vector<std::pair<std::string, std::string> > listen = servers[i].getListen();
-        std::sort(listen.begin(), listen.end());
-        std::cout << "----------------------------\n";
-        for (size_t j = 0; j < listen.size(); j++){
-            std::pair<std::string, std::string> p = listen[j];
-            std::cout << p.first << " ";
-            std::cout << p.second << std::endl;
-            map[p]++;
+    /***************************/
+	// try {
 
-        }
-			// std::cout << listen << std::endl;
-        }
-        std::cout << "map:" << std::endl;
-        std::map<std::pair<std::string, std::string>, int >::iterator mit;
-        std::vector<Socket> sockets;
-        for (mit = map.begin(); mit != map.end(); mit++){
-            std::pair<std::string, std::string> mp = mit->first;
-            std::cout << mp.first << " " << mp.second;
-            std::cout << " " << mit->second << std::endl;
-            Socket s(mp.first, mp.second);
-            sockets.push_back(s);
-        }
-        
-        //hna
-        
-		// std::cout << servers.size() << std::endl;
-		// for (std::vector<ServerConf>::iterator it = servers.begin(); it != servers.end() ; it++) {
-		// 	std::cout << *it << std::endl;
-		// }
+    // 	std::vector<ServerConf> servers = ConfigBuilder::generateServers("config/default.conf");
 
-	}
-	catch (const std::exception& ex) {
+    //     //hna
+
+	// 	// std::cout << servers.size() << std::endl;
+	// 	// for (std::vector<ServerConf>::iterator it = servers.begin(); it != servers.end() ; it++) {
+	// 	// 	std::cout << *it << std::endl;
+	// 	// }
+	// }
+	// catch (const std::exception& ex) {
+	// 	std::cerr << ex.what() << std::endl;
+	// }
+    /***************************/
+    
+    try {  
+      std::map<std::pair<std::string, std::string>, int > map;
+
+        std::vector<ServerConf> servers = ConfigBuilder::generateServers("config/default.conf");
+             for (size_t i = 0; i < servers.size(); i++) {
+      std::vector<std::pair<std::string, std::string> > listen = servers[i].getListen();
+      std::sort(listen.begin(), listen.end());
+      std::cout << "----------------------------\n";
+      for (size_t j = 0; j < listen.size(); j++){
+          std::pair<std::string, std::string> p = listen[j];
+          std::cout << p.first << " ";
+          std::cout << p.second << std::endl;
+          map[p]++;
+ 
+         }
+                     // std::cout << listen << std::endl;
+      }
+      std::cout << "map:" << std::endl;
+      std::map<std::pair<std::string, std::string>, int >::iterator mit;
+      std::vector<Socket> sockets;
+      for (mit = map.begin(); mit != map.end(); mit++){
+          std::pair<std::string, std::string> mp = mit->first;
+          std::cout << mp.first << " " << mp.second;
+          std::cout << " " << mit->second << std::endl;
+          Socket s(mp.first, mp.second);
+          sockets.push_back(s);
+      }
+    }
+    catch (const std::exception& ex) {
 		std::cerr << ex.what() << std::endl;
 	}
-    
-    
     
     // return (0);
 // >>>>>>> config

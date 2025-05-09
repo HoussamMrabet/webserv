@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   parser-headers.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cmasnaou <cmasnaou@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/15 07:46:04 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/05/09 09:19:53 by cmasnaou         ###   ########.fr       */
+/*   Updated: 2025/03/17 00:09:45 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../includes/Request.hpp"
+#include "../includes/Request.hpp"
 
 void Request::parseHeaders()
 {

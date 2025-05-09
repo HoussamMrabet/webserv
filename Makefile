@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+         #
+#    By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/20 11:17:19 by hmrabet           #+#    #+#              #
-#    Updated: 2025/03/15 08:09:16 by hmrabet          ###   ########.fr        #
+#    Updated: 2025/05/01 17:58:34 by mel-hamd         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -23,7 +23,7 @@ OBJECT = $(SOURCE:.cpp=.o)
 
 HEADERS = includes/WebServ.hpp includes/Request.hpp includes/Multipart.hpp includes/Server.hpp \
 		  includes/response.hpp includes/cgi.hpp \
-		  includes/Socket.hpp includes/ServerConf.hpp includes/LocationConf.hpp includes/TokenizeFile.hpp  includes/ConfigBuilder.hpp  includes/webserv.hpp
+		  includes/Socket.hpp includes/ServerConf.hpp includes/LocationConf.hpp includes/TokenizeFile.hpp  includes/ConfigBuilder.hpp  includes/WebServ.hpp
 
 INCLUDES = -Iincludes -Iincludes/
 
