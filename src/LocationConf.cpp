@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConf.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cmasnaou <cmasnaou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 16:33:00 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/22 14:57:54 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/05/09 09:20:59 by cmasnaou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "LocationConf.hpp"
+#include "../includes/LocationConf.hpp"
 
 
 LocationConf::LocationConf() {

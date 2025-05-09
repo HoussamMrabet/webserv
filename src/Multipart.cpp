@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   Multipart.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
+/*   By: cmasnaou <cmasnaou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 20:01:43 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 08:23:47 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/05/09 09:20:44 by cmasnaou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Multipart.hpp"
+#include "../includes/Multipart.hpp"
 
 Multipart::Multipart() : currentStep(MULTIPART_HEADERS) {}
 

@@ -73,7 +73,7 @@ class WebServ{
         // struct pollfd addnew();
     
     public:
-        static addSocket(Socket& s);
+        static void addSocket(Socket& s);
         // Server(std::string ipAddress, int port);
         // ~Server();
 };

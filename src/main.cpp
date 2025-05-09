@@ -3,15 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cmasnaou <cmasnaou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/04/29 18:22:55 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/05/09 08:42:00 by cmasnaou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Request.hpp"
-#include "Socket.hpp"
+#include "../includes/Socket.hpp"
+#include "../includes/WebServ.hpp"
+#include "../includes/ServerConf.hpp"
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -19,7 +21,6 @@
 #include <unistd.h>
 #include <cstring>
 #include <fcntl.h>
-#include "webserv.hpp"
 #include <vector>
 
 #define PORT 3000
