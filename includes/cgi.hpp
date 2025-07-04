@@ -11,3 +11,52 @@
 /* ************************************************************************** */
 
 #pragma once
+
+#include "Request.hpp"
+// #include <signal.h>
+#include <iostream>
+#include <sstream>
+#include <sys/wait.h> // pipe - fork - dup2 - close - execve - write - read - waitpid - STDOUT_FILENO
+#include <cstdio> // perror
+#include <cstdlib> // exit
+#include <fcntl.h>  // fcntl, O_NONBLOCK
+#include <vector>
+#include <map>
+// #include <unistd.h> // for close, read, write
+// #include <cerrno>   // for errno
+
+#define SERVERERROR "HTTP/1.1 500 Internal Server Error\r\n" \
+                    "Content-Type: text/plain\r\n" \
+                    "Content-Length: 22\r\n\r\n" \
+                    "Invalid CGI script."
+
+class CGI{ // should class name be camel-case??
+    
+    private:
+        // env variables:
+        std::string _scriptName;        // filesystem path to script
+        std::string _requestMethod;     // GET, POST, etc.
+        std::string _queryString;       // stuff after '?'
+        std::string _body;              // POST body (if any)
+        std::string _contentLenght;     // _body.size()
+        std::string _contentType;       // from the headers map (should be!!)
+        std::string _remoteAddr;        // remote client IP
+        std::map<std::string, std::string> _headers; // HTTP headers
+        std::vector<std::string> _envs; // environment variables (string)
+        std::vector<char*> _envc;       // environment for execve (should be char*)
+
+
+        CGI();
+        void importData(const Request&);
+        void setQueryString();
+        void setContentLenght();
+        void set_HTTP_Header();
+        void printEnvironment(); // to remove later
+        std::string parseOutput(std::string &);
+        std::string runCGI();
+        bool setToNonBlocking(int);
+        bool validPath();
+        
+    public:
+        static std::string executeCGI(const Request&);
+};

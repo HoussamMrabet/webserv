@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/Request.hpp"
+#include "Request.hpp"
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -18,7 +18,8 @@
 #include <unistd.h>
 #include <cstring>
 #include <fcntl.h>
-#include "WebServ.hpp"
+#include "ServerConf.hpp"
+#include "WebServer.hpp"
 #include <vector>
 
 #define PORT 3000
