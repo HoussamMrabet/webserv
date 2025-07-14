@@ -12,31 +12,28 @@
 #include <fcntl.h>
 #include "Listen.hpp"
 #include "ServerConf.hpp"
-#define INCOMING_CONNECTIONS 10
-
-// this class creats one socket 
+#define MAXCONNECTIONS 100
+// creat one socket 
         
-    class Socket{
+// Factory designe
+class Socket{
 
     private:
-        Listen _listen; // to remove later!
-        // std::string _host;
-        // std::string _port;
-        int _fd;
-        struct sockaddr_in _address; // can be removed
-    
-    public:
-        // add canonical form?
-        Socket(Listen&);
-        // Socket();
-        void socket_init(); // useless!!
-        void socket_fcntl();
+        int         _fd;
+        std::string _host;
+        std::string _port;
+
+        Socket(const std::string&, const std::string&);
         void socket_start();
+        void socket_fcntl();
         void socket_bind();
         void socket_listen();
-        int getFd() const;
-        Listen getListen() const;
-        ~Socket();
- };
+
+    public:
+        static int StartSocket(const std::string&, const std::string&);
+        // add canonical form
+        // ~Socket();
+
+};
+
  #endif
- 

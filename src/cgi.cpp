@@ -96,8 +96,8 @@ std::string CGI::runCGI(){
         close(pipe_in[1]);
 
         char* argv[2];
-        argv[0] = const_cast<char*>(_scriptName.c_str());
-        argv[1] = NULL;
+        argv[0] = const_cast<char*>(_scriptName.c_str()); // fix this! it should be argv[3] 
+        argv[1] = NULL; // should also containe path to exec, py or pl ... 
 
         execve(argv[0], argv, &_envc[0]);
         perror("execve");

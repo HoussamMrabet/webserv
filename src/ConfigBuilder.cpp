@@ -154,15 +154,17 @@ bool ConfigBuilder::checkPort(std::string str) {
 	return (false);
 }
 
-bool ConfigBuilder::checkIp(std::string str) {
+bool ConfigBuilder::checkIp(std::string& str) {
 	
 	std::stringstream ss(str);
 	int count = 0;
 	std::string buff;
 	int test;
 
-	if (str == "localhost")
+	if (str == "localhost"){
+		str = "127.0.0.1";
 		return (false);
+	}
 	while (std::getline(ss, buff, '.')) {
 		count++;
 		if (count > 4)

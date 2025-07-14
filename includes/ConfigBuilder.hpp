@@ -45,7 +45,7 @@ class ConfigBuilder {
 		static ServerConf buildServer(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens, std::stack<char> &stk);
 		static bool checkDirective(std::vector<std::string>::const_iterator &it,  std::vector<std::string> &tokens);
 		static bool checkPort(std::string str);
-		static bool checkIp(std::string str);
+		static bool checkIp(std::string& str);
 		class ErrorConfig : public std::exception {
 			private :
 				const std::string msg;

@@ -1,14 +1,41 @@
 #include "../includes/Socket.hpp"
-/* useless headers :*/
+/* useless headers ?*/
 #include <arpa/inet.h>  // For inet_ntop
 #include <netdb.h>   // For getaddrinfo
-/* useless */
 
-Socket::Socket(Listen& listen): _listen(listen){
-    socket_init(); // to remove 
+
+int Socket::StartSocket(const std::string& host, const std::string& port){
+    Socket socket(host, port);
+
+    socket.socket_start();
+    socket.socket_fcntl();
+    socket.socket_bind();
+    socket.socket_listen();
+    return (socket._fd);
+}
+
+Socket::Socket(const std::string& host, const std::string& port):_fd(-1), _host(host), _port(port){}
+
+void Socket::socket_start(){  // useless!!
+    struct addrinfo info, *ip;
+    memset(&info, 0, sizeof(info));
+    info.ai_family = AF_INET;  // IPv4 add
+    info.ai_socktype = SOCK_STREAM; // tcp socket
+    /* The available socket types:
+    //  - SOCK_STREAM: Provides a reliable, byte-stream-based communication (TCP)
+    //  - SOCK_DGRAM: Provides a connectionless, unreliable communication (UDP)
+    //  - SOCK_RAW: Provides raw network access (used in special cases like IP-level communication)
+    //  - SOCK_SEQPACKET: Provides a connection-oriented, reliable communication with record boundaries
+    */
+    if (int err = getaddrinfo(_host.c_str(), _port.c_str(), &info, &ip)) {
+        std::cerr << "getaddrinfo error: " << gai_strerror(err) << std::endl;
+        exit(1);  // Exit if there was an error or exception??
+    } // dont forget to free the memory allocated by getaddrinfo() !!!
+    // freeaddrinfo(ip);
+    
     if ((_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) { // -1
-        perror("Socket failed"); // manage failiar!
-        exit(1);
+        perror("Socket failed");
+        exit(1); // manage failiar
     }
     
     int val = 1;
@@ -22,56 +49,26 @@ Socket::Socket(Listen& listen): _listen(listen){
     }
 }
 
-Socket::~Socket(){
-    // std::cout << "Closing Socket!" << std::endl;
-    // close(this->_fd); // dont close it yet!!!
-}
-
-int Socket::getFd() const{
-    return (this->_fd);
-}
-
-Listen Socket::getListen() const{ return (_listen);}
-
-void Socket::socket_init(){  // useless!!
-    struct addrinfo info, *ip;
-    memset(&info, 0, sizeof(info));
-    info.ai_family = AF_INET;  // IPv4 add
-    info.ai_socktype = SOCK_STREAM; // tcp socket
-    /* The available socket types:
-    //  - SOCK_STREAM: Provides a reliable, byte-stream-based communication (TCP)
-    //  - SOCK_DGRAM: Provides a connectionless, unreliable communication (UDP)
-    //  - SOCK_RAW: Provides raw network access (used in special cases like IP-level communication)
-    //  - SOCK_SEQPACKET: Provides a connection-oriented, reliable communication with record boundaries
-    */
-    if (int err = getaddrinfo(_listen.getHost().c_str(), _listen.getPort().c_str(), &info, &ip)) {
-        std::cerr << "getaddrinfo error: " << gai_strerror(err) << std::endl;
-        exit(1);
-    }
-}
-
 void Socket::socket_fcntl(){
     // int flags = fcntl(sockfd, F_GETFL, 0);// F_GETFL = get file status flags
     // fcntl(sockfd, F_SETFL, flags | O_NONBLOCK); // then change to non bloking
-    fcntl(_fd, F_SETFL, O_NONBLOCK);
+    fcntl(_fd, F_SETFL, fcntl(_fd, F_GETFL, 0) | O_NONBLOCK);
 }
 
-void Socket::socket_start(){ // add to bind 
-    // struct sockaddr_in _address;
-    memset(&_address, 0, sizeof(_address));
-    // std::stringstream ss(_port);
-    // int d; ss >> d;
-    _address.sin_family = AF_INET;
-    _address.sin_port = htons(_listen.getPort(0));
-    if (inet_pton(AF_INET, _listen.getHost().c_str(), &_address.sin_addr) <= 0) {
+
+void Socket::socket_bind(){
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    std::stringstream ss(_port);
+    int port; ss >> port;
+    address.sin_family = AF_INET;
+    address.sin_port = htons(port);
+    if (inet_pton(AF_INET, _host.c_str(), &address.sin_addr) <= 0) {
         perror("Invalid address");
         close(_fd);
         exit(1);
     }
-}
-
-void Socket::socket_bind(){
-    if (bind(_fd, (struct sockaddr*)&_address, sizeof(_address)) == -1) {
+    if (bind(_fd, (struct sockaddr*)&address, sizeof(address)) == -1) {
         perror("Bind failed");
         close(_fd);
         exit(1);
@@ -79,7 +76,7 @@ void Socket::socket_bind(){
 }
 
 void Socket::socket_listen(){
-    if (listen(_fd, INCOMING_CONNECTIONS) == -1) {
+    if (listen(_fd, MAXCONNECTIONS) == -1) {
         perror("Listen failed");
         close(_fd);
         exit(1);

@@ -17,10 +17,8 @@ class Listen{ // to remove later!
         std::string getHost() const;
         std::string getPort() const;
         int getPort(int)  const;
-
-
-    bool operator==(const Listen& l) const;
-    bool operator<(const Listen& l) const;
+        bool operator==(const Listen& l) const;
+        bool operator<(const Listen& l) const;
 
 };
 

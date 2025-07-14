@@ -17,6 +17,7 @@
 #include <iostream>
 #include <sstream>
 #include <sys/wait.h> // pipe - fork - dup2 - close - execve - write - read - waitpid - STDOUT_FILENO
+#include <unistd.h> // close - read - write - execve - STDIN_FILENO - fork - pipe
 #include <cstdio> // perror
 #include <cstdlib> // exit
 #include <fcntl.h>  // fcntl, O_NONBLOCK
@@ -41,6 +42,11 @@ class CGI{ // should class name be camel-case??
         std::string _contentLenght;     // _body.size()
         std::string _contentType;       // from the headers map (should be!!)
         std::string _remoteAddr;        // remote client IP
+        /* To fix the path to file, join with root
+        // if there was no root add a default path!
+        std::string _location;
+        std::string _root;
+        */
         std::map<std::string, std::string> _headers; // HTTP headers
         std::vector<std::string> _envs; // environment variables (string)
         std::vector<char*> _envc;       // environment for execve (should be char*)
