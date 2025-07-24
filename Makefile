@@ -1,62 +1,53 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2025/01/20 11:17:19 by hmrabet           #+#    #+#              #
-#    Updated: 2025/05/01 17:58:34 by mel-hamd         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
+# This makefile uses wildcards to facilitate testing the code
+# the old one is still present and called Makefile_old
+# you can remove this one and use the old Makefile
 
-NAME = webserv
+NAME      =		webserv
+CPP       =		c++
+CPPFLAGS  =		-std=c++98 -Iincludes -Wall -Wextra -Werror
+SRC_DIR   =		src
+OBJ_DIR   =		obj
+INC_DIR   =		includes
+SRCS      =		$(shell find $(SRC_DIR) -name "*.cpp") # src/ and subdirs
+OBJS      =		$(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS)) # replace src/*.cpp with obj/*.o
 
-SOURCE = src/main.cpp \
-		src/Request/Request.cpp src/Request/parser.cpp src/Request/parser-request_line.cpp \
-		src/Request/parser-headers.cpp src/Request/parser-body.cpp src/Request/parser-multipart.cpp \
-		src/Request/utils.cpp src/Multipart.cpp \
-		src/Socket.cpp src/TokenizeFile.cpp src/LocationConf.cpp src/ServerConf.cpp src/ConfigBuilder.cpp 
-# src/response.cpp src/server.cpp src/cgi.cpp src/utils.cpp
+RM        =		rm -rf
 
-OBJECT = $(SOURCE:.cpp=.o)
-
-HEADERS = includes/WebServ.hpp includes/Request.hpp includes/Multipart.hpp includes/Server.hpp \
-		  includes/response.hpp includes/cgi.hpp \
-		  includes/Socket.hpp includes/ServerConf.hpp includes/LocationConf.hpp includes/TokenizeFile.hpp  includes/ConfigBuilder.hpp  includes/WebServ.hpp
-
-INCLUDES = -Iincludes -Iincludes/
-
-OBJ_DIR = obj
-
-CPP = @c++ -Wall -Wextra -Werror -std=c++98
-
-GREEN = \033[32m
-RESET = \033[0m
+GREEN 	= \033[32m
+MAGENTA = \033[35m
+RESET 	= \033[0m
 
 define PRINT_LOADING
-	@printf "$(GREEN)Compiling... ["
-	@for i in $(shell seq 0 10 100); do 		printf "▓"; 		sleep 0.1; 	done
+	@for i in $(shell seq 0 10 100); do 		printf "▓"; 		sleep 0; 	done
 	@printf "] 100%%$(RESET)\n"
 endef
 
-all : $(NAME)
+all: $(OBJ_DIR) $(NAME)
 
-$(NAME) : $(OBJECT)
-	$(CPP) -I$(INCLUDES) $^ -o $(NAME)
+$(NAME): $(OBJS)
+	@$(CPP) $(CPPFLAGS) $^ -o $@
 	@echo "$(GREEN)Your program is ready!$(RESET)"
 
-%.o : %.cpp Makefile $(HEADERS)
+$(OBJ_DIR):
+	@mkdir -p $(OBJ_DIR)
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(INC_DIR)/*.hpp
+	@mkdir -p $(dir $@) 
 	@echo "$(GREEN) $<"
+	@printf "$(GREEN)Compiling... ["
 	@$(PRINT_LOADING)
-	$(CPP) $(INCLUDES) -c $< -o $@
+	@$(CPP) $(CPPFLAGS) -c $< -o $@
 
-clean :
-	@rm -f $(OBJECT)
+clean:
+	@printf "$(MAGENTA)Cleaning object files... ["
+	@$(PRINT_LOADING)
+	@$(RM) $(OBJ_DIR)
 
-fclean : clean
-	@rm -f $(NAME)
+fclean: clean
+	@printf "$(MAGENTA)Removing binary...["
+	@$(PRINT_LOADING)
+	@$(RM) $(NAME)
 
-re : fclean all
+re: fclean all
 
-.PHONY : clean
+.PHONY: all clean fclean re

@@ -3,214 +3,34 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cmasnaou <cmasnaou@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:12:37 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/05/09 09:46:17 by cmasnaou         ###   ########.fr       */
+/*   Updated: 2025/05/01 17:58:17 by mel-hamd         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/Request.hpp"
 #include <iostream>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <cstdlib>
-#include <unistd.h>
-#include <cstring>
-#include <fcntl.h>
-#include "WebServ.hpp"
-#include <vector>
+#include <exception>
+#include <signal.h>
+#include "ServerBlock.hpp"
+#include "WebServer.hpp"
 
-#define PORT 3000
-#define BUFFER_SIZE 1024
 
-int main()
+
+int main(int ac, char **av)
 {
-// <<<<<<< HEAD
-    // int server_fd, new_socket;
-    // struct sockaddr_in address;
-    // socklen_t addrlen = sizeof(address);
-    // char buffer[BUFFER_SIZE + 1] = {0};
-    // std::string buf;
+	try{
+        // signal(SIGPIPE, SIG_IGN); // sig ignore broken pipe,q to remove later!
+		std::string config_file = "config/default.conf";
+		if (ac > 1) config_file = av[1]; // parse config file name and path?
+		std::vector<ServerConf> servers = ConfigBuilder::generateServers(config_file); // import servers from config file
+		std::map<Listen, ServerBlock > serverBlocks = makeBloks(servers); // make blocks of servers sharing the same listen
+        WebServ::startServer(serverBlocks);
 
-    // // Create socket
-    // server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    // if (server_fd == 0)
-    // {
-    //     perror("Socket failed");
-    //     return EXIT_FAILURE;
-    // }
-
-    // // Forcefully bind to the port even if already in use
-    // int opt = 1;
-    // if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-    // {
-    //     perror("setsockopt failed");
-    //     return EXIT_FAILURE;
-    // }
-
-    // // Configure address
-    // address.sin_family = AF_INET;
-    // address.sin_addr.s_addr = INADDR_ANY;
-    // address.sin_port = htons(PORT);
-    // // setsockopt(); // bad adress port
-    // // Bind socket
-    // if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
-    // {
-    //     perror("Bind failed");
-    //     return EXIT_FAILURE;
-    // }
-
-    // // Listen for connections
-    // if (listen(server_fd, 3) < 0)
-    // {
-    //     perror("Listen failed");
-    //     return EXIT_FAILURE;
-    // }
-
-    // // std::cout << "Server listening on port " << PORT << "..." << std::endl;
-
-    // while (true)
-    // {
-    //     Request req;
-    //     // Accept connection
-    //     new_socket = accept(server_fd, (struct sockaddr *)&address, &addrlen);
-    //     if (new_socket < 0)
-    //     {
-    //         perror("Accept failed");
-    //         continue;
-    //     }
-
-    //     fcntl(new_socket, F_SETFL, O_NONBLOCK);
-    //     // Read request
-    //     while (!req.isDone())
-    //     {
-    //         ssize_t valread = read(new_socket, buffer, BUFFER_SIZE);
-    //         if (valread > 0)
-    //         {
-    //             buffer[valread] = '\0';
-    //             // std::cout << "Received Request:\n"
-    //             //           << std::endl;
-                
-    //             buf.append(buffer, valread);
-    //             // std::cout.write(buf.c_str(), buf.size());
-    //             // std::cout.flush();
-    //             // std::cout << buf << std::flush;
-    //             req.parseRequest(buf);
-    //             // req.printRequest();
-    //             buf.clear();
-    //         }
-    //         else
-    //         {
-    //             req.parseRequest();
-    //         }
-    //     }
-    //     // req.printRequest();
-    //     // Simple HTTP Response
-    //     std::string response;
-    //     switch (req.getStatusCode())
-    //     {
-    //         case 200:
-    //             response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nDone!";
-    //             send(new_socket, response.c_str(), response.length(), 0);
-    //             break;
-    //         case 400:
-    //             response = "HTTP/1.1 400 Bad Request\r\nContent-Length: 11\r\n\r\nBad Request";
-    //             send(new_socket, response.c_str(), response.length(), 0);
-    //             break;
-    //         case 500:
-    //             response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 21\r\n\r\nInternal Server Error";
-    //             send(new_socket, response.c_str(), response.length(), 0);
-    //             break;
-    //         case 501:
-    //             response = "HTTP/1.1 501 Not Implemented\r\nContent-Length: 17\r\n\r\nNot Implemented";
-    //             send(new_socket, response.c_str(), response.length(), 0);
-    //             break;
-    //         case 505:
-    //             response = "HTTP/1.1 505 HTTP Version Not Supported\r\nContent-Length: 29\r\n\r\nHTTP Version Not Supported";
-    //             send(new_socket, response.c_str(), response.length(), 0);
-    //             break;
-    //         case 413:
-    //             response = "HTTP/1.1 413 Payload Too Large\r\nContent-Length: 20\r\n\r\nPayload Too Large";
-    //             send(new_socket, response.c_str(), response.length(), 0);
-    //             break;
-    //         case 415:
-    //             response = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Length: 26\r\n\r\nUnsupported Media Type";
-    //             send(new_socket, response.c_str(), response.length(), 0);
-    //             break;
-    //         default:
-    //             response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 21\r\n\r\nInternal Server Error";
-    //             send(new_socket, response.c_str(), response.length(), 0);
-    //             break;
-    //     }
-
-    //     // Close connection
-    //     close(new_socket);
-    // }
-
-    // return 0;
-// =======
-    // try
-    // {
-    //     std::vector<std::string> tokens = TokenizeFile::tokens("config/default.conf");
-    
-    //     for (std::vector<std::string>::const_iterator it = tokens.begin(); it != tokens.end(); ++it) {
-    //         std::cout << *it << std::endl;
-    //     }
-    // }
-    // catch(const std::exception& e)
-    // {
-    //     std::cerr << e.what() << '\n';
-    // // }
-    /***************************/
-	// try {
-
-    // 	std::vector<ServerConf> servers = ConfigBuilder::generateServers("config/default.conf");
-
-    //     //hna
-
-	// 	// std::cout << servers.size() << std::endl;
-	// 	// for (std::vector<ServerConf>::iterator it = servers.begin(); it != servers.end() ; it++) {
-	// 	// 	std::cout << *it << std::endl;
-	// 	// }
-	// }
-	// catch (const std::exception& ex) {
-	// 	std::cerr << ex.what() << std::endl;
-	// }
-    /***************************/
-    
-    try {  
-      std::map<std::pair<std::string, std::string>, int > map;
-
-        std::vector<ServerConf> servers = ConfigBuilder::generateServers("config/default.conf");
-             for (size_t i = 0; i < servers.size(); i++) {
-      std::vector<std::pair<std::string, std::string> > listen = servers[i].getListen();
-      std::sort(listen.begin(), listen.end());
-      std::cout << "----------------------------\n";
-      for (size_t j = 0; j < listen.size(); j++){
-          std::pair<std::string, std::string> p = listen[j];
-          std::cout << p.first << " ";
-          std::cout << p.second << std::endl;
-          map[p]++;
- 
-         }
-                     // std::cout << listen << std::endl;
-      }
-      std::cout << "map:" << std::endl;
-      std::map<std::pair<std::string, std::string>, int >::iterator mit;
-      std::vector<Socket> sockets;
-      for (mit = map.begin(); mit != map.end(); mit++){
-          std::pair<std::string, std::string> mp = mit->first;
-          std::cout << mp.first << " " << mp.second;
-          std::cout << " " << mit->second << std::endl;
-          Socket s(mp.first, mp.second);
-          sockets.push_back(s);
-      }
-    }
-    catch (const std::exception& ex) {
+	}
+	catch (const std::exception& ex){
 		std::cerr << ex.what() << std::endl;
 	}
-    
-    // return (0);
-// >>>>>>> config
+
 }

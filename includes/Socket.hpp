@@ -9,23 +9,31 @@
 #include <cerrno> // for errno, check if c++11
 #include <cstdlib> // For exit() and EXIT_FAILURE
 #include <vector>
-// #include "ServerConf.hpp"
-
+#include <fcntl.h>
+#include "Listen.hpp"
+#include "ServerConf.hpp"
+#define MAXCONNECTIONS 100
 // creat one socket 
         
-    class Socket{
-        public:
-        // add canonical form
-        Socket(std::string host, std::string port);
-        int getFd() const;
-        ~Socket();
+// Factory designe
+class Socket{
+
     private:
+        int         _fd;
         std::string _host;
         std::string _port;
-        int _fd;
-        // std::vector<std::string> _serverNames;
-        struct sockaddr_in _address; // can be removed
 
- };
+        Socket(const std::string&, const std::string&);
+        void socket_start();
+        void socket_fcntl();
+        void socket_bind();
+        void socket_listen();
+
+    public:
+        static int StartSocket(const std::string&, const std::string&);
+        // add canonical form
+        // ~Socket();
+
+};
+
  #endif
- 

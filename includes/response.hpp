@@ -11,11 +11,11 @@
 /* ************************************************************************** */
 
 #pragma once
-
+#include <iostream>
 
 class Response {
 	private :
 	
 	public :
-		
+		static std::string getResponse(int);
 };
