@@ -41,6 +41,14 @@ void Request::parseRequestLine()
         throw 400;
     }
     
+    size_t pos = this->uri.find('?');
+    
+    if (pos != std::string::npos)
+    {
+        this->uriQueries = this->uri.substr(pos + 1);
+        this->uri = this->uri.substr(0, pos);
+    }
+
     handleUriSpecialCharacters(this->uri);
     if (this->uri[0] != '/')
     {
@@ -48,13 +56,18 @@ void Request::parseRequestLine()
         throw 400;
     }
     
-    if (httpVersion.size() < 6 || httpVersion.substr(0, 5) != "HTTP/")
+    if (this->uri.length() >= 4 && this->uri.substr(this->uri.length() - 4) == ".php")
+        this->cgiType = "php";
+    else if (this->uri.length() >= 3 && this->uri.substr(this->uri.length() - 3) == ".py")
+        this->cgiType = "py";
+
+    if (this->httpVersion.size() < 6 || this->httpVersion.substr(0, 5) != "HTTP/")
     {
         this->message = "Invalid request line";
         throw 400;
     }
 
-    std::string version = httpVersion.substr(5);
+    std::string version = this->httpVersion.substr(5);
 
     if (version.empty() || version.find_first_not_of("0123456789.") != std::string::npos)
     {
@@ -69,7 +82,7 @@ void Request::parseRequestLine()
         throw 400;
     }
 
-    if (httpVersion != "HTTP/1.1")
+    if (this->httpVersion != "HTTP/1.1")
     {
         this->message = "HTTP Version Not Supported";
         throw 505;

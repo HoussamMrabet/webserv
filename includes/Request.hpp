@@ -18,7 +18,8 @@
 #include <cstdlib>
 #include <map>
 #include <vector>
-#include  <algorithm>
+#include <algorithm>
+#include <string>
 #include "Multipart.hpp"
 
 #define CHUNKED true
@@ -48,6 +49,8 @@ class Request
         t_method    method;
         std::string reqLine;
         std::string uri;
+        std::string uriQueries;
+        std::string cgiType;
         std::string host;
         std::string httpVersion;
         std::map<std::string, std::string> headers;
@@ -79,14 +82,17 @@ class Request
         ~Request();
         
         t_method getMethod() const;
-        std::string getUri() const;
+        std::string getUri() const; // return the uri (without queries if exists)
+        std::string getUriQueries() const; // return the queries from the uri "?..."
         std::map<std::string, std::string> getHeaders() const;
         std::string getBody() const;
         std::string getHeader(const std::string &key) const;
-        std::string getHost() const;
+        std::string getHost() const; // return server name
+        std::string getCgiType() const; // return php or py as string if there is a cgi otherwise return empty string
         int getStatusCode() const;
 
         bool isDone() const;
+        bool isCGI() const; // check if the request is a cgi or not
         void parseRequest(const std::string& rawRequest = "");
         void printRequest();
 };

@@ -13,8 +13,8 @@
 #include "Request.hpp"
 
 Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE),
-                        method(UNDEFINED), reqLine(""), uri(""), httpVersion(""),
-                        body(""), isChunked(false), isMultipart(false),
+                        method(UNDEFINED), reqLine(""), uri(""), uriQueries(""), cgiType(""),
+                        httpVersion(""), body(""), isChunked(false), isMultipart(false),
                         isContentLength(false), boundaryKey(""), contentLength(0),
                         requestData(""), headersData(""), currentContentLength(0),
                         fileName(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false)
@@ -44,6 +44,11 @@ std::string Request::getUri() const
     return (this->uri);
 }
 
+std::string Request::getUriQueries() const
+{
+    return (this->uriQueries);
+}
+
 std::map<std::string, std::string> Request::getHeaders() const
 {
     return (this->headers);
@@ -67,9 +72,19 @@ std::string Request::getHost() const
     return (getHeader("host"));
 }
 
+std::string Request::getCgiType() const
+{
+    return (this->cgiType);
+}
+
 bool Request::isDone() const
 {
     return (this->currentStep == DONE);
+}
+
+bool Request::isCGI() const
+{
+    return !this->cgiType.empty();
 }
 
 void Request::printRequest()
