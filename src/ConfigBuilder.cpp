@@ -55,7 +55,9 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 		}
 	}
 	if (!stk.empty())
-		throw ConfigBuilder::ErrorConfig("Config file : You have to open and close curly bracets { }");;
+		throw ConfigBuilder::ErrorConfig("Config file : You have to open and close curly bracets { }");
+	if (stk.size() != 1)
+		throw ConfigBuilder::ErrorConfig("Config file : should have only one server");;
 	return (res);
 }
 
