@@ -42,7 +42,7 @@ void Request::setBodyInformations()
     }
     if (!this->isMultipart)
     {
-        this->file.open(generateRandomFileName("./binary_file_").c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+        this->file.open(generateRandomFileName(this->root + "/binary_file_").c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
         if (!this->file.is_open())
         {
             this->message = "Failed to open file";
@@ -78,9 +78,11 @@ void Request::parseRequest(const std::string &rawRequest)
                 this->requestData.erase(0, pos + 4);
                 this->parseHeaders();
                 this->setBodyInformations();
+                this->processResponseErrors();
                 this->currentStep = BODY;
             }
         }
+
         if (this->currentStep == BODY)
         {
             this->fullBody += this->requestData;

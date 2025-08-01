@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/15 07:46:58 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/17 00:10:15 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/01 11:49:41 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,11 +93,11 @@ void Request::parseMultipartHeaders(const std::string &multipartHeaders)
     try
     {
         if (!fileName.empty())
-            this->multipartData.back()->setFileName(fileName);
+            this->multipartData.back()->setFileName(this->root + "/" + fileName);
         else if (!name.empty())
-            this->multipartData.back()->setFileName(name);
+            this->multipartData.back()->setFileName(this->root + "/" + name);
         else
-            this->multipartData.back()->setFileName(generateRandomFileName());
+            this->multipartData.back()->setFileName(this->root + "/" + generateRandomFileName());
     }
     catch(const char *e)
     {

@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/04/29 18:18:06 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/01 10:24:52 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,8 @@ class Request
         size_t currentContentLength;
         std::string fileName;
         std::string fullBody;
+        size_t bodySizeLimit;
+        std::string root;
         std::vector<Multipart *> multipartData;
         size_t chunkSize;
         std::string chunkData;
@@ -74,6 +76,7 @@ class Request
         void parseHeaders();
         void parseBody();
         void setBodyInformations();
+        void processResponseErrors();
         void parseMultipart(bool isChunked = false);
         void parseMultipartHeaders(const std::string &multipartHeaders);
 

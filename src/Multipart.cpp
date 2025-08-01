@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 20:01:43 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 08:23:47 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/01 11:49:50 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ Multipart::~Multipart()
 void Multipart::setFileName(const std::string &fileName)
 {
     this->fileName = fileName;
-    this->file.open(("./" + fileName).c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+    this->file.open((fileName).c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
     if (!this->file.is_open())
         throw "Failed to open file";
 }
