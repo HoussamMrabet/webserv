@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 20:04:44 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/08/22 03:14:02 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/22 16:14:05 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,8 +39,8 @@ void Request::processResponseErrors()
 
     if (locIt == locations.end())
     {
-        this->message = "Method Not Allowed";
-        throw 403;
+        this->message = "Route Not Found";
+        throw 404;
     }
 
     LocationConf location = locIt->second;
@@ -63,7 +63,7 @@ void Request::processResponseErrors()
     if (!methodAllowed)
     {
         this->message = "Method Not Allowed";
-        throw 403;
+        throw 405;
     }
 
     return;

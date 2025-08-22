@@ -77,8 +77,8 @@ void Request::parseRequest(const std::string &rawRequest)
                 this->headersData = this->requestData.substr(0, pos);
                 this->requestData.erase(0, pos + 4);
                 this->parseHeaders();
-                this->setBodyInformations();
                 this->processResponseErrors();
+                this->setBodyInformations();
                 this->currentStep = BODY;
             }
         }
