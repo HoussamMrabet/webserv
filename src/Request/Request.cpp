@@ -6,11 +6,12 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/04/29 18:22:17 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/22 03:13:43 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
+#include "WebServer.hpp"
 
 Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE),
                         method(UNDEFINED), reqLine(""), uri(""), uriQueries(""), cgiType(""),
@@ -20,6 +21,8 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
                         fileName(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false)
 {
     this->headers["connection"] = "keep-alive";
+    const ServerConf &server = globalServer[0];
+    this->uploadDir = server.getUploadDir();
 }
 Request::~Request()
 {

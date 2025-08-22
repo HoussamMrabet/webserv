@@ -9,12 +9,15 @@
 #include "ServerBlock.hpp"
 #include "Connection.hpp"
 
+
+extern std::vector<ServerConf> globalServer;
+
 class WebServ{ // Factory design
     private:
         // std::vector<int> _serverfds; // can be removed?
         std::vector<struct pollfd> _pollfds;
         std::map<Listen, ServerBlock > _serverBlocks;
-        std::map<int,  Connection> _connections; // can use just vector?
+        std::map<int, Connection> _connections; // can use just vector?
         std::map<int, std::string> _fdType; // to check if fd is a listen, client connection, or a cgi pipe
 
         WebServ();

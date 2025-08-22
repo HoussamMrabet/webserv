@@ -31,25 +31,32 @@ bool Connection::readRequest(){
     char buffer[1024] = {0};
     ssize_t bytesRead = 0;
 
-    // while (!_request->isDone()) { // check if while is useless!!
+    while (!_request->isDone())
+    {
         bytesRead = read(_fd, buffer, sizeof(buffer));
-        if (bytesRead > 0){
+        if (bytesRead > 0)
+        {
             _buffer.append(buffer, bytesRead);
             _request->parseRequest(_buffer);
             _time = time(NULL);  // update activity timestamp
-            if (_request->isDone()) _buffer.clear();
+            _buffer.clear();
             // else continue;
         }
-        else if (bytesRead == 0){
+        else
+        {
+            _request->parseRequest();
+            // _buffer.clear();
             std::cout << "Client disconnected!" << std::endl;
-            return (false);
+            // return (false);
         }
-        else{
-            // check for errno!!!
-            perror("Read failed");
-            return (false);
-        }
-    // }
+        // else
+        // {
+        //     std::cout << "Error reading from socket" << std::endl;
+        //     // check for errno!!!
+        //     perror("Read failed");
+        //     return (false);
+        // }
+    }
     _done = _request->isDone();
     // _request->printRequest();
 

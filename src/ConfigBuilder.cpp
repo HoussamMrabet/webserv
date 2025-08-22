@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigBuilder.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mel-hamd <mel-hamd@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 06:15:23 by mel-hamd          #+#    #+#             */
-/*   Updated: 2025/04/22 12:35:53 by mel-hamd         ###   ########.fr       */
+/*   Updated: 2025/08/21 19:40:30 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 	}
 	if (!stk.empty())
 		throw ConfigBuilder::ErrorConfig("Config file : You have to open and close curly bracets { }");
-	if (stk.size() != 1)
+	if (res.size() != 1)
 		throw ConfigBuilder::ErrorConfig("Config file : should have only one server");;
 	return (res);
 }

@@ -42,7 +42,7 @@ void Request::setBodyInformations()
     }
     if (!this->isMultipart)
     {
-        this->file.open(generateRandomFileName(this->root + "/binary_file_").c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+        this->file.open(generateRandomFileName(this->uploadDir + "/binary_file_").c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
         if (!this->file.is_open())
         {
             this->message = "Failed to open file";

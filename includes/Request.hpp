@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/08/01 10:24:52 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/22 03:13:36 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,7 @@ class Request
         std::string fullBody;
         size_t bodySizeLimit;
         std::string root;
+        std::string uploadDir;
         std::vector<Multipart *> multipartData;
         size_t chunkSize;
         std::string chunkData;
