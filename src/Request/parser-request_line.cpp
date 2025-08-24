@@ -62,7 +62,8 @@ void Request::parseRequestLine()
         const std::string &route = it->first;
         if (this->uri == route ||
             (this->uri.find(route) == 0 && route != "/" &&
-             (route.back() == '/' || this->uri[route.length()] == '/')))
+             (route[route.size() - 1] == '/' || this->uri[route.length()] == '/')))
+            //  (route.back() == '/' || this->uri[route.length()] == '/')))
         {
             if (route.length() > matchedRoute.length())
             {

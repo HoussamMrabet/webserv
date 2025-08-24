@@ -58,6 +58,9 @@ void WebServ::pollLoop(){
                     if (it->second.isDone()){
                         _pollfds[i].revents = POLLOUT;
                         it->second.printRequest(); // to remove!
+                        // std::cout << "+++++++++++++++\n";
+                        // std::cout << it->second.getFd() << std::endl;
+                        // std::cout << it->second.getServer() << std::endl;
                         // it->second.writeResponse();
                         // it->second.cgiResponse(pipe_fdout, pipe_fdin); // start pipefds here and add to pollfds 
                     }
@@ -77,7 +80,8 @@ void WebServ::pollLoop(){
 }
 
 bool WebServ::acceptConnection(int fd){
-    Connection connection(fd);
+    std::cout << "new connection fd " << fd << " " << _server.getRoot() << std::endl; 
+    Connection connection(fd, _server);
     int connection_fd = connection.getFd();
     _connections.insert(std::make_pair(connection_fd, connection));
     // struct pollfd client_pfd;

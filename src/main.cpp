@@ -27,6 +27,8 @@ int main(int ac, char **av)
 		globalServer = ConfigBuilder::generateServers(config_file); // import servers from config file
 		std::vector<ServerConf> servers = globalServer; // import servers from config file
 		ServerConf server = servers[0]; // vector should have only one vector
+		std::cout << "Server data\n";
+		std::cout << server << std::endl;
 		WebServ::startServer(server);
 
 	}

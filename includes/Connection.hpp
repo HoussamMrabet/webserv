@@ -9,6 +9,7 @@
 #include <unistd.h>   // read, write, close
 #include "Request.hpp"
 #include "Response.hpp"
+#include "ServerConf.hpp"
 #include "cgi.hpp"
 
 class Connection{
@@ -19,18 +20,22 @@ private:
     Request* _request;
     // Response _response;
     std::string _response;
+    static ServerConf _server;
     bool _done;
 
 public:
-    Connection(int);
+    Connection(int, ServerConf&);
     Connection(const Connection&);
     int getFd() const;
+    ServerConf getServer();
     time_t getTime() const;
     bool readRequest();
     bool isDone();
     bool writeResponse();
     void printRequest(); // to remove
     void setNonBlocking();
+    std::string getRequestMethod();
+    void sendGetResponse();
     // bool cgiResponse(int (&fd_in)[], int (&fd_out)[]);
 };
 

@@ -1,4 +1,6 @@
 #include "Connection.hpp"
+ServerConf Connection::_server = ConfigBuilder::generateServers("config/config.conf").back();
+
 #define DEFAULT_RESPONSE "HTTP/1.1 200 OK\r\n" \
                          "Content-Length: 10\r\n" \
                          "Content-Type: text/plain\r\n" \
@@ -7,8 +9,12 @@
                          "Received!!\r\n" // Connection keep-alive but still ends !!!!!
 
 
-Connection::Connection(int fd): _time(time(NULL)), _request(new Request()), _done(false)/*....*/ {
+Connection::Connection(int fd, ServerConf& server): _time(time(NULL)), _request(new Request()),
+                                                    _done(false)/*....*/ {
     _fd = accept(fd, NULL, NULL);
+    (void)server;
+    std::cout << "Connection constructor fd " << _fd << "\n";
+    std::cout << _server.getRoot() << std::endl;
     if (_fd == -1) {
         perror("Accept failed");
         exit(1);/// check !!
@@ -67,6 +73,10 @@ bool Connection::readRequest(){
 }
 
 bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiResponse!!!
+    if (getRequestMethod() == "GET"){
+        sendGetResponse();
+        return (true);
+    }
     // if (_response.empty())
     _response = DEFAULT_RESPONSE;
         // _response = "Response sent from server!!!\r\n";
@@ -80,6 +90,48 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     return (true);
 }
 
+std::string Connection::getRequestMethod(){
+    t_method method = _request->getMethod();
+    switch (method)
+    {
+        case GET:
+            return "GET";
+        case POST:
+            return "POST";
+        case DELETE:
+            return "DELETE";
+        default:
+            return "UNDEFINED";
+    }
+}
+
+void Connection::sendGetResponse(){
+    char pwd[100];
+    getcwd(pwd, 100);
+    std::cout << "---> fd = " << _fd << std::endl;
+    std::string path = _server.getRoot();
+    std::cout << "------ Path = " << path << std::endl;
+    std::vector<std::string> indexes = _server.getIndex();
+    std::string index = indexes[0];
+    std::cout << "------ index = " << index << std::endl;
+    std::string full_path = pwd + path + index;
+    std::cout << "------ full_path = " << full_path << std::endl;
+    std::ifstream file(full_path.c_str(), std::ios::in | std::ios::binary);
+    std::ostringstream get_file;
+    get_file << file.rdbuf();
+    
+    std::ostringstream get_response;
+    get_response << "HTTP/1.1 200 OK\r\n";
+    get_response << "Content-Type: text.html\r\n";
+    get_response << "Content-Lenght:" << get_file.str().size() << "\r\n";
+    get_response << "Connection: keep-alive\r\n";
+    get_response << "\r\n";
+    get_response << get_file.str();
+    
+    _response = get_response.str();
+    std::cout << "------ response = " << _response << std::endl;
+    send(_fd, _response.c_str(), _response.size(), 0);
+}
 
 void Connection::printRequest(){
     if (_done){
@@ -90,6 +142,8 @@ void Connection::printRequest(){
     // else
     //     std::cout << "Request not received!\n";
 }
+
+ServerConf Connection::getServer(){ return (_server);}
 
 bool Connection::isDone(){ return (_done);}
 
