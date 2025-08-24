@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/08/22 03:13:43 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/24 16:43:58 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,8 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
                         httpVersion(""), body(""), isChunked(false), isMultipart(false),
                         isContentLength(false), boundaryKey(""), contentLength(0),
                         requestData(""), headersData(""), currentContentLength(0),
-                        fileName(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false)
+                        fileName(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false),
+                        cgiFdRead(-1), cgiFdWrite(-1)
 {
     this->headers["connection"] = "keep-alive";
     const ServerConf &server = globalServer[0];
@@ -78,6 +79,11 @@ std::string Request::getHost() const
 std::string Request::getCgiType() const
 {
     return (this->cgiType);
+}
+
+int Request::getCgiFdRead() const
+{
+    return cgiFdRead;
 }
 
 bool Request::isDone() const

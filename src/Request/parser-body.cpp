@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/15 07:48:15 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/03/15 07:48:25 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/24 16:39:32 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ void Request::parseBody()
                 return ;
             else
             {
-                if (this->isMultipart)
+                if (this->isMultipart && !this->isCGI())
                 {
                     this->chunkData += this->body.substr(0, this->chunkSize);
                     parseMultipart(CHUNKED);
@@ -32,8 +32,20 @@ void Request::parseBody()
                 }
                 else
                 {
-                    this->file.write(this->body.substr(0, this->chunkSize).c_str(), this->chunkSize);
-                    this->file.flush();
+                    if (this->isCGI())
+                    {
+                        ssize_t written = write(this->cgiFdWrite, this->body.c_str(), this->chunkSize + 2);
+                        if (written == -1)
+                        {
+                            this->message = "Failed to write to CGI pipe";
+                            throw 500;
+                        }
+                    }
+                    else
+                    {
+                        this->file.write(this->body.substr(0, this->chunkSize).c_str(), this->chunkSize);
+                        this->file.flush();
+                    }
                     this->body.erase(0, this->chunkSize + 2);
                 }
                 inChunk = false;
@@ -59,17 +71,30 @@ void Request::parseBody()
             }
         }
     }
-    else if (this->isMultipart)
+    else if (this->isMultipart && !this->isCGI())
     {
         parseMultipart();
     }
-    else if (this->isContentLength)
+    else if (this->isContentLength || this->isCGI())
     {
         if (this->contentLength == this->currentContentLength)
         {
-            this->file.write(this->body.c_str(), this->body.size());
-            this->file.flush();
-            this->file.close();
+            if (this->isCGI())
+            {
+                ssize_t written = write(this->cgiFdWrite, this->body.c_str(), this->body.size());
+                if (written == -1)
+                {
+                    this->message = "Failed to write to CGI pipe";
+                    throw 500;
+                }
+                close(this->cgiFdWrite);
+            }
+            else
+            {
+                this->file.write(this->body.c_str(), this->body.size());
+                this->file.flush();
+                this->file.close();
+            }
             this->body.clear();
             throw 200;
         }

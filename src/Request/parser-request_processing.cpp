@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 20:04:44 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/08/22 16:14:05 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/24 19:57:00 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ void Request::processResponseErrors()
     const ServerConf &server = globalServer[0];
 
     std::map<std::string, LocationConf> locations = server.getLocations();
-    std::map<std::string, LocationConf>::iterator locIt = locations.find(this->uri);
+    std::map<std::string, LocationConf>::iterator locIt = locations.find(this->location);
 
     if (locIt == locations.end())
     {

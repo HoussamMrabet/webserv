@@ -18,7 +18,14 @@ MAGENTA = \033[35m
 RESET 	= \033[0m
 
 define PRINT_LOADING
-	@for i in $(shell seq 0 10 100); do 		printf "▓"; 		sleep 0; 	done
+	@printf "$(GREEN)Compiling... ["
+	@for i in $(shell seq 0 10 100); do 		printf "▓"; 		sleep 0.01; 	done
+	@printf "] 100%%$(RESET)\n"
+endef
+
+define PRINT_LOADING
+	@printf "$(GREEN)Compiling... ["
+	@for i in $(shell seq 0 10 100); do 		printf "▓"; 		sleep 0.01; 	done
 	@printf "] 100%%$(RESET)\n"
 endef
 
@@ -34,19 +41,21 @@ $(OBJ_DIR):
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(INC_DIR)/*.hpp
 	@mkdir -p $(dir $@) 
 	@echo "$(GREEN) $<"
-	@printf "$(GREEN)Compiling... ["
 	@$(PRINT_LOADING)
 	@$(CPP) $(CPPFLAGS) -c $< -o $@
 
 clean:
 	@printf "$(MAGENTA)Cleaning object files... ["
-	@$(PRINT_LOADING)
+	@for i in $(shell seq 0 10 100); do 		printf "▓"; 		sleep 0.05; 	done
+	@printf "] 100%%$(RESET)\n"
 	@$(RM) $(OBJ_DIR)
 
 fclean: clean
-	@printf "$(MAGENTA)Removing binary...["
-	@$(PRINT_LOADING)
+	@printf "$(MAGENTA)Removing executable file...["
+	@for i in $(shell seq 0 10 100); do 		printf "▓"; 		sleep 0.01; 	done
+	@printf "] 100%%$(RESET)\n"
 	@$(RM) $(NAME)
+
 
 re: fclean all
 

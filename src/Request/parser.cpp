@@ -40,7 +40,7 @@ void Request::setBodyInformations()
             this->boundaryKey.erase(this->boundaryKey.size());
         }
     }
-    if (!this->isMultipart)
+    if (!this->isMultipart && !this->isCGI())
     {
         this->file.open(generateRandomFileName(this->uploadDir + "/binary_file_").c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
         if (!this->file.is_open())
@@ -52,9 +52,9 @@ void Request::setBodyInformations()
 }
 
 void Request::parseRequest(const std::string &rawRequest)
-{    
+{
     if (this->statusCode != 200 || this->currentStep == DONE)
-        return ;
+        return;
     try
     {
         this->requestData += rawRequest;
@@ -77,14 +77,15 @@ void Request::parseRequest(const std::string &rawRequest)
                 this->headersData = this->requestData.substr(0, pos);
                 this->requestData.erase(0, pos + 4);
                 this->parseHeaders();
-                this->processResponseErrors();
+                if (!this->isCGI())
+                    this->processResponseErrors();
                 this->setBodyInformations();
                 this->currentStep = BODY;
             }
         }
 
         if (this->currentStep == BODY)
-        {
+        {            
             this->fullBody += this->requestData;
             this->body += this->requestData;
             this->currentContentLength += requestData.size();
@@ -92,9 +93,12 @@ void Request::parseRequest(const std::string &rawRequest)
             this->parseBody();
         }
     }
-    catch(const int &e)
+    catch (const int &e)
     {
         this->statusCode = e;
         this->currentStep = DONE;
+        if (this->statusCode != 200)
+            close(this->cgiFdRead);
+        close(this->cgiFdWrite);
     }
 }

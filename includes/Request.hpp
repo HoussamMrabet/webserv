@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/08/22 03:13:36 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/24 20:01:08 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <string>
 #include "Multipart.hpp"
+#include <fcntl.h>
+#include <unistd.h>
 
 #define CHUNKED true
 
@@ -50,6 +52,7 @@ class Request
         std::string reqLine;
         std::string uri;
         std::string uriQueries;
+        std::string location;
         std::string cgiType;
         std::string host;
         std::string httpVersion;
@@ -72,7 +75,9 @@ class Request
         std::vector<Multipart *> multipartData;
         size_t chunkSize;
         std::string chunkData;
-        bool   inChunk;
+        bool inChunk;
+        int cgiFdRead;
+        int cgiFdWrite;
         void parseRequestLine();
         void parseHeaders();
         void parseBody();
@@ -94,6 +99,7 @@ class Request
         std::string getHost() const; // return server name
         std::string getCgiType() const; // return php or py as string if there is a cgi otherwise return empty string
         int getStatusCode() const;
+        int getCgiFdRead() const; // return read end of cgi pipe
 
         bool isDone() const;
         bool isCGI() const; // check if the request is a cgi or not
