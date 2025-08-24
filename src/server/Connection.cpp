@@ -68,9 +68,10 @@ bool Connection::readRequest(){
 
 bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiResponse!!!
     // if (_response.empty())
-    //     _response = DEFAULT_RESPONSE;
+    _response = DEFAULT_RESPONSE;
         // _response = "Response sent from server!!!\r\n";
-    _response = Response::getResponse(_request->getStatusCode());
+    // std::cout << "status code : " << _request->getStatusCode() << std::endl;
+    // _response = Response::getResponse(_request->getStatusCode());
     // ssize_t b = ;
     if (write(_fd, _response.c_str(), _response.length()) == -1){
         perror("Write failed");

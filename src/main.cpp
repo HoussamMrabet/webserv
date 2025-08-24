@@ -13,7 +13,7 @@
 #include <iostream>
 #include <exception>
 #include <signal.h>
-#include "ServerBlock.hpp"
+// #include "ServerConf.hpp"
 #include "WebServer.hpp"
 
 std::vector<ServerConf> globalServer;
@@ -26,8 +26,8 @@ int main(int ac, char **av)
 		if (ac > 1) config_file = av[1]; // parse config file name and path?
 		globalServer = ConfigBuilder::generateServers(config_file); // import servers from config file
 		std::vector<ServerConf> servers = globalServer; // import servers from config file
-		std::map<Listen, ServerBlock > serverBlocks = makeBloks(servers); // make blocks of servers sharing the same listen
-        WebServ::startServer(serverBlocks);
+		ServerConf server = servers[0]; // vector should have only one vector
+		WebServ::startServer(server);
 
 	}
 	catch (const std::exception& ex){

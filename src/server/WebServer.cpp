@@ -2,16 +2,16 @@
 
 WebServ::WebServ(){/*init default data*/}
 
-WebServ::WebServ(std::map<Listen, ServerBlock >& serverBlocks): _serverBlocks(serverBlocks){/*init data*/}
+WebServ::WebServ(ServerConf& server): _server(server), _listens(server.getListen()){/*init data*/}
 
-bool WebServ::startServer(std::map<Listen, ServerBlock >& serverBlocks){
-    WebServ webserv(serverBlocks);
-    
-    std::map<Listen, ServerBlock >::iterator it;
-    for (it = webserv._serverBlocks.begin(); it != webserv._serverBlocks.end(); it++) {
-        int server_fd = Socket::StartSocket(it->first.getHost(), it->first.getPort());
+bool WebServ::startServer(ServerConf& server){
+    WebServ webserv(server);
+
+    std::vector<std::pair<std::string, std::string> >::iterator it;
+    for (it = webserv._listens.begin(); it != webserv._listens.end(); it++) {
+        int server_fd = Socket::StartSocket(it->first, it->second);
         webserv.addPollFd(server_fd, POLLIN, "listen");
-        std::cout << "Listening on " << it->first.getHost() << ":" << it->first.getPort() << "..." << std::endl;
+        std::cout << "Listening on " << it->first << ":" << it->second << "..." << std::endl;
     }
     webserv.pollLoop();
     return (true); // check return value value for all functions or remove and use exception!!
@@ -55,12 +55,22 @@ void WebServ::pollLoop(){
                         break;
                     }
                     // std::cout << "HERE!!!" << it->second.isDone() << std::endl;
-                    // if (it->second.isDone()){
-                    //     it->second.printRequest(); // to remove!
-                        it->second.writeResponse();
+                    if (it->second.isDone()){
+                        _pollfds[i].revents = POLLOUT;
+                        it->second.printRequest(); // to remove!
+                        // it->second.writeResponse();
                         // it->second.cgiResponse(pipe_fdout, pipe_fdin); // start pipefds here and add to pollfds 
-                    // }
+                    }
                 }
+            }
+            if (_pollfds[i].revents & POLLOUT){
+                std::map<int, Connection>::iterator it = _connections.find(fd);
+                it->second.writeResponse();
+                close(fd);
+                _connections.erase(it);
+                _pollfds.erase(_pollfds.begin() + i);
+                i--;
+                break;
             }
         }
     }

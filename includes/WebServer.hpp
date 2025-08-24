@@ -5,9 +5,9 @@
 #include <map>
 #include <poll.h>
 #include "Socket.hpp"    
-#include "Listen.hpp"  
-#include "ServerBlock.hpp"
+#include "Listen.hpp"
 #include "Connection.hpp"
+// #include "ServerConf.hpp"
 
 
 extern std::vector<ServerConf> globalServer;
@@ -15,13 +15,14 @@ extern std::vector<ServerConf> globalServer;
 class WebServ{ // Factory design
     private:
         // std::vector<int> _serverfds; // can be removed?
+        ServerConf _server;
+        std::vector<std::pair<std::string, std::string> > _listens;
         std::vector<struct pollfd> _pollfds;
-        std::map<Listen, ServerBlock > _serverBlocks;
         std::map<int, Connection> _connections; // can use just vector?
         std::map<int, std::string> _fdType; // to check if fd is a listen, client connection, or a cgi pipe
 
         WebServ();
-        WebServ(std::map<Listen, ServerBlock >&);
+        WebServ(ServerConf&);
         // void startSocket(std::string, std::string);
         void pollLoop();
     //     bool newConnection(int);
@@ -33,5 +34,5 @@ class WebServ{ // Factory design
     //     void removePollFd(int);
 
     public:
-        static bool startServer(std::map<Listen, ServerBlock >&);
+        static bool startServer(ServerConf&);
 };
