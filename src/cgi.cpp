@@ -2,7 +2,32 @@
 
 // Using Factory design:
 
+std::string CGI::_cgiFileName = "";
+
 CGI::CGI(){}
+
+int CGI::generateCgiFile(){
+    time_t ttime;
+    struct tm * timeinfo;
+    char buffer[20];
+
+    time (&ttime);
+    timeinfo = localtime(&ttime);
+    strftime(buffer,sizeof(buffer),"%d%m%Y%H%M%S",timeinfo);
+    std::string new_str = buffer;
+    std::cout << " ++++  " << _cgiFileName << " " << new_str << std::endl;
+    if (_cgiFileName.substr(0, new_str.size()) == new_str)
+        _cgiFileName = _cgiFileName + "_";
+    else 
+        _cgiFileName = new_str;
+    // std::ofstream file(_cgiFileName);
+    int fd = open(_cgiFileName.c_str(), O_CREAT | O_RDWR | O_NONBLOCK);
+    // close(fd);
+    // std::cout << _cgiFileName << std::endl;
+    // file.close();
+    return (fd);
+
+}
 
 std::string CGI::executeCGI(const Request& request){
     CGI cgi;
@@ -41,6 +66,10 @@ void CGI::set_HTTP_Header(){
 
 void CGI::importData(const Request& request){
      // env variables:
+     fd_in = request.getCgiFdRead();
+     if (request.getCgiType() == "py")
+        cgiExecPath = "/usr/bin/python3";
+    else cgiExecPath = "";
     _scriptName = request.getUri();        // filesystem path to script (added '.' to use current directory)
     _requestMethod = "GET"/*FIX!!!*/; //add request.getRequestMethod();     // GET, POST, etc.
     _queryString = "";       // stuff after '?' if it exists
@@ -69,17 +98,24 @@ void CGI::importData(const Request& request){
 }
 
 std::string CGI::runCGI(){
+
+    char pwd[50];
+    getcwd(pwd, 50);
+    std::string cgi_root = pwd;
+    fd_out = generateCgiFile();
+    std::cout << "Fd_out = " << fd_out << std::endl;
+
     // signal(SIGPIPE, SIG_IGN); // trying to catch broken pipe signal after nonblok
     if (!validPath()){
         return (SERVERERROR);
     }
     printEnvironment();
-    int pipe_out[2]; // child writes into pipe_out[1] (execve output) -> parent reads from pipe_out[0]
-    int pipe_in[2]; // parent writes into pipe_in[1] (POST body) -> child reads from pipe_in[0]
-    if (pipe(pipe_out) == -1 || pipe(pipe_in) == -1){
-        perror("pipe");
-        return ("pipe error!\n"); //FIX error: "HTTP/1.1 500 Internal Server Error\r\n\r\n"
-    }
+    // int pipe_out[2]; // child writes into pipe_out[1] (execve output) -> parent reads from pipe_out[0]
+    // int pipe_in[2]; // parent writes into pipe_in[1] (POST body) -> child reads from pipe_in[0]
+    // if (pipe(pipe_out) == -1 || pipe(pipe_in) == -1){
+    //     perror("pipe");
+    //     return ("pipe error!\n"); //FIX error: "HTTP/1.1 500 Internal Server Error\r\n\r\n"
+    // }
     // // adding non blocking causes broken pipe error!!!
     pid_t pid = fork();
     if (pid < 0){
@@ -87,42 +123,57 @@ std::string CGI::runCGI(){
         return ("fork error!\n"); // FIX error
     }
     if (pid == 0){
-        dup2(pipe_out[1], STDOUT_FILENO);
-        dup2(pipe_in[0], STDIN_FILENO);
+        dup2(fd_in, STDIN_FILENO);
+        dup2(fd_out, STDOUT_FILENO);
 
-        close(pipe_out[0]);
-        close(pipe_out[1]);
-        close(pipe_in[0]);
-        close(pipe_in[1]);
+        close(fd_in);
+        close(fd_out);
+        // close(pipe_out[0]);
+        // close(pipe_out[1]);
+        // close(pipe_in[0]);
+        // close(pipe_in[1]);
 
-        char* argv[2];
-        argv[0] = const_cast<char*>(_scriptName.c_str()); // fix this! it should be argv[3] 
-        argv[1] = NULL; // should also containe path to exec, py or pl ... 
+        std::string ful_path = cgi_root + _scriptName; // fix path
+        // should get cgi path from cgi location in config file
+        
+        // std::cout << " ------------- cgi full path -----\n";
+        // std::cout <<  ful_path << std::endl;
+        char* argv[3];
+        argv[0] = const_cast<char*>(cgiExecPath.c_str()); // fix this! it should be argv[3] 
+        argv[1] = const_cast<char*>(ful_path.c_str()); // fix this! it should be argv[3] 
+        argv[2] = NULL; // should also containe path to exec, py or pl ... 
+        // char* argv[2];
+        // argv[0] = const_cast<char*>(_scriptName.c_str()); // fix this! it should be argv[3] 
+        // argv[1] = NULL; // should also containe path to exec, py or pl ... 
 
-        execve(argv[0], argv, &_envc[0]);
+        execve(cgiExecPath.c_str(), argv, &_envc[0]);
         perror("execve");
         exit(1);
     }
-    close(pipe_out[1]);
-    close(pipe_in[0]);
+    // close(pipe_out[1]);
+    // close(pipe_in[0]);
 
-    if (_requestMethod == "POST" && !_body.empty())
-        write(pipe_in[1], _body.c_str(), _body.size()); // add protection and fix blocking!
-    close(pipe_in[1]);
-
-
+    // if (_requestMethod == "POST" && !_body.empty())
+    //     write(fd_out, _body.c_str(), _body.size()); // add protection and fix blocking!
+    // close(fd_out);
+    
+    
+    int status;
+    waitpid(pid, &status, 0); // check status!
+    
+    lseek(fd_out, 0, SEEK_SET);
     std::string cgi_output;
     char buffer[1024];
     size_t n; // ssise_t
-    while ((n = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
+    while ((n = read(fd_out, buffer, sizeof(buffer))) > 0)
         cgi_output.append(buffer, n);
-    close(pipe_out[0]);
+    close(fd_out);
+    // unlink(_cgiFileName);
 
-
-    int status;
-    waitpid(pid, &status, 0); // check status!
-
-    std::string response = parseOutput(cgi_output);
+    std::string response = parseOutput(cgi_output); // add headers here
+    std::cout << "-+-+-+-+-+-+-\n";
+    std::cout << response << "\n";
+    std::cout << "-+-+-+-+-+-+-\n";
     return (response);
 }
 

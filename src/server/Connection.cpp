@@ -67,8 +67,8 @@ bool Connection::readRequest(){
     // _request->printRequest();
 
 
-    // if (_request->isDone()) // remove from here and add to webserv in order to add pipe_fds to pollfds
-    //     _response = CGI::executeCGI(*_request);
+    if (_request->isDone()) // remove from here and add to webserv in order to add pipe_fds to pollfds
+        _response = CGI::executeCGI(*_request);
     return (true);
 }
 
@@ -77,8 +77,8 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         sendGetResponse();
         return (true);
     }
-    // if (_response.empty())
-    _response = DEFAULT_RESPONSE;
+    if (_response.empty())
+        _response = DEFAULT_RESPONSE;
         // _response = "Response sent from server!!!\r\n";
     // std::cout << "status code : " << _request->getStatusCode() << std::endl;
     // _response = Response::getResponse(_request->getStatusCode());

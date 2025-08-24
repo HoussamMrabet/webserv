@@ -42,6 +42,8 @@ class CGI{ // should class name be camel-case??
         std::string _contentLenght;     // _body.size()
         std::string _contentType;       // from the headers map (should be!!)
         std::string _remoteAddr;        // remote client IP
+        int fd_in;
+        int fd_out;
         /* To fix the path to file, join with root
         // if there was no root add a default path!
         std::string _location;
@@ -50,9 +52,11 @@ class CGI{ // should class name be camel-case??
         std::map<std::string, std::string> _headers; // HTTP headers
         std::vector<std::string> _envs; // environment variables (string)
         std::vector<char*> _envc;       // environment for execve (should be char*)
-
+        static std::string _cgiFileName;
+        std::string cgiExecPath;
 
         CGI();
+        int generateCgiFile();
         void importData(const Request&);
         void setQueryString();
         void setContentLenght();
