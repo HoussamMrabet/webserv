@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/19 15:16:29 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/08/24 20:01:08 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/24 20:55:48 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,6 +93,7 @@ class Request
         t_method getMethod() const;
         std::string getUri() const; // return the uri (without queries if exists)
         std::string getUriQueries() const; // return the queries from the uri "?..."
+        std::string getLocation() const; // return the location matched in the config file
         std::map<std::string, std::string> getHeaders() const;
         std::string getBody() const;
         std::string getHeader(const std::string &key) const;

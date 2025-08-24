@@ -6,7 +6,7 @@
 /*   By: hmrabet <hmrabet@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/16 21:20:45 by hmrabet           #+#    #+#             */
-/*   Updated: 2025/08/24 16:43:58 by hmrabet          ###   ########.fr       */
+/*   Updated: 2025/08/24 20:56:08 by hmrabet          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,11 @@ std::string Request::getUri() const
 std::string Request::getUriQueries() const
 {
     return (this->uriQueries);
+}
+
+std::string Request::getLocation() const
+{
+    return (this->location);
 }
 
 std::map<std::string, std::string> Request::getHeaders() const
