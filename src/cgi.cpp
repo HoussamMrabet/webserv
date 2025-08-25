@@ -3,8 +3,6 @@
 ServerConf CGI::_server;
 // Using Factory design:
 
-// std::string CGI::_cgiFileName = "";
-
 CGI::CGI(){}
 
 CGI::~CGI(){
@@ -23,28 +21,6 @@ void CGI::generateCgiFile(){
     // return (fd);
 
 }
-// int CGI::generateCgiFile(){
-//     time_t ttime;
-//     struct tm * timeinfo;
-//     char buffer[20];
-
-//     time (&ttime);
-//     timeinfo = localtime(&ttime);
-//     strftime(buffer,sizeof(buffer),"%d%m%Y%H%M%S",timeinfo);
-//     std::string new_str = buffer;
-//     std::cout << " ++++  " << _cgiFileName << " " << new_str << std::endl;
-//     if (_cgiFileName.substr(0, new_str.size()) == new_str)
-//         _cgiFileName = _cgiFileName + "_";
-//     else 
-//         _cgiFileName = new_str;
-//     // std::ofstream file(_cgiFileName);
-//     int fd = open(_cgiFileName.c_str(), O_CREAT | O_RDWR | O_NONBLOCK);
-//     // close(fd);
-//     // std::cout << _cgiFileName << std::endl;
-//     // file.close();
-//     return (fd);
-
-// }
 
 std::string CGI::executeCGI(const Request& request, ServerConf& server){
     CGI cgi;
@@ -83,9 +59,6 @@ void CGI::set_HTTP_Header(){
     }
 }
 
-// void CGI::getRoot(){
-// }
-
 void CGI::importData(const Request& request){
      // env variables:
      fd_in = request.getCgiFdRead();
@@ -104,7 +77,7 @@ void CGI::importData(const Request& request){
     // else cgiExecPath = "";
     _scriptName = request.getUri();        // filesystem path to script (added '.' to use current directory)
     // getRoot();
-    _requestMethod = "GET"/*FIX!!!*/; //add request.getRequestMethod();     // GET, POST, etc.
+    _requestMethod = "POST"/*FIX!!!*/; //add request.getRequestMethod();     // GET, POST, etc.
     _queryString = "";       // stuff after '?' if it exists
     _body = request.getBody();              // POST body (if any)
     _contentLenght = "";     // _body.size()
@@ -130,36 +103,14 @@ void CGI::importData(const Request& request){
     _envc.push_back(NULL);
 }
 
-// std::string CGI::getCGIPath(){
-//     std::map<std::string, LocationConf> locations = _server.getLocations();
-//     int pos = _scriptName.find('/');
-//     std::string location = _scriptName.substr(0, _scriptName.find('/'));
-//     // std::string name = _scriptName.substr()
-//     return (location);
-// }
-
 std::string CGI::runCGI(){
-
-    // char pwd[50];
-    // getcwd(pwd, 50);
-    // std::string cgi_root = pwd;
-    // std::string cgi_root = getCGIPath();
     generateCgiFile();
-    // fd_out = generateCgiFile();
-    // std::cout << "Fd_out = " << fd_out << std::endl;
-
-    // signal(SIGPIPE, SIG_IGN); // trying to catch broken pipe signal after nonblok
-    if (!validPath()){
-        return (SERVERERROR);
-    }
-    printEnvironment();
-    // int pipe_out[2]; // child writes into pipe_out[1] (execve output) -> parent reads from pipe_out[0]
-    // int pipe_in[2]; // parent writes into pipe_in[1] (POST body) -> child reads from pipe_in[0]
-    // if (pipe(pipe_out) == -1 || pipe(pipe_in) == -1){
-    //     perror("pipe");
-    //     return ("pipe error!\n"); //FIX error: "HTTP/1.1 500 Internal Server Error\r\n\r\n"
+    // if (!validPath()){
+    //     return (SERVERERROR);
     // }
-    // // adding non blocking causes broken pipe error!!!
+    printEnvironment();
+
+    lseek(fd_in, 0, SEEK_SET);
     pid_t pid = fork();
     if (pid < 0){
         perror("fork");
@@ -171,10 +122,6 @@ std::string CGI::runCGI(){
 
         close(fd_in);
         close(fd_out);
-        // close(pipe_out[0]);
-        // close(pipe_out[1]);
-        // close(pipe_in[0]);
-        // close(pipe_in[1]);
 
         std::string ful_path = _root + _scriptName; // fix path
         // should get cgi path from cgi location in config file
@@ -187,17 +134,11 @@ std::string CGI::runCGI(){
         argv[0] = const_cast<char*>(_execPath.c_str()); // fix this! it should be argv[3] 
         argv[1] = const_cast<char*>(ful_path.c_str()); // fix this! it should be argv[3] 
         argv[2] = NULL; // should also containe path to exec, py or pl ... 
-        // char* argv[2];
-        // argv[0] = const_cast<char*>(_scriptName.c_str()); // fix this! it should be argv[3] 
-        // argv[1] = NULL; // should also containe path to exec, py or pl ... 
 
         execve(_execPath.c_str(), argv, &_envc[0]);
         perror("execve");
         exit(1);
     }
-    // close(pipe_out[1]);
-    // close(pipe_in[0]);
-
     // if (_requestMethod == "POST" && !_body.empty())
     //     write(fd_out, _body.c_str(), _body.size()); // add protection and fix blocking!
     // close(fd_out);
@@ -216,9 +157,9 @@ std::string CGI::runCGI(){
     // unlink(_cgiFileName);
 
     std::string response = parseOutput(cgi_output); // add headers here
-    std::cout << "-+-+-+-+-+-+-\n";
-    std::cout << response << "\n";
-    std::cout << "-+-+-+-+-+-+-\n";
+    // std::cout << "-+-+-+-+-+-+-\n";
+    // std::cout << response << "\n";
+    // std::cout << "-+-+-+-+-+-+-\n";
     return (response);
 }
 
@@ -226,8 +167,15 @@ std::string CGI::parseOutput(std::string& cgi_output){
     // Parse headers/body from CGI output
     // Build full HTTP response
     // fix error: Received HTTP/0.9 when not allowed
+    std::ostringstream out;
+    out << "HTTP/1.1 200 OK \r\n";
+    out << "Content-Length: " << cgi_output.size() << "\r\n";
+    out << "Connection: keep-alive\r\n";
+    out << "\r\n";
+    out << cgi_output;
+    std::string response = out.str();
+    // std::string response = cgi_output;
 
-    std::string response = cgi_output;
     return (response);
 }
 
