@@ -1,9 +1,9 @@
 #include "cgi.hpp"
 #include <sys/time.h> // gettimeofday
-
+ServerConf CGI::_server;
 // Using Factory design:
 
-std::string CGI::_cgiFileName = "";
+// std::string CGI::_cgiFileName = "";
 
 CGI::CGI(){}
 
@@ -46,8 +46,10 @@ void CGI::generateCgiFile(){
 
 // }
 
-std::string CGI::executeCGI(const Request& request){
+std::string CGI::executeCGI(const Request& request, ServerConf& server){
     CGI cgi;
+    cgi._server = server;
+    // (void)server;
     cgi.importData(request);
     std::string response = cgi.runCGI();
     return (response);
@@ -81,13 +83,27 @@ void CGI::set_HTTP_Header(){
     }
 }
 
+// void CGI::getRoot(){
+// }
+
 void CGI::importData(const Request& request){
      // env variables:
      fd_in = request.getCgiFdRead();
-     if (request.getCgiType() == "py")
-        cgiExecPath = "/usr/bin/python3";
-    else cgiExecPath = "";
+    _location = request.getLocation();
+    std::map<std::string, LocationConf> locations = _server.getLocations();
+    // std::cout << "\n\n\n\n location : " << _location << "\n\n\n\n\n";
+    LocationConf conf = locations[_location];
+    std::map<std::string, std::string> cgis = conf.getCgi();
+    _root = conf.getRoot();
+    if (request.getCgiType() == "py")
+        _execPath = cgis[".py"];
+    else
+        _execPath = cgis[".php"];
+    //  if (request.getCgiType() == "py")
+    //     cgiExecPath = "/usr/bin/python3";
+    // else cgiExecPath = "";
     _scriptName = request.getUri();        // filesystem path to script (added '.' to use current directory)
+    // getRoot();
     _requestMethod = "GET"/*FIX!!!*/; //add request.getRequestMethod();     // GET, POST, etc.
     _queryString = "";       // stuff after '?' if it exists
     _body = request.getBody();              // POST body (if any)
@@ -114,11 +130,20 @@ void CGI::importData(const Request& request){
     _envc.push_back(NULL);
 }
 
+// std::string CGI::getCGIPath(){
+//     std::map<std::string, LocationConf> locations = _server.getLocations();
+//     int pos = _scriptName.find('/');
+//     std::string location = _scriptName.substr(0, _scriptName.find('/'));
+//     // std::string name = _scriptName.substr()
+//     return (location);
+// }
+
 std::string CGI::runCGI(){
 
-    char pwd[50];
-    getcwd(pwd, 50);
-    std::string cgi_root = pwd;
+    // char pwd[50];
+    // getcwd(pwd, 50);
+    // std::string cgi_root = pwd;
+    // std::string cgi_root = getCGIPath();
     generateCgiFile();
     // fd_out = generateCgiFile();
     // std::cout << "Fd_out = " << fd_out << std::endl;
@@ -151,20 +176,22 @@ std::string CGI::runCGI(){
         // close(pipe_in[0]);
         // close(pipe_in[1]);
 
-        std::string ful_path = cgi_root + _scriptName; // fix path
+        std::string ful_path = _root + _scriptName; // fix path
         // should get cgi path from cgi location in config file
         
         // std::cout << " ------------- cgi full path -----\n";
         // std::cout <<  ful_path << std::endl;
+        // std::cout << " ------------- exec path -----\n";
+        // std::cout <<  _execPath << std::endl;
         char* argv[3];
-        argv[0] = const_cast<char*>(cgiExecPath.c_str()); // fix this! it should be argv[3] 
+        argv[0] = const_cast<char*>(_execPath.c_str()); // fix this! it should be argv[3] 
         argv[1] = const_cast<char*>(ful_path.c_str()); // fix this! it should be argv[3] 
         argv[2] = NULL; // should also containe path to exec, py or pl ... 
         // char* argv[2];
         // argv[0] = const_cast<char*>(_scriptName.c_str()); // fix this! it should be argv[3] 
         // argv[1] = NULL; // should also containe path to exec, py or pl ... 
 
-        execve(cgiExecPath.c_str(), argv, &_envc[0]);
+        execve(_execPath.c_str(), argv, &_envc[0]);
         perror("execve");
         exit(1);
     }

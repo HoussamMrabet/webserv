@@ -77,7 +77,7 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     if (_request->isCGI())
     {
         std:: cout << "IT IS CGI!!!!!\n";
-        _response = CGI::executeCGI(*_request);
+        _response = CGI::executeCGI(*_request, _server);
     }
     else if (getRequestMethod() == "GET"){
         sendGetResponse();

@@ -22,6 +22,7 @@
 #include <cstdlib> // exit
 #include <fcntl.h>  // fcntl, O_NONBLOCK
 #include <vector>
+#include "ServerConf.hpp"
 #include <map>
 // #include <unistd.h> // for close, read, write
 // #include <cerrno>   // for errno
@@ -35,7 +36,11 @@ class CGI{ // should class name be camel-case??
     
     private:
         // env variables:
+        static ServerConf _server;
         std::string _scriptName;        // filesystem path to script
+        std::string _location;
+        std::string _execPath;
+        std::string _root;
         std::string _requestMethod;     // GET, POST, etc.
         std::string _queryString;       // stuff after '?'
         std::string _body;              // POST body (if any)
@@ -52,12 +57,14 @@ class CGI{ // should class name be camel-case??
         std::map<std::string, std::string> _headers; // HTTP headers
         std::vector<std::string> _envs; // environment variables (string)
         std::vector<char*> _envc;       // environment for execve (should be char*)
-        static std::string _cgiFileName;
+        std::string _cgiFileName;
         std::string cgiExecPath;
 
         CGI();
         ~CGI();
         // int generateCgiFile();
+        // std::string getCGIPath();
+        // void getRoot();
         void generateCgiFile();
         void importData(const Request&);
         void setQueryString();
@@ -70,5 +77,5 @@ class CGI{ // should class name be camel-case??
         bool validPath();
         
     public:
-        static std::string executeCGI(const Request&);
+        static std::string executeCGI(const Request&, ServerConf&);
 };
