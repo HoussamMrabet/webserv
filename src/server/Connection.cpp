@@ -1,5 +1,6 @@
 #include "Connection.hpp"
-ServerConf Connection::_server = ConfigBuilder::generateServers("config/config.conf").back();
+ServerConf Connection::_server;
+// ServerConf Connection::_server = ConfigBuilder::generateServers("config/config.conf").back();
 
 #define DEFAULT_RESPONSE "HTTP/1.1 200 OK\r\n" \
                          "Content-Length: 10\r\n" \
@@ -12,7 +13,7 @@ ServerConf Connection::_server = ConfigBuilder::generateServers("config/config.c
 Connection::Connection(int fd, ServerConf& server): _time(time(NULL)), _request(new Request()),
                                                     _done(false)/*....*/ {
     _fd = accept(fd, NULL, NULL);
-    (void)server;
+    _server = server;
     std::cout << "Connection constructor fd " << _fd << "\n";
     std::cout << _server.getRoot() << std::endl;
     if (_fd == -1) {
@@ -67,13 +68,18 @@ bool Connection::readRequest(){
     // _request->printRequest();
 
 
-    if (_request->isDone()) // remove from here and add to webserv in order to add pipe_fds to pollfds
-        _response = CGI::executeCGI(*_request);
+    // if (_request->isDone()) // remove from here and add to webserv in order to add pipe_fds to pollfds
+    //     _response = CGI::executeCGI(*_request);
     return (true);
 }
 
 bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiResponse!!!
-    if (getRequestMethod() == "GET"){
+    if (_request->isCGI())
+    {
+        std:: cout << "IT IS CGI!!!!!\n";
+        _response = CGI::executeCGI(*_request);
+    }
+    else if (getRequestMethod() == "GET"){
         sendGetResponse();
         return (true);
     }
@@ -109,9 +115,10 @@ void Connection::sendGetResponse(){
     char pwd[100];
     getcwd(pwd, 100);
     std::cout << "---> fd = " << _fd << std::endl;
-    std::string path = _server.getRoot();
+//    this->_server.prin
+    std::string path = this->_server.getRoot();
     std::cout << "------ Path = " << path << std::endl;
-    std::vector<std::string> indexes = _server.getIndex();
+    std::vector<std::string> indexes = this->_server.getIndex();
     std::string index = indexes[0];
     std::cout << "------ index = " << index << std::endl;
     std::string full_path = pwd + path + index;

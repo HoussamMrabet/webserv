@@ -26,6 +26,7 @@ class LocationConf {
         size_t bodySizeLimit;
         std::string redirectUrl;
         bool    listing;
+        bool cgi_exist;
         std::map<std::string, std::string> cgi;
     public :
         LocationConf();

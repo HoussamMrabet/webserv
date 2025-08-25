@@ -26,6 +26,7 @@ LocationConf::LocationConf(const ServerConf server, std::string name) : name(nam
 	allowedMethods.push_back("POST");
 	allowedMethods.push_back("DELETE");
 	this->listing = false;
+	this->cgi_exist = false;
 }
 
 LocationConf::~LocationConf() {
@@ -207,6 +208,7 @@ void LocationConf::setCgi(std::vector<std::string>::const_iterator &it, std::vec
 					throw ServerConf::ParseError("Config file : cgi directive cant have duplicated keys !");
 			}
 			cgi.insert(std::make_pair(key, value));
+			this->cgi_exist = true;
 		}
 		it++;
 	}

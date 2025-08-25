@@ -16,6 +16,7 @@
 // #include "ServerConf.hpp"
 #include "WebServer.hpp"
 
+
 std::vector<ServerConf> globalServer;
 
 int main(int ac, char **av)
@@ -23,7 +24,7 @@ int main(int ac, char **av)
 	try{
         // signal(SIGPIPE, SIG_IGN); // sig ignore broken pipe,q to remove later!
 		std::string config_file = "config/default.conf";
-		if (ac > 1) config_file = av[1]; // parse config file name and path?
+		if (ac > 1) config_file = av[1]; // parse config file name and path? 
 		globalServer = ConfigBuilder::generateServers(config_file); // import servers from config file
 		std::vector<ServerConf> servers = globalServer; // import servers from config file
 		ServerConf server = servers[0]; // vector should have only one vector

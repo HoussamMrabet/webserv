@@ -27,7 +27,7 @@ public:
     Connection(int, ServerConf&);
     Connection(const Connection&);
     int getFd() const;
-    ServerConf getServer();
+    ServerConf getServer(); 
     time_t getTime() const;
     bool readRequest();
     bool isDone();

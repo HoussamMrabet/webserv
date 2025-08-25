@@ -1,4 +1,5 @@
 #include "cgi.hpp"
+#include <sys/time.h> // gettimeofday
 
 // Using Factory design:
 
@@ -6,28 +7,44 @@ std::string CGI::_cgiFileName = "";
 
 CGI::CGI(){}
 
-int CGI::generateCgiFile(){
-    time_t ttime;
-    struct tm * timeinfo;
-    char buffer[20];
+CGI::~CGI(){
+    std::remove(_cgiFileName.c_str());
+}
 
-    time (&ttime);
-    timeinfo = localtime(&ttime);
-    strftime(buffer,sizeof(buffer),"%d%m%Y%H%M%S",timeinfo);
-    std::string new_str = buffer;
-    std::cout << " ++++  " << _cgiFileName << " " << new_str << std::endl;
-    if (_cgiFileName.substr(0, new_str.size()) == new_str)
-        _cgiFileName = _cgiFileName + "_";
-    else 
-        _cgiFileName = new_str;
-    // std::ofstream file(_cgiFileName);
-    int fd = open(_cgiFileName.c_str(), O_CREAT | O_RDWR | O_NONBLOCK);
+void CGI::generateCgiFile(){
+    timeval ttime; gettimeofday(&ttime, NULL);
+    long long microseconds = ttime.tv_sec * 1000000LL + ttime.tv_usec;
+
+    std::stringstream ss; ss << microseconds; ss >> _cgiFileName;
+    fd_out = open(_cgiFileName.c_str(), O_CREAT | O_RDWR | O_NONBLOCK);
     // close(fd);
     // std::cout << _cgiFileName << std::endl;
     // file.close();
-    return (fd);
+    // return (fd);
 
 }
+// int CGI::generateCgiFile(){
+//     time_t ttime;
+//     struct tm * timeinfo;
+//     char buffer[20];
+
+//     time (&ttime);
+//     timeinfo = localtime(&ttime);
+//     strftime(buffer,sizeof(buffer),"%d%m%Y%H%M%S",timeinfo);
+//     std::string new_str = buffer;
+//     std::cout << " ++++  " << _cgiFileName << " " << new_str << std::endl;
+//     if (_cgiFileName.substr(0, new_str.size()) == new_str)
+//         _cgiFileName = _cgiFileName + "_";
+//     else 
+//         _cgiFileName = new_str;
+//     // std::ofstream file(_cgiFileName);
+//     int fd = open(_cgiFileName.c_str(), O_CREAT | O_RDWR | O_NONBLOCK);
+//     // close(fd);
+//     // std::cout << _cgiFileName << std::endl;
+//     // file.close();
+//     return (fd);
+
+// }
 
 std::string CGI::executeCGI(const Request& request){
     CGI cgi;
@@ -102,8 +119,9 @@ std::string CGI::runCGI(){
     char pwd[50];
     getcwd(pwd, 50);
     std::string cgi_root = pwd;
-    fd_out = generateCgiFile();
-    std::cout << "Fd_out = " << fd_out << std::endl;
+    generateCgiFile();
+    // fd_out = generateCgiFile();
+    // std::cout << "Fd_out = " << fd_out << std::endl;
 
     // signal(SIGPIPE, SIG_IGN); // trying to catch broken pipe signal after nonblok
     if (!validPath()){
