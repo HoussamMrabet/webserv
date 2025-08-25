@@ -119,7 +119,8 @@ void ServerConf::printLocations(std::ostream& os) const {
 		it->second.printAllowedMethods(os);
 		it->second.printBodySizeLimit(os);
 		it->second.printRedirectUrl(os);
-		it->second.prontListing(os);
+		// it->second.printListing(os);
+		it->second.printCgi(os);
 		os << "----------------------------" << std::endl;
 	}
 }
@@ -327,14 +328,14 @@ void ServerConf::setLocations(std::vector<std::string>::const_iterator &it, std:
 				location.setBodySizeLimit(it, tokens);
 				continue;
 			}
-			else if (*it == "listing") {
-				it++;
-				location.setListing(it, tokens);
-				continue;
-			}
 			else if (*it == "return") {
 				it++;
 				location.setRedirectUrl(it, tokens);
+				continue;
+			}
+			else if (*it == "cgi") {
+				it++;
+				location.setCgi(it, tokens);
 				continue;
 			}
 			else if (*it == "{") {
@@ -347,7 +348,7 @@ void ServerConf::setLocations(std::vector<std::string>::const_iterator &it, std:
 				throw ConfigBuilder::ErrorConfig("Config file : error et \";\"");
 			}
 			else {
-				throw ConfigBuilder::ErrorConfig("Config file : the directive "+(*it)+" is not supported !");
+				throw ConfigBuilder::ErrorConfig("Config file : the directive "+(*it)+" is not supported s !");
 			}
 			it++;
 			if (stk.size() == 1)
@@ -387,8 +388,8 @@ std::pair<std::string, std::string> ServerConf::parseListen(std::string str) {
 
 std::ostream& operator << (std::ostream& os, const ServerConf server) {
 		os << "Server Class : " << std::endl;
-		os << "#" << "Listen : " << std::endl;
-		server.printListen(os);
+		// os << "#" << "Listen : " << std::endl;
+		// server.printListen(os);
 		os << "#" << "Server Names : " << std::endl;
 		server.printServerNames(os);
 		os << "#" << "Root : " << std::endl;

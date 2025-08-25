@@ -26,6 +26,7 @@ class LocationConf {
         size_t bodySizeLimit;
         std::string redirectUrl;
         bool    listing;
+        std::map<std::string, std::string> cgi;
     public :
         LocationConf();
 		LocationConf(const ServerConf server, std::string name);
@@ -38,7 +39,7 @@ class LocationConf {
         void setBodySizeLimit(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
         void setRedirectUrl(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
         void setListing(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
-		
+		void setCgi(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens);
 		const std::string getName() const;
         std::string getRoot() const;                        
         std::vector<std::string> getIndex() const;           
@@ -47,7 +48,7 @@ class LocationConf {
         size_t getBodySizeLimit() const;
         std::string getRedirectUrl() const;
         bool    getListing() const;
-		
+		std::map<std::string, std::string> getCgi() const;
 
 		void printName(std::ostream& os) const;
 		void printRoot(std::ostream& os) const;
@@ -56,5 +57,6 @@ class LocationConf {
 		void printAllowedMethods(std::ostream& os) const;
 		void printBodySizeLimit(std::ostream& os) const;
 		void printRedirectUrl(std::ostream& os) const;
-		void prontListing(std::ostream& os) const;
+        void printCgi(std::ostream& os) const;
+		void printListing(std::ostream& os) const;
     };

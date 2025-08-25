@@ -185,6 +185,38 @@ void LocationConf::setRedirectUrl(std::vector<std::string>::const_iterator &it, 
 		throw ServerConf::ParseError("Config file : Syntax error !");
 }
 
+void LocationConf::setCgi(std::vector<std::string>::const_iterator &it, std::vector<std::string> &tokens) {
+	if (!ConfigBuilder::checkDirective(it, tokens))
+	{
+		if (*it == ";")
+			throw ServerConf::ParseError("Config file : empty value not accepted !");
+		while (*it != ";")
+		{
+			if (ConfigBuilder::checkDirective(it, tokens))
+				throw ServerConf::ParseError("Config file : syntax error !");
+			std::string key = *it;
+			it++;
+			if (ConfigBuilder::checkDirective(it, tokens))
+				throw ServerConf::ParseError("Config file : syntax error !");
+			if (*it == ";")
+				throw ServerConf::ParseError("Config file : empty value not accepted !");
+			std::string value = *it;
+			it++;
+			for (std::map<std::string, std::string>::iterator its = cgi.begin(); its != cgi.end(); its++) {
+				if (its->first == key)
+					throw ServerConf::ParseError("Config file : cgi directive cant have duplicated keys !");
+			}
+			cgi.insert(std::make_pair(key, value));
+		}
+		it++;
+	}
+	else
+		throw ServerConf::ParseError("Config file : Syntax error !");
+}
+
+std::map<std::string, std::string> LocationConf::getCgi() const {
+	return (this->cgi);
+}
 
 const std::string LocationConf::getName() const {
 	return (this->name);
@@ -252,10 +284,23 @@ void LocationConf::printBodySizeLimit(std::ostream& os) const {
 void LocationConf::printRedirectUrl(std::ostream& os) const {
 	os << "|-> redirect URL : "  << this->redirectUrl << std::endl;
 }
-void LocationConf::prontListing(std::ostream& os) const {
+void LocationConf::printListing(std::ostream& os) const {
 	os << "|-> listing : " ;
 	if (this->listing)
 		os << "on" << std::endl;
 	else
 		os << "off" << std::endl;
+}
+
+void LocationConf::printCgi(std::ostream& os) const {
+	if (this->cgi.empty())
+	{
+		os << "|-> cgi : no cgi configured" << std::endl;
+		return ;
+	}
+	os << "|-> cgi : " ;
+	for (std::map<std::string, std::string>::const_iterator it = this->cgi.begin(); it != this->cgi.end() ; it++) {
+		os << it->first << " -> " << it->second << " | ";
+	}
+	os << std::endl;
 }

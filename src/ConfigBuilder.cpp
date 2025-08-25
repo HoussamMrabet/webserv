@@ -131,6 +131,7 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 	// 	throw ConfigBuilder::ErrorConfig("Error : your server should have directives to be able to run !");
 	// std::cout << server.getUploadDir() << std::endl << server << std::endl;
 	// std::cout << "_____________________________" <<std::endl;
+	server.printLocations(std::cout);
 	return (server);
 }
 
