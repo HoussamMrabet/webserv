@@ -38,6 +38,11 @@ void Request::setBodyInformations()
             this->boundaryKey = "--" + contentType.substr(boundaryPos + 9);
             this->isMultipart = true;
             this->boundaryKey.erase(this->boundaryKey.size());
+            if (this->boundaryKey.size() > 70)
+            {
+                this->message = "Invalid boundary length";
+                throw 400;
+            }
         }
     }
     if (!this->isMultipart && !this->isCGI())
@@ -68,6 +73,11 @@ void Request::parseRequest(const std::string &rawRequest)
                 this->parseRequestLine();
                 this->currentStep = HEADERS;
             }
+            else if (this->requestData.size() > 8192)
+            {
+                this->message = "Request Line Too Long";
+                throw 414;
+            }
         }
         if (this->currentStep == HEADERS)
         {
@@ -81,6 +91,11 @@ void Request::parseRequest(const std::string &rawRequest)
                     this->processResponseErrors();
                 this->setBodyInformations();
                 this->currentStep = BODY;
+            }
+            else if (this->requestData.size() > 8192)
+            {
+                this->message = "Request Headers Too Long";
+                throw 431;
             }
         }
 
