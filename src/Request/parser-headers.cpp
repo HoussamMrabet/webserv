@@ -72,4 +72,10 @@ void Request::parseHeaders()
             throw 415;
         }
     }
+
+    if (this->headers.size() > 200)
+    {
+        this->message = "Too Many Headers";
+        throw 431;
+    }
 }

@@ -1,4 +1,5 @@
 #include "Request.hpp"
+#include "WebServer.hpp"
 
 void Request::setBodyInformations()
 {
@@ -102,6 +103,25 @@ void Request::parseRequest(const std::string &rawRequest)
         if (this->currentStep == BODY)
         {            
             this->fullBody += this->requestData;
+
+            const ServerConf &server = globalServer[0];
+            std::map<std::string, LocationConf> locations = server.getLocations();
+            std::map<std::string, LocationConf>::iterator locIt = locations.find(this->location);
+
+            if (locIt != locations.end())
+            {
+                const LocationConf &location = locIt->second;
+                if (this->fullBody.size() > location.getBodySizeLimit())
+                {
+                    this->message = "Request Body Too Large";
+                    throw 413;
+                }
+            }
+            else if (this->fullBody.size() > this->contentLength || this->fullBody.size() > server.getBodySizeLimit())
+            {
+                this->message = "Request Body Too Large";
+                throw 413;
+            }
             this->body += this->requestData;
             this->currentContentLength += requestData.size();
             this->requestData.clear();
