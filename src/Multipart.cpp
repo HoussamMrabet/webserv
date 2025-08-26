@@ -84,3 +84,17 @@ void Multipart::closeFile()
     if (this->file != -1)
         close(this->file);
 }
+
+void Multipart::unlinkFile()
+{
+    if (this->file != -1)
+    {
+        close(this->file);
+        this->file = -1;
+    }
+    if (!this->fileName.empty())
+    {
+        unlink(this->fileName.c_str());
+        this->fileName.clear();
+    }
+}

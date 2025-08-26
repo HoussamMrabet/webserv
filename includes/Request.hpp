@@ -69,6 +69,7 @@ class Request
         std::string headersData;
         size_t currentContentLength;
         std::string fileName;
+        std::string createdFile;
         std::string fullBody;
         size_t bodySizeLimit;
         std::string root;

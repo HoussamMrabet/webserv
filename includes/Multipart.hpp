@@ -34,6 +34,7 @@ class Multipart
         std::map<std::string, std::string> headers;
         std::string contentType;
         t_multipartStep  currentStep;
+
         
     public:
         Multipart();
@@ -50,4 +51,5 @@ class Multipart
         t_multipartStep getCurrentStep() const;
         void writeToFile(const std::string &content);
         void closeFile();
+        void unlinkFile();
 };

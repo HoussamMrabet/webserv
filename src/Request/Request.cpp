@@ -18,7 +18,7 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
                         location(""), cgiType(""), host(""), httpVersion(""), body(""),file(-1),
                         isChunked(false), isMultipart(false), isContentLength(false), boundaryKey(""),
                         contentLength(0), requestData(""), headersData(""), currentContentLength(0),
-                        fileName(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false),
+                        fileName(""), createdFile(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false),
                         cgiFdRead(-1), cgiFdWrite(-1)
 {
     this->headers["connection"] = "keep-alive";

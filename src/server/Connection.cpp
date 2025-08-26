@@ -168,7 +168,7 @@ void Connection::sendGetResponse(){
 void Connection::printRequest(){
     if (_done){
         std::cout << "-------> Request received: <----------\n";
-        _request.printRequest();
+        // _request.printRequest();
         std::cout << "-------------------------------\n";
     }
     // else

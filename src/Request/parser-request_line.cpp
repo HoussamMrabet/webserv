@@ -111,7 +111,7 @@ void Request::parseRequestLine()
     if (this->isCGI())
     {
         std::string filename = generateRandomFileName("./");
-
+        this->createdFile = filename;
         int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600);
         if (fd == -1)
         {
