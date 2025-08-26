@@ -52,6 +52,7 @@ class Request
         std::string reqLine;
         std::string uri;
         std::string uriQueries;
+        std::string uriFileName;
         std::string location;
         std::string cgiType;
         std::string host;
@@ -95,6 +96,7 @@ class Request
         std::string getStrMethod() const;
         std::string getUri() const; // return the uri (without queries if exists)
         std::string getUriQueries() const; // return the queries from the uri "?..."
+        std::string getUriFileName() const; // return the file name from the uri
         std::string getLocation() const; // return the location matched in the config file
         std::map<std::string, std::string> getHeaders() const;
         std::string getBody() const;

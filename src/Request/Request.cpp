@@ -13,7 +13,7 @@
 #include "Request.hpp"
 #include "WebServer.hpp"
 
-Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE),
+Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE), uriFileName(""),
                         method(UNDEFINED), reqLine(""), uri(""), uriQueries(""), cgiType(""),
                         httpVersion(""), body(""), isChunked(false), isMultipart(false),
                         isContentLength(false), boundaryKey(""), contentLength(0),
@@ -66,6 +66,11 @@ std::string Request::getUri() const
 std::string Request::getUriQueries() const
 {
     return (this->uriQueries);
+}
+
+std::string Request::getUriFileName() const
+{
+    return (this->uriFileName);
 }
 
 std::string Request::getLocation() const

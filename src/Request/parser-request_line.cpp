@@ -50,6 +50,24 @@ void Request::parseRequestLine()
         this->uri = this->uri.substr(0, pos);
     }
 
+    size_t lastSlash = this->uri.find_last_of('/');
+    std::string lastPart;
+    if (lastSlash != std::string::npos && lastSlash + 1 < this->uri.size())
+    {
+        lastPart = this->uri.substr(lastSlash + 1);
+    }
+
+    if (lastPart.empty())
+        this->uriFileName = "";
+    else if (lastPart.size() > 3 && lastPart.substr(lastPart.size() - 3) == ".py")
+        this->uriFileName = lastPart;
+    else if (lastPart.size() > 4 && lastPart.substr(lastPart.size() - 4) == ".php")
+        this->uriFileName = lastPart;
+    else if (!this->uriQueries.empty())
+        this->uriFileName = lastPart;
+    else
+        this->uriFileName = "";
+
     handleUriSpecialCharacters(this->uri);
 
     const ServerConf &server = globalServer[0];
@@ -63,7 +81,7 @@ void Request::parseRequestLine()
         if (this->uri == route ||
             (this->uri.find(route) == 0 && route != "/" &&
              (route[route.size() - 1] == '/' || this->uri[route.length()] == '/')))
-            //  (route.back() == '/' || this->uri[route.length()] == '/')))
+        //  (route.back() == '/' || this->uri[route.length()] == '/')))
         {
             if (route.length() > matchedRoute.length())
             {
