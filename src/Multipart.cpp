@@ -16,16 +16,22 @@ Multipart::Multipart() : currentStep(MULTIPART_HEADERS) {}
 
 Multipart::~Multipart()
 {
-    if (file.is_open())
-        file.close();
+    if (this->file != -1)
+    {
+        close(this->file);
+        this->file = -1;
+    }
 }
 
 void Multipart::setFileName(const std::string &fileName)
 {
     this->fileName = fileName;
-    this->file.open((fileName).c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
-    if (!this->file.is_open())
+
+    this->file = open(fileName.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (this->file == -1)
+    {
         throw "Failed to open file";
+    }
 }
 
 void Multipart::setHeaders(const std::map<std::string, std::string> &headers)
@@ -65,18 +71,16 @@ t_multipartStep Multipart::getCurrentStep() const
 
 void Multipart::writeToFile(const std::string &content)
 {
-    if (!this->file.is_open())
+    if (this->file == -1)
         throw "File is not open!";
-    
-    this->file.write(content.c_str(), content.size());
-    this->file.flush();
-    
-    if (this->file.fail())
+
+    ssize_t written = ::write(this->file, content.c_str(), content.size());
+    if (written == -1)
         throw "Failed to write to the file!";
 }
 
 void Multipart::closeFile()
 {
-    if (this->file.is_open())
-        this->file.close();
+    if (this->file != -1)
+        close(this->file);
 }

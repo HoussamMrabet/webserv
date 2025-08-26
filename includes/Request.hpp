@@ -59,7 +59,7 @@ class Request
         std::string httpVersion;
         std::map<std::string, std::string> headers;
         std::string body;
-        std::ofstream file;
+        int file;
         bool isChunked;
         bool isMultipart;
         bool isContentLength;

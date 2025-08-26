@@ -21,7 +21,7 @@ void Request::parseBody()
         if (inChunk)
         {
             if (this->body.size() < this->chunkSize + 2)
-                return ;
+                return;
             else
             {
                 if (this->isMultipart && !this->isCGI())
@@ -43,8 +43,14 @@ void Request::parseBody()
                     }
                     else
                     {
-                        this->file.write(this->body.substr(0, this->chunkSize).c_str(), this->chunkSize);
-                        this->file.flush();
+                        std::string chunk = this->body.substr(0, this->chunkSize);
+
+                        ssize_t written = write(this->file, chunk.c_str(), this->chunkSize);
+                        if (written == -1)
+                        {
+                            this->message = "Failed to write to file";
+                            throw 500;
+                        }
                     }
                     this->body.erase(0, this->chunkSize + 2);
                 }
@@ -91,9 +97,18 @@ void Request::parseBody()
             }
             else
             {
-                this->file.write(this->body.c_str(), this->body.size());
-                this->file.flush();
-                this->file.close();
+                ssize_t written = write(this->file, this->body.c_str(), this->body.size());
+                if (written == -1)
+                {
+                    this->message = "Failed to write to file";
+                    throw 500;
+                }
+
+                if (close(this->file) == -1)
+                {
+                    this->message = "Failed to close file";
+                    throw 500;
+                }
             }
             this->body.clear();
             throw 200;

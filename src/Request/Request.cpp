@@ -13,11 +13,11 @@
 #include "Request.hpp"
 #include "WebServer.hpp"
 
-Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE), uriFileName(""),
-                        method(UNDEFINED), reqLine(""), uri(""), uriQueries(""), cgiType(""),
-                        httpVersion(""), body(""), isChunked(false), isMultipart(false),
-                        isContentLength(false), boundaryKey(""), contentLength(0),
-                        requestData(""), headersData(""), currentContentLength(0),
+Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE),
+                        method(UNDEFINED), reqLine(""), uri(""), uriQueries(""), uriFileName(""),
+                        location(""), cgiType(""), host(""), httpVersion(""), body(""),file(-1),
+                        isChunked(false), isMultipart(false), isContentLength(false), boundaryKey(""),
+                        contentLength(0), requestData(""), headersData(""), currentContentLength(0),
                         fileName(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false),
                         cgiFdRead(-1), cgiFdWrite(-1)
 {
@@ -29,8 +29,11 @@ Request::~Request()
 {
     for (size_t i = 0; i < multipartData.size(); ++i)
         delete multipartData[i];
-    if (file.is_open())
-        file.close();
+    if (this->file != -1)
+    {
+        close(this->file);
+        this->file = -1;
+    }
 }
 
 t_method Request::getMethod() const

@@ -15,6 +15,8 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <fcntl.h>
+#include <unistd.h>
 
 typedef enum e_multipartStep
 {
@@ -28,7 +30,7 @@ class Multipart
 {
     private:
         std::string fileName;
-        std::ofstream file;
+        int file;
         std::map<std::string, std::string> headers;
         std::string contentType;
         t_multipartStep  currentStep;

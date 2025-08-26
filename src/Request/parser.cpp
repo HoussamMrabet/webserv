@@ -48,12 +48,16 @@ void Request::setBodyInformations()
     }
     if (!this->isMultipart && !this->isCGI())
     {
-        this->file.open(generateRandomFileName(this->uploadDir + "/binary_file_").c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
-        if (!this->file.is_open())
+        std::string filename = generateRandomFileName(this->uploadDir + "/binary_file_");
+
+        int fd = open(filename.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
+        if (fd == -1)
         {
             this->message = "Failed to open file";
             throw 500;
         }
+
+        this->file = fd;
     }
 }
 
@@ -101,7 +105,7 @@ void Request::parseRequest(const std::string &rawRequest)
         }
 
         if (this->currentStep == BODY)
-        {            
+        {
             this->fullBody += this->requestData;
 
             const ServerConf &server = globalServer[0];
