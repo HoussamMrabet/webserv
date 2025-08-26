@@ -34,7 +34,8 @@ public:
     bool writeResponse();
     void printRequest(); // to remove
     void setNonBlocking();
-    std::string getRequestMethod();
+    void updateTimout();
+    // std::string getRequestMethod();
     void sendGetResponse();
     // bool cgiResponse(int (&fd_in)[], int (&fd_out)[]);
 };

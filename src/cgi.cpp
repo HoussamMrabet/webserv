@@ -1,43 +1,42 @@
 #include "cgi.hpp"
-#include <sys/time.h> // gettimeofday
-ServerConf CGI::_server;
-// Using Factory design:
+#include <sys/time.h>
 
-CGI::CGI(){}
+ServerConf CGI::_server;
+
+CGI::CGI() : _fd_in(-1), _fd_out(-1) {}
 
 CGI::~CGI(){
-    std::remove(_cgiFileName.c_str());
+    if (_fd_out != -1)
+        close(_fd_out);
+    if (!_cgiFileName.empty())
+        std::remove(_cgiFileName.c_str());
 }
 
 void CGI::generateCgiFile(){
-    timeval ttime; gettimeofday(&ttime, NULL);
+    timeval ttime; 
+    gettimeofday(&ttime, NULL);
     long long microseconds = ttime.tv_sec * 1000000LL + ttime.tv_usec;
 
-    std::stringstream ss; ss << microseconds; ss >> _cgiFileName;
-    fd_out = open(_cgiFileName.c_str(), O_CREAT | O_RDWR | O_NONBLOCK);
-    // close(fd);
-    // std::cout << _cgiFileName << std::endl;
-    // file.close();
-    // return (fd);
-
+    std::stringstream ss; 
+    ss << "/tmp/cgi_" << microseconds;
+    _cgiFileName = ss.str();
+    
+    _fd_out = open(_cgiFileName.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0644);
+    if (_fd_out == -1) {
+        perror("open cgi file");
+        throw std::runtime_error("Failed to create CGI output file");
+    }
 }
 
 std::string CGI::executeCGI(const Request& request, ServerConf& server){
-    CGI cgi;
-    cgi._server = server;
-    // (void)server;
-    cgi.importData(request);
-    std::string response = cgi.runCGI();
-    return (response);
-}
-
-void CGI::setQueryString(){
-    std::string script_path;
-    size_t pos =_scriptName.find('?');
-    if (pos != std::string::npos){
-        script_path =_scriptName.substr(0, pos);
-        _queryString =_scriptName.substr(pos + 1);
-       _scriptName = script_path;
+    try {
+        CGI cgi;
+        cgi._server = server;
+        cgi.importData(request);
+        return (cgi.runCGI());
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return (SERVERERROR);
     }
 }
 
@@ -45,163 +44,205 @@ void CGI::setContentLenght(){
     if (_requestMethod == "POST" && !_body.empty()){
         std::stringstream ss;
         ss << _body.size();
-        ss >> _contentLenght;
+        _contentLenght = ss.str();
+    } else {
+        _contentLenght = "0";
     }
 }
 
 void CGI::set_HTTP_Header(){
-    for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
+    for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); 
+         it != _headers.end(); ++it) {
         std::string envName = it->first;
-        if (it->first == "Content-Type") _contentType = it->second;
-        for (size_t i = 0; i < envName.size(); ++i)
-            envName[i] = envName[i] == '-'? '_': toupper(envName[i]);
+        if (it->first == "content-type"){
+            _contentType = it->second;
+            continue;
+        }
+        if (it->first == "content-length"){
+            // _contentType = it->second;
+            continue;
+        }
+        
+        for (size_t i = 0; i < envName.size(); ++i) {
+            envName[i] = (envName[i] == '-') ? '_' : toupper(envName[i]);
+        }
         _envs.push_back("HTTP_" + envName + "=" + it->second);
     }
 }
 
 void CGI::importData(const Request& request){
-     // env variables:
-     fd_in = request.getCgiFdRead();
+    _fd_in = request.getCgiFdRead();
     _location = request.getLocation();
+    
     std::map<std::string, LocationConf> locations = _server.getLocations();
-    // std::cout << "\n\n\n\n location : " << _location << "\n\n\n\n\n";
     LocationConf conf = locations[_location];
     std::map<std::string, std::string> cgis = conf.getCgi();
+    
     _root = conf.getRoot();
+    _scriptName = request.getUri();
+    
+    // Handle directory requests (ending with /) - use index file
+    if (_scriptName.empty() || _scriptName.back() == '/') {
+        std::vector<std::string> indexFiles = conf.getIndex();
+        if (!indexFiles.empty()) {
+            _scriptName += indexFiles[0]; // Use first index file
+        }
+    }
+    
+    _scriptFileName = _root + _scriptName;
+    // std::cout << "----> " << _scriptFileName << std::endl;
     _execPath = cgis[request.getCgiType()];
-    // if (request.getCgiType() == "py")
-    //     _execPath = cgis[".py"];
-    // else
-    //     _execPath = cgis[".php"];
+    _queryString = request.getUriQueries();
+    _requestMethod = request.getStrMethod();
+    _body = request.getBody();
+    _remoteAddr = request.getHost();
+    _headers = request.getHeaders();
 
+    if (_execPath.empty()) {
+        throw std::runtime_error("CGI interpreter not found");
+    }
+    
+    if (!validPath()) {
+        throw std::runtime_error("Invalid CGI script path");
+    }
 
-    //  if (request.getCgiType() == "py")
-    //     cgiExecPath = "/usr/bin/python3";
-    // else cgiExecPath = "";
-    _scriptName = request.getUri();        // filesystem path to script (added '.' to use current directory)
-    // getRoot();
-    _requestMethod = request.getStrMethod()/*FIX!!!*/; //add request.getRequestMethod();     // GET, POST, etc.
-    _queryString = "";       // stuff after '?' if it exists
-    _body = request.getBody();              // POST body (if any)
-    _contentLenght = "";     // _body.size()
-    _contentType = "";       // from the headers map (should be!!)
-    _remoteAddr = request.getHost();        // remote client IP
-    _headers = request.getHeaders(); // HTTP headers
-    setQueryString();
     setContentLenght();
     set_HTTP_Header();
-    _envs.push_back("SCRIPT_NAME=" + _scriptName); // SCRIPT_NAME - URL path to script
-    _envs.push_back("SCRIPT_FILENAME=" + _scriptName/* FIX!!!*/); // SCRIPT_FILENAME - full path on filesystem
+    
+    _envs.push_back("SCRIPT_NAME=" + _scriptName);
+    _envs.push_back("SCRIPT_FILENAME=" + _scriptFileName);
     _envs.push_back("REQUEST_METHOD=" + _requestMethod);
     _envs.push_back("QUERY_STRING=" + _queryString);
     _envs.push_back("CONTENT_LENGTH=" + _contentLenght);
-    _envs.push_back("CONTENT_TYPE=" + _contentType); // CONTENT_TYPE (if present)
-    _envs.push_back("REMOTE_ADDR=" + _remoteAddr); // REMOTE_ADDR - client IP
-    _envs.push_back("SERVER_PROTOCOL=HTTP/1.1"); // SERVER_PROTOCOL
-    _envs.push_back("SERVER_SOFTWARE=webserv/0.1"); // SERVER_SOFTWARE - your server name/version
-    _envs.push_back("GATEWAY_INTERFACE=CGI/1.1"); // GATEWAY_INTERFACE - CGI version
-    // add rest of env vars
-    for (size_t i = 0; i < _envs.size(); ++i)
+    _envs.push_back("CONTENT_TYPE=" + _contentType);
+    _envs.push_back("REMOTE_ADDR=" + _remoteAddr);
+    _envs.push_back("SERVER_PROTOCOL=HTTP/1.1");
+    _envs.push_back("SERVER_SOFTWARE=webserv/1.0");
+    _envs.push_back("GATEWAY_INTERFACE=CGI/1.1");
+    
+    _envc.clear();
+    for (size_t i = 0; i < _envs.size(); ++i) {
         _envc.push_back(const_cast<char*>(_envs[i].c_str()));
+    }
     _envc.push_back(NULL);
 }
 
 std::string CGI::runCGI(){
     generateCgiFile();
-    // if (!validPath()){
-    //     return (SERVERERROR);
-    // }
     printEnvironment();
+    if (_fd_in != -1) {
+        lseek(_fd_in, 0, SEEK_SET);
+    }
 
-    lseek(fd_in, 0, SEEK_SET);
     pid_t pid = fork();
     if (pid < 0){
-        perror("fork");
-        return ("fork error!\n"); // FIX error
+        throw std::runtime_error("Fork failed");
     }
-    if (pid == 0){
-        dup2(fd_in, STDIN_FILENO);
-        dup2(fd_out, STDOUT_FILENO);
-
-        close(fd_in);
-        close(fd_out);
-
-        std::string ful_path = _root + _scriptName; // fix path
-        // should get cgi path from cgi location in config file
+    
+    if (pid == 0) {
+        if (_fd_in != -1) {
+            dup2(_fd_in, STDIN_FILENO);
+        } else {
+            int dev_null = open("/dev/null", O_RDONLY);
+            if (dev_null != -1) {
+                dup2(dev_null, STDIN_FILENO);
+                close(dev_null);
+            }
+        }
         
-        // std::cout << " ------------- cgi full path -----\n";
-        // std::cout <<  ful_path << std::endl;
-        // std::cout << " ------------- exec path -----\n";
-        // std::cout <<  _execPath << std::endl;
+        dup2(_fd_out, STDOUT_FILENO);
+        dup2(STDOUT_FILENO, STDERR_FILENO);
+        
+        if (_fd_in != -1) close(_fd_in);
+        close(_fd_out);
+
         char* argv[3];
-        argv[0] = const_cast<char*>(_execPath.c_str()); // fix this! it should be argv[3] 
-        argv[1] = const_cast<char*>(ful_path.c_str()); // fix this! it should be argv[3] 
-        argv[2] = NULL; // should also containe path to exec, py or pl ... 
+        argv[0] = const_cast<char*>(_execPath.c_str());
+        argv[1] = const_cast<char*>(_scriptFileName.c_str());
+        argv[2] = NULL;
 
         execve(_execPath.c_str(), argv, &_envc[0]);
         perror("execve");
         exit(1);
     }
-    // if (_requestMethod == "POST" && !_body.empty())
-    //     write(fd_out, _body.c_str(), _body.size()); // add protection and fix blocking!
-    // close(fd_out);
-    
     
     int status;
-    waitpid(pid, &status, 0); // check status!
+    waitpid(pid, &status, 0);
     
-    lseek(fd_out, 0, SEEK_SET);
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        throw std::runtime_error("CGI script failed");
+    }
+    
+    lseek(_fd_out, 0, SEEK_SET);
     std::string cgi_output;
-    char buffer[1024];
-    size_t n; // ssise_t
-    while ((n = read(fd_out, buffer, sizeof(buffer))) > 0)
+    char buffer[4096];
+    ssize_t n;
+    
+    while ((n = read(_fd_out, buffer, sizeof(buffer))) > 0) {
         cgi_output.append(buffer, n);
-    close(fd_out);
-    // unlink(_cgiFileName);
+    }
 
-    std::string response = parseOutput(cgi_output); // add headers here
-    // std::cout << "-+-+-+-+-+-+-\n";
-    // std::cout << response << "\n";
-    // std::cout << "-+-+-+-+-+-+-\n";
-    return (response);
+    return (parseOutput(cgi_output));
 }
 
 std::string CGI::parseOutput(std::string& cgi_output){
-    // Parse headers/body from CGI output
-    // Build full HTTP response
-    // fix error: Received HTTP/0.9 when not allowed
-    std::ostringstream out;
-    out << "HTTP/1.1 200 OK \r\n";
-    out << "Content-Length: " << cgi_output.size() << "\r\n";
-    out << "Connection: keep-alive\r\n";
-    out << "\r\n";
-    out << cgi_output;
-    std::string response = out.str();
-    // std::string response = cgi_output;
-
-    return (response);
+    std::ostringstream response;
+    
+    size_t header_end = cgi_output.find("\r\n\r\n");
+    if (header_end == std::string::npos) {
+        header_end = cgi_output.find("\n\n");
+        if (header_end != std::string::npos) {
+            header_end += 2;
+        }
+    } else {
+        header_end += 4;
+    }
+    
+    if (header_end != std::string::npos) {
+        std::string headers_part = cgi_output.substr(0, header_end);
+        std::string body_part = cgi_output.substr(header_end);
+        
+        if (headers_part.find("HTTP/") == 0) {
+            return (cgi_output);
+        } else {
+            response << "HTTP/1.1 200 OK\r\n";
+            response << headers_part;
+            if (headers_part.back() != '\n') {
+                response << "\r\n";
+            }
+            response << body_part;
+        }
+    } else {
+        response << "HTTP/1.1 200 OK\r\n";
+        response << "Content-Type: text/html\r\n";
+        response << "Content-Length: " << cgi_output.size() << "\r\n";
+        response << "\r\n";
+        response << cgi_output;
+    }
+    
+    return (response.str());
 }
 
-void CGI::printEnvironment(){ // to remove later
+void CGI::printEnvironment(){
     std::cout << "...........Environment...............\n"; 
-    // std::cout << "--- > env size = " << _envs.size() << std::endl;
-    for (size_t i = 0; i < _envs.size(); i++)
-        std::cout << _envs[i] << std::endl;
+    for (size_t i = 0; i < _envc.size() - 1; i++) {
+        if (_envc[i]) {
+            std::cout << _envc[i] << std::endl;
+        }
+    }
     std::cout << "...................................\n"; 
 }
 
-
-bool CGI::setToNonBlocking(int/* pipe_fd*/){
-    // set pipe_fds used in the parent process to non blocking
-    // to avoid blocking read and write
-    // fcntl() ?
-    return (true);
-}
+// bool CGI::setToNonBlocking(int fd){
+//     int flags = fcntl(fd, F_GETFL);
+//     if (flags == -1) return (false);
+//     return ((fcntl(fd, F_SETFL, flags | O_NONBLOCK) != -1));
+// }
 
 bool CGI::validPath(){
-    // no path traversal ../?
-    // file is executable: access(_scriptName.c_str(), X_OK) ?
-    // no need to check for valid path if execve returns error in all error cases?
-    // Check if it's within the allowed CGI directory if there is one??
+    if (access(_scriptFileName.c_str(), F_OK) != 0) return (false);
+    if (access(_scriptFileName.c_str(), R_OK) != 0) return (false);
+    if (access(_execPath.c_str(), X_OK) != 0) return (false);
+    if (_scriptFileName.find("../") != std::string::npos) return (false);
     return (true);
 }

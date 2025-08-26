@@ -21,15 +21,16 @@
 #include <cstdio> // perror
 #include <cstdlib> // exit
 #include <fcntl.h>  // fcntl, O_NONBLOCK
+#include <sys/time.h> // gettimeofday
 #include <vector>
-#include "ServerConf.hpp"
 #include <map>
+#include "ServerConf.hpp"
 // #include <unistd.h> // for close, read, write
 // #include <cerrno>   // for errno
 
 #define SERVERERROR "HTTP/1.1 500 Internal Server Error\r\n" \
                     "Content-Type: text/plain\r\n" \
-                    "Content-Length: 22\r\n\r\n" \
+                    "Content-Length: 19\r\n\r\n" \
                     "Invalid CGI script."
 
 class CGI{ // should class name be camel-case??
@@ -38,6 +39,7 @@ class CGI{ // should class name be camel-case??
         // env variables:
         static ServerConf _server;
         std::string _scriptName;        // filesystem path to script
+        std::string _scriptFileName;        // full path to script
         std::string _location;
         std::string _execPath;
         std::string _root;
@@ -47,8 +49,7 @@ class CGI{ // should class name be camel-case??
         std::string _contentLenght;     // _body.size()
         std::string _contentType;       // from the headers map (should be!!)
         std::string _remoteAddr;        // remote client IP
-        int fd_in;
-        int fd_out;
+        int _fd_in, _fd_out;
         /* To fix the path to file, join with root
         // if there was no root add a default path!
         std::string _location;
@@ -67,7 +68,7 @@ class CGI{ // should class name be camel-case??
         // void getRoot();
         void generateCgiFile();
         void importData(const Request&);
-        void setQueryString();
+        // void setQueryString();
         void setContentLenght();
         void set_HTTP_Header();
         void printEnvironment(); // to remove later

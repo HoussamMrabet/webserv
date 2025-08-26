@@ -12,6 +12,7 @@ bool WebServ::startServer(ServerConf& server){
         int server_fd = Socket::StartSocket(it->first, it->second);
         webserv.addPollFd(server_fd, POLLIN, "listen");
         std::cout << "Listening on " << it->first << ":" << it->second << "..." << std::endl;
+        std::cout << "Server socket  (fd "<< server_fd << ")" << std::endl;
     }
     webserv.pollLoop();
     return (true); // check return value value for all functions or remove and use exception!!
@@ -80,7 +81,7 @@ void WebServ::pollLoop(){
 }
 
 bool WebServ::acceptConnection(int fd){
-    std::cout << "new connection fd " << fd << " " << _server.getRoot() << std::endl; 
+    // std::cout << "new connection fd " << fd << " " << _server.getRoot() << std::endl; 
     Connection connection(fd, _server);
     int connection_fd = connection.getFd();
     _connections.insert(std::make_pair(connection_fd, connection));

@@ -14,14 +14,14 @@ Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
                                                     _done(false)/*....*/ {
     _fd = accept(fd, NULL, NULL);
     _server = server;
-    std::cout << "Connection constructor fd " << _fd << "\n";
-    std::cout << _server.getRoot() << std::endl;
+    // std::cout << "Connection constructor fd " << _fd << "\n";
+    // std::cout << _server.getRoot() << std::endl;
     if (_fd == -1) {
         perror("Accept failed");
         exit(1);/// check !!
     }
     setNonBlocking();
-    std::cout << "New client connected!\n" << std::endl;
+    std::cout << "New connection (fd " << _fd << ")\n" << std::endl;
 }
 
 Connection::Connection(const Connection& connection){
@@ -45,8 +45,8 @@ bool Connection::readRequest(){
         {
             _buffer.append(buffer, bytesRead);
             _request.parseRequest(_buffer);
-            _time = time(NULL);  // update activity timestamp
             _buffer.clear();
+            updateTimout();  // update activity timestamp
             // else continue;
         }
         else
@@ -78,9 +78,11 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     {
         // std:: cout << "IT IS CGI!!!!!\n";
         _response = CGI::executeCGI(_request, _server);
+        updateTimout();
     }
     else if (_request.getStrMethod() == "GET"){ // can use pointer to member function 
         sendGetResponse();
+        updateTimout();
         return (true);
     }
     if (_response.empty())
@@ -112,22 +114,44 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
 // }
 
 void Connection::sendGetResponse(){
-    char pwd[100];
-    getcwd(pwd, 100);
-    std::cout << "---> fd = " << _fd << std::endl;
+    // char pwd[100];
+    // getcwd(pwd, 100);
+    // std::cout << "---> fd = " << _fd << std::endl;
 //    this->_server.prin
     std::string path = this->_server.getRoot();
     std::cout << "------ Path = " << path << std::endl;
+    std::string uri = _request.getUri();
+    std::cout << "------ uri = " << uri << std::endl;
     std::vector<std::string> indexes = this->_server.getIndex();
-    std::string index = indexes[0];
-    std::cout << "------ index = " << index << std::endl;
-    std::string full_path = pwd + path + index;
+    std::string index = "";
+    if (uri == "/" && indexes.size()){
+        index = indexes[0];
+    }
+    // check here for file inside path is it accesible (use stat!!) 
+
+
+
+    // else{
+    //     int pos = uri.rfind("/");
+    //     std::string fileName = uri.substr(pos +1);
+    //     std::cout << "---- file name " << fileName << std::endl;
+    //     std::vector<std::string>::iterator it = std::find(indexes.begin(), indexes.end(), fileName);
+    //     if (it == indexes.end()){
+    //         std::cout << "file not found!!\n";
+    //         return ;
+    //     }
+    //     // else index = indexes[0];
+    //     // index = indexes[fileName];
+    // }
+    // std::cout << "------ index = " << index << std::endl;
+    // // std::string full_path = pwd + path + index;
+    std::string full_path = path + uri + index;
     std::cout << "------ full_path = " << full_path << std::endl;
     std::ifstream file(full_path.c_str(), std::ios::in | std::ios::binary);
-    std::ostringstream get_file;
+    std::stringstream get_file;
     get_file << file.rdbuf();
     
-    std::ostringstream get_response;
+    std::stringstream get_response;
     get_response << "HTTP/1.1 200 OK\r\n";
     get_response << "Content-Type: text.html\r\n";
     get_response << "Content-Lenght:" << get_file.str().size() << "\r\n";
@@ -136,13 +160,14 @@ void Connection::sendGetResponse(){
     get_response << get_file.str();
     
     _response = get_response.str();
-    std::cout << "------ response = " << _response << std::endl;
+    std::cout << "------ response --- \n " << _response << std::endl;
+    std::cout << "---------------------\n";
     send(_fd, _response.c_str(), _response.size(), 0);
 }
 
 void Connection::printRequest(){
     if (_done){
-        std::cout << "-------> Received: <----------\n";
+        std::cout << "-------> Request received: <----------\n";
         _request.printRequest();
         std::cout << "-------------------------------\n";
     }
@@ -162,4 +187,8 @@ void Connection::setNonBlocking() {
     // fcntl(_fd, F_SETFL, O_NONBLOCK);
     fcntl(_fd, F_SETFL, fcntl(_fd, F_GETFL, 0) | O_NONBLOCK);
 
+}
+
+void Connection::updateTimout(){
+    _time = time(NULL);
 }
