@@ -68,16 +68,19 @@ void CGI::importData(const Request& request){
     LocationConf conf = locations[_location];
     std::map<std::string, std::string> cgis = conf.getCgi();
     _root = conf.getRoot();
-    if (request.getCgiType() == "py")
-        _execPath = cgis[".py"];
-    else
-        _execPath = cgis[".php"];
+    _execPath = cgis[request.getCgiType()];
+    // if (request.getCgiType() == "py")
+    //     _execPath = cgis[".py"];
+    // else
+    //     _execPath = cgis[".php"];
+
+
     //  if (request.getCgiType() == "py")
     //     cgiExecPath = "/usr/bin/python3";
     // else cgiExecPath = "";
     _scriptName = request.getUri();        // filesystem path to script (added '.' to use current directory)
     // getRoot();
-    _requestMethod = "POST"/*FIX!!!*/; //add request.getRequestMethod();     // GET, POST, etc.
+    _requestMethod = request.getStrMethod()/*FIX!!!*/; //add request.getRequestMethod();     // GET, POST, etc.
     _queryString = "";       // stuff after '?' if it exists
     _body = request.getBody();              // POST body (if any)
     _contentLenght = "";     // _body.size()

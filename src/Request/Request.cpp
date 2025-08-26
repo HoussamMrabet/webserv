@@ -38,6 +38,21 @@ t_method Request::getMethod() const
     return (this->method);
 }
 
+std::string Request::getStrMethod() const
+{
+    switch (this->method)
+    {
+    case GET:
+        return "GET";
+    case POST:
+        return "POST";
+    case DELETE:
+        return "DELETE";
+    default:
+        return "UNDEFINED";
+    }
+}
+
 int Request::getStatusCode() const
 {
     return (this->statusCode);

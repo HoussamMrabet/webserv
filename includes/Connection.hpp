@@ -17,7 +17,7 @@ private:
     int _fd;
     time_t _time;
     std::string _buffer;
-    Request* _request;
+    Request _request;
     // Response _response;
     std::string _response;
     static ServerConf _server;

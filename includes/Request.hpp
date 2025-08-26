@@ -85,12 +85,14 @@ class Request
         void processResponseErrors();
         void parseMultipart(bool isChunked = false);
         void parseMultipartHeaders(const std::string &multipartHeaders);
-
+        Request(const Request&);            // don't define!!!
+        Request& operator=(const Request&); // don't define!!!
     public:
         Request();
         ~Request();
         
         t_method getMethod() const;
+        std::string getStrMethod() const;
         std::string getUri() const; // return the uri (without queries if exists)
         std::string getUriQueries() const; // return the queries from the uri "?..."
         std::string getLocation() const; // return the location matched in the config file

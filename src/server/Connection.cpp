@@ -10,7 +10,7 @@ ServerConf Connection::_server;
                          "Received!!\r\n" // Connection keep-alive but still ends !!!!!
 
 
-Connection::Connection(int fd, ServerConf& server): _time(time(NULL)), _request(new Request()),
+Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
                                                     _done(false)/*....*/ {
     _fd = accept(fd, NULL, NULL);
     _server = server;
@@ -28,7 +28,7 @@ Connection::Connection(const Connection& connection){
     _fd = connection._fd;
     _time = connection._time;
     _buffer = connection._buffer;
-    _request = connection._request;
+    // _request = connection._request;
     _done = connection._done;
 }
 
@@ -38,20 +38,20 @@ bool Connection::readRequest(){
     char buffer[1024] = {0};
     ssize_t bytesRead = 0;
 
-    while (!_request->isDone())
+    while (!_request.isDone())
     {
         bytesRead = read(_fd, buffer, sizeof(buffer));
         if (bytesRead > 0)
         {
             _buffer.append(buffer, bytesRead);
-            _request->parseRequest(_buffer);
+            _request.parseRequest(_buffer);
             _time = time(NULL);  // update activity timestamp
             _buffer.clear();
             // else continue;
         }
         else
         {
-            _request->parseRequest();
+            _request.parseRequest();
             // _buffer.clear();
             std::cout << "Client disconnected!" << std::endl;
             // return (false);
@@ -64,30 +64,30 @@ bool Connection::readRequest(){
         //     return (false);
         // }
     }
-    _done = _request->isDone();
-    // _request->printRequest();
+    _done = _request.isDone();
+    // _request.printRequest();
 
 
-    // if (_request->isDone()) // remove from here and add to webserv in order to add pipe_fds to pollfds
+    // if (_request.isDone()) // remove from here and add to webserv in order to add pipe_fds to pollfds
     //     _response = CGI::executeCGI(*_request);
     return (true);
 }
 
 bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiResponse!!!
-    if (_request->isCGI())
+    if (_request.isCGI())
     {
         // std:: cout << "IT IS CGI!!!!!\n";
-        _response = CGI::executeCGI(*_request, _server);
+        _response = CGI::executeCGI(_request, _server);
     }
-    else if (getRequestMethod() == "GET"){
+    else if (_request.getStrMethod() == "GET"){ // can use pointer to member function 
         sendGetResponse();
         return (true);
     }
     if (_response.empty())
         _response = DEFAULT_RESPONSE;
         // _response = "Response sent from server!!!\r\n";
-    // std::cout << "status code : " << _request->getStatusCode() << std::endl;
-    // _response = Response::getResponse(_request->getStatusCode());
+    // std::cout << "status code : " << _request.getStatusCode() << std::endl;
+    // _response = Response::getResponse(_request.getStatusCode());
     // ssize_t b = ;
     if (write(_fd, _response.c_str(), _response.length()) == -1){
         perror("Write failed");
@@ -96,20 +96,20 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     return (true);
 }
 
-std::string Connection::getRequestMethod(){
-    t_method method = _request->getMethod();
-    switch (method)
-    {
-        case GET:
-            return "GET";
-        case POST:
-            return "POST";
-        case DELETE:
-            return "DELETE";
-        default:
-            return "UNDEFINED";
-    }
-}
+// std::string Connection::getRequestMethod(){
+//     t_method method = _request.getMethod();
+//     switch (method)
+//     {
+//         case GET:
+//             return "GET";
+//         case POST:
+//             return "POST";
+//         case DELETE:
+//             return "DELETE";
+//         default:
+//             return "UNDEFINED";
+//     }
+// }
 
 void Connection::sendGetResponse(){
     char pwd[100];
@@ -143,7 +143,7 @@ void Connection::sendGetResponse(){
 void Connection::printRequest(){
     if (_done){
         std::cout << "-------> Received: <----------\n";
-        _request->printRequest();
+        _request.printRequest();
         std::cout << "-------------------------------\n";
     }
     // else

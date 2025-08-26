@@ -86,9 +86,9 @@ void Request::parseRequestLine()
     }
 
     if (this->uri.length() >= 4 && this->uri.substr(this->uri.length() - 4) == ".php")
-        this->cgiType = "php";
+        this->cgiType = ".php";
     else if (this->uri.length() >= 3 && this->uri.substr(this->uri.length() - 3) == ".py")
-        this->cgiType = "py";
+        this->cgiType = ".py";
 
     if (this->isCGI())
     {

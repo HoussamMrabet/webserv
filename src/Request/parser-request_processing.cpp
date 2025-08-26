@@ -13,24 +13,25 @@
 #include "Request.hpp"
 #include "WebServer.hpp"
 
-std::string methodToString(t_method method)
-{
-    switch (method)
-    {
-    case GET:
-        return "GET";
-    case POST:
-        return "POST";
-    case DELETE:
-        return "DELETE";
-    default:
-        return "UNDEFINED";
-    }
-}
+// std::string methodToString(t_method method)
+// {
+//     switch (method)
+//     {
+//     case GET:
+//         return "GET";
+//     case POST:
+//         return "POST";
+//     case DELETE:
+//         return "DELETE";
+//     default:
+//         return "UNDEFINED";
+//     }
+// }
 
 void Request::processResponseErrors()
 {
-    std::string methodStr = methodToString(this->method);
+    std::string methodStr = getStrMethod();
+    // std::string methodStr = methodToString(this->method);
 
     const ServerConf &server = globalServer[0];
 
