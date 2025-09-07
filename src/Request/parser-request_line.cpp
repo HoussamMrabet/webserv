@@ -39,9 +39,8 @@ void Request::parseRequestLine()
     else
     {
         this->message = "Invalid Method";
-        throw 400;
+        throw 405;
     }
-
     size_t pos = this->uri.find('?');
 
     if (pos != std::string::npos)

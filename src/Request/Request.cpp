@@ -25,6 +25,7 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
     const ServerConf &server = globalServer[0];
     this->uploadDir = server.getUploadDir();
 }
+
 Request::~Request()
 {
     for (size_t i = 0; i < multipartData.size(); ++i)
@@ -34,6 +35,11 @@ Request::~Request()
         close(this->file);
         this->file = -1;
     }
+}
+
+std::string Request::getMessage() const
+{
+    return (this->message);
 }
 
 t_method Request::getMethod() const

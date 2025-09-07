@@ -22,6 +22,7 @@ private:
     std::string _response;
     static ServerConf _server;
     bool _done;
+    bool _responseDone;
 
 public:
     Connection(int, ServerConf&);
@@ -31,12 +32,19 @@ public:
     time_t getTime() const;
     bool readRequest();
     bool isDone();
+    bool isResponseDone();
     bool writeResponse();
     void printRequest(); // to remove
     void setNonBlocking();
     void updateTimout();
     // std::string getRequestMethod();
-    void sendGetResponse();
+    void sendGetResponse(Request    &request, ServerConf &server);
+    void sendPostResponse(Request   &request, int status_code, ServerConf &server);
+    // void sentPostResponse(Request   &request, ServerConf &server);
+    // void sendDeleteResponse(Request &request, ServerConf &server);
+    // void sendAutoIndex(Response &response_obj, const std::string &full_path, const std::string &requested_path);
+    void sendErrorPage(Request &request, int code, ServerConf &server);
+    std::string getConnectionHeader(Request &request);
     // bool cgiResponse(int (&fd_in)[], int (&fd_out)[]);
 };
 

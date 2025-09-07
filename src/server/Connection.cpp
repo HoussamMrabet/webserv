@@ -1,6 +1,8 @@
 #include "Connection.hpp"
+#include <algorithm>
 ServerConf Connection::_server;
 // ServerConf Connection::_server = ConfigBuilder::generateServers("config/config.conf").back();
+struct stat fileStat;
 
 #define DEFAULT_RESPONSE "HTTP/1.1 200 OK\r\n" \
                          "Content-Length: 10\r\n" \
@@ -11,7 +13,8 @@ ServerConf Connection::_server;
 
 
 Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
-                                                    _done(false)/*....*/ {
+                                                    _done(false),
+                                                    _responseDone(false)/*....*/ {
     _fd = accept(fd, NULL, NULL);
     _server = server;
     // std::cout << "Connection constructor fd " << _fd << "\n";
@@ -30,6 +33,7 @@ Connection::Connection(const Connection& connection){
     _buffer = connection._buffer;
     // _request = connection._request;
     _done = connection._done;
+    _responseDone = connection._responseDone;
 }
 
 int Connection::getFd() const{ return (_fd);}
@@ -38,7 +42,7 @@ bool Connection::readRequest(){
     char buffer[1024] = {0};
     ssize_t bytesRead = 0;
 
-    while (!_request.isDone())
+    if  (!_request.isDone() && this->_responseDone == false)
     {
         bytesRead = read(_fd, buffer, sizeof(buffer));
         if (bytesRead > 0)
@@ -54,6 +58,8 @@ bool Connection::readRequest(){
             _request.parseRequest();
             // _buffer.clear();
             std::cout << "Client disconnected!" << std::endl;
+            _done = true;
+            _responseDone = true;
             // return (false);
         }
         // else
@@ -80,10 +86,29 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         _response = CGI::executeCGI(_request, _server);
         updateTimout();
     }
-    else if (_request.getStrMethod() == "GET"){ // can use pointer to member function 
-        sendGetResponse();
+    else if ( _request.getStatusCode() != 200){
+        std::cout << "Error status code: " << _request.getStatusCode()  << std::endl;
+        std::cout << "Error message: " << _request.getMessage()  << std::endl;
+        sendErrorPage(_request, _request.getStatusCode(), _server);
+        // std::cout << _response << std::endl;
         updateTimout();
-        return (true);
+    }
+    else if (_request.getStrMethod() == "POST"){
+        // sentPostResponse(_request, _server);
+        sendPostResponse(_request, _request.getStatusCode(), _server);
+        std::cout << _response << std::endl;
+        updateTimout();
+    }
+    else if (_request.getStrMethod() == "DELETE"){
+        // sendDeleteResponse(_request, _server);
+        sendErrorPage(_request, 501, _server); // not implemented
+        std::cout << _response << std::endl;
+        updateTimout();
+    }
+    else if (_request.getStrMethod() == "GET"){ // can use pointer to member function 
+        sendGetResponse(_request, _server);
+        std::cout << _response << std::endl;
+        updateTimout();
     }
     if (_response.empty())
         _response = DEFAULT_RESPONSE;
@@ -95,6 +120,16 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         perror("Write failed");
         return (false);
     } // send part by part using a buffer, while sum of buffer size sent less that responce size?
+    
+    // Check if connection should be closed based on the response headers
+    std::string connection_header = getConnectionHeader(_request);
+    if (connection_header == "close") {
+        _responseDone = true;
+    } else {
+        // For keep-alive connections, we don't mark response as done
+        // The connection can be reused for more requests
+        _responseDone = false;
+    }
     return (true);
 }
 
@@ -113,56 +148,180 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
 //     }
 // }
 
-void Connection::sendGetResponse(){
-    // char pwd[100];
-    // getcwd(pwd, 100);
-    // std::cout << "---> fd = " << _fd << std::endl;
-//    this->_server.prin
-    std::string path = this->_server.getRoot();
-    std::cout << "------ Path = " << path << std::endl;
-    std::string uri = _request.getUri();
-    std::cout << "------ uri = " << uri << std::endl;
-    std::vector<std::string> indexes = this->_server.getIndex();
-    std::string index = "";
-    if (uri == "/" && indexes.size()){
-        index = indexes[0];
+void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
+    Response response_obj;
+    std::string error_page;
+    std::map<std::string, std::string> error_pages = server.getErrorPages();
+    std::string connection_header = getConnectionHeader(request);
+    
+    // Check if there's a custom error page defined in config
+    if (error_pages.find(std::to_string(code)) != error_pages.end()) {
+        error_page = error_pages[std::to_string(code)];
+        // Attach ./www/errors/ to the error page path
+        std::string full_error_path = "./www/errors/" + error_page;
+        if (response_obj.fileExists(full_error_path)) {
+            response_obj.setStatus(code);
+            response_obj.setBodyFromFile(full_error_path);
+            response_obj.setHeader("Content-Type", response_obj.getContentType(full_error_path));
+            response_obj.setHeader("Connection", connection_header);
+            _response = response_obj.buildResponse();
+            return;
+        }
     }
-    // check here for file inside path is it accesible (use stat!!) 
-
-
-
-    // else{
-    //     int pos = uri.rfind("/");
-    //     std::string fileName = uri.substr(pos +1);
-    //     std::cout << "---- file name " << fileName << std::endl;
-    //     std::vector<std::string>::iterator it = std::find(indexes.begin(), indexes.end(), fileName);
-    //     if (it == indexes.end()){
-    //         std::cout << "file not found!!\n";
-    //         return ;
-    //     }
-    //     // else index = indexes[0];
-    //     // index = indexes[fileName];
-    // }
-    // std::cout << "------ index = " << index << std::endl;
-    // // std::string full_path = pwd + path + index;
-    std::string full_path = path + uri + index;
-    std::cout << "------ full_path = " << full_path << std::endl;
-    std::ifstream file(full_path.c_str(), std::ios::in | std::ios::binary);
-    std::stringstream get_file;
-    get_file << file.rdbuf();
     
-    std::stringstream get_response;
-    get_response << "HTTP/1.1 200 OK\r\n";
-    get_response << "Content-Type: text.html\r\n";
-    get_response << "Content-Lenght:" << get_file.str().size() << "\r\n";
-    get_response << "Connection: keep-alive\r\n";
-    get_response << "\r\n";
-    get_response << get_file.str();
+    // Fallback: check for standard error pages in ./www/errors/
+    std::string standard_error_page = "./www/errors/" + std::to_string(code) + ".html";
+    if (response_obj.fileExists(standard_error_page)) {
+        response_obj.setStatus(code);
+        response_obj.setBodyFromFile(standard_error_page);
+        response_obj.setHeader("Content-Type", response_obj.getContentType(standard_error_page));
+        response_obj.setHeader("Connection", connection_header);
+        _response = response_obj.buildResponse();
+        return;
+    }
     
-    _response = get_response.str();
-    std::cout << "------ response --- \n " << _response << std::endl;
-    std::cout << "---------------------\n";
-    send(_fd, _response.c_str(), _response.size(), 0);
+    // Default error message if no custom page is found or file doesn't exist
+    response_obj.setStatus(code);
+    response_obj.setBody("<html><body><h1>" + std::to_string(code) + " " + response_obj.getStatusMessage(code) + "</h1></body></html>");
+    response_obj.setHeader("Content-Type", "text/html");
+    response_obj.setHeader("Connection", connection_header);
+    _response = response_obj.buildResponse();
+}
+
+void Connection::sendGetResponse(Request &request  , ServerConf &server){
+    // Create a Response object and build it step by step
+    Response response_obj;
+    std::string connection_header = getConnectionHeader(request);
+
+    std::string requested_path = request.getUri();
+    std::string document_root;
+    std::string full_path;
+    
+    // Find the matching location configuration
+    std::string location_path = "/";
+    std::map<std::string, LocationConf> locations = server.getLocations();
+    
+    // Find the best matching location (longest prefix match)
+    for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); 
+         it != locations.end(); ++it) {
+        if (requested_path.find(it->first) == 0 && it->first.length() > location_path.length()) {
+            location_path = it->first;
+        }
+    }
+    
+    // Always use ./www as the document root
+    document_root = "./www";
+    
+    // Construct full path - handle the case where requested_path starts with '/'
+    if (requested_path[0] == '/') {
+        full_path = document_root + requested_path;
+    } else {
+        full_path = document_root + "/" + requested_path;
+    }
+    
+    std::cout << "Requested path: " << requested_path << std::endl;
+    std::cout << "Document root: " << document_root << std::endl;
+    std::cout << "Full path: " << full_path << std::endl;
+    
+    if (stat(full_path.c_str(), &fileStat) == 0) {
+        // File exists
+        if (S_ISREG(fileStat.st_mode)) {
+            response_obj.setStatus(200);
+            response_obj.setBodyFromFile(full_path);
+            response_obj.setHeader("Connection", connection_header);
+            _response = response_obj.buildResponse();
+            return;
+        } else if (S_ISDIR(fileStat.st_mode)) {
+            bool auto_index = false;
+            std::vector<std::string> index_files;
+            
+            if (locations.find(location_path) != locations.end()) {
+                auto_index = locations.at(location_path).getAutoIndex();
+                index_files = locations.at(location_path).getIndex();
+            }
+            
+            if (index_files.empty()) {
+                index_files = server.getIndex();
+            }
+            
+            // Try to serve index files
+            bool index_found = false;
+            for (std::vector<std::string>::const_iterator it = index_files.begin(); 
+                 it != index_files.end(); ++it) {
+                std::string index_path = full_path;
+                if (index_path[index_path.length() - 1] != '/') {
+                    index_path += "/";
+                }
+                index_path += *it;
+                
+                if (stat(index_path.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode)) {
+                    response_obj.setStatus(200);
+                    response_obj.setBodyFromFile(index_path);
+                    response_obj.setHeader("Connection", connection_header);
+                    _response = response_obj.buildResponse();
+                    return;
+                }
+            }
+            
+            if (!index_found) {
+                if (auto_index) {
+                    response_obj.setStatus(200);
+                    response_obj.setHeader("Content-Type", "text/html");
+                    response_obj.setHeader("Connection", connection_header);
+                    response_obj.setBody("<html><body><h1>Directory listing not implemented yet</h1></body></html>");
+                    _response = response_obj.buildResponse();
+                    return;
+                } else {
+                    // Directory listing forbidden
+                    response_obj.setStatus(403);
+                    response_obj.setBody("Forbidden - Directory listing disabled");
+                    response_obj.setHeader("Content-Type", "text/html");
+                    response_obj.setHeader("Connection", connection_header);
+                    _response = response_obj.buildResponse();
+                    return;
+                }
+            }
+            std::cout << "It's a directory." << std::endl;
+        } else {
+            std::cout << "It's neither a regular file nor a directory." << std::endl;
+            response_obj.setStatus(403);
+            response_obj.setBody("Forbidden");
+            response_obj.setHeader("Content-Type", "text/html");
+            response_obj.setHeader("Connection", connection_header);
+            _response = response_obj.buildResponse();
+            return;
+        }
+    } else {
+        // File does not exist
+        std::cout << "File does not exist: " << full_path << std::endl;
+        response_obj.setStatus(404);
+        response_obj.setBody("File not found");
+        response_obj.setHeader("Content-Type", "text/html");
+        response_obj.setHeader("Connection", connection_header);
+        _response = response_obj.buildResponse();
+        return;
+    }   
+    
+    // This should not be reached now since we handle all cases above
+    _response = response_obj.buildResponse();
+}
+
+void Connection::sendPostResponse(Request &request, int status_code, ServerConf &server) {
+    Response response_obj;
+    std::string connection_header = getConnectionHeader(request);
+    (void)server; // Suppress unused parameter warning
+    
+    // Since POST logic is already handled in Request class, just send success response
+    response_obj.setStatus(status_code);
+    response_obj.setHeader("Content-Type", "text/html");
+    response_obj.setHeader("Connection", connection_header);
+    
+    std::string success_body = "<html><body><h1>POST Request Successful</h1>"
+                              "<p>Your POST request has been processed successfully.</p>"
+                              "</body></html>";
+    
+    response_obj.setBody(success_body);
+    _response = response_obj.buildResponse();
 }
 
 void Connection::printRequest(){
@@ -179,6 +338,8 @@ ServerConf Connection::getServer(){ return (_server);}
 
 bool Connection::isDone(){ return (_done);}
 
+bool Connection::isResponseDone(){ return (_responseDone);}
+
 time_t Connection::getTime() const { return _time; }
 
 void Connection::setNonBlocking() {
@@ -191,4 +352,19 @@ void Connection::setNonBlocking() {
 
 void Connection::updateTimout(){
     _time = time(NULL);
+}
+
+std::string Connection::getConnectionHeader(Request &request) {
+    std::string connection_header = request.getHeader("Connection");
+    
+    // Convert to lowercase for case-insensitive comparison
+    std::transform(connection_header.begin(), connection_header.end(), connection_header.begin(), ::tolower);
+    
+    // If the request explicitly asks for close, return close
+    if (connection_header == "close") {
+        return "close";
+    }
+    
+    // Default to keep-alive for HTTP/1.1
+    return "keep-alive";
 }

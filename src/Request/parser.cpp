@@ -46,6 +46,8 @@ void Request::setBodyInformations()
             }
         }
     }
+    if (this->getMethod() != POST)
+                throw 200;
     if (!this->isMultipart && !this->isCGI())
     {
         std::string filename = generateRandomFileName(this->uploadDir + "/binary_file_");
@@ -106,6 +108,9 @@ void Request::parseRequest(const std::string &rawRequest)
 
         if (this->currentStep == BODY)
         {
+            if (this->getMethod() != POST)
+                throw 200;
+           
             this->fullBody += this->requestData;
 
             const ServerConf &server = globalServer[0];

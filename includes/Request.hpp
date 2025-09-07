@@ -111,6 +111,7 @@ class Request
         bool isCGI() const; // check if the request is a cgi or not
         void parseRequest(const std::string& rawRequest = "");
         void printRequest();
+        std::string getMessage() const;
 };
 
 void handleUriSpecialCharacters(std::string &uri);
