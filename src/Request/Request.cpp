@@ -23,7 +23,7 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
 {
     this->headers["connection"] = "keep-alive";
     const ServerConf &server = globalServer[0];
-    this->uploadDir = server.getUploadDir();
+    this->uploadDir = server.getRoot() + server.getUploadDir();
 }
 
 Request::~Request()
