@@ -42,7 +42,7 @@ bool Connection::readRequest(){
     char buffer[1024] = {0};
     ssize_t bytesRead = 0;
 
-    if  (!_request.isDone() && this->_responseDone == false)
+    while  (!_request.isDone() && this->_responseDone == false)
     {
         bytesRead = read(_fd, buffer, sizeof(buffer));
         if (bytesRead > 0)
@@ -57,7 +57,7 @@ bool Connection::readRequest(){
         {
             _request.parseRequest();
             // _buffer.clear();
-            std::cout << "Client disconnected!" << std::endl;
+            // std::cout << "Client disconnected!" << std::endl;
             _done = true;
             _responseDone = true;
             // return (false);
