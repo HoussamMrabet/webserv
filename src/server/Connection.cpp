@@ -14,7 +14,8 @@ struct stat fileStat;
 
 Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
                                                     _done(false),
-                                                    _responseDone(false)/*....*/ {
+                                                    _responseDone(false),
+                                                    _isChunkedResponse(false)/*....*/ {
     _fd = accept(fd, NULL, NULL);
     _server = server;
     // std::cout << "Connection constructor fd " << _fd << "\n";
@@ -34,6 +35,7 @@ Connection::Connection(const Connection& connection){
     // _request = connection._request;
     _done = connection._done;
     _responseDone = connection._responseDone;
+    _isChunkedResponse = connection._isChunkedResponse;
 }
 
 int Connection::getFd() const{ return (_fd);}
@@ -80,7 +82,14 @@ bool Connection::readRequest(){
 }
 
 bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiResponse!!!
-    if (_request.isCGI())
+    // Check for redirects first
+    std::string redirect_url = checkForRedirect(_request, _server);
+    if (!redirect_url.empty()) {
+        _response = sendRedirectResponse(_request, redirect_url, _server);
+        std::cout << "Redirect Response:\n" << _response << std::endl;
+        updateTimout();
+    }
+    else if (_request.isCGI())
     {
         // std:: cout << "IT IS CGI!!!!!\n";
         _response = CGI::executeCGI(_request, _server);
@@ -107,28 +116,61 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     }
     else if (_request.getStrMethod() == "GET"){ // can use pointer to member function 
         sendGetResponse(_request, _server);
-        std::cout << _response << std::endl;
+        if (!_isChunkedResponse) {
+            std::cout << _response << std::endl;
+        }
         updateTimout();
     }
-    if (_response.empty())
-        _response = DEFAULT_RESPONSE;
-        // _response = "Response sent from server!!!\r\n";
-    // std::cout << "status code : " << _request.getStatusCode() << std::endl;
-    // _response = Response::getResponse(_request.getStatusCode());
-    // ssize_t b = ;
-    if (write(_fd, _response.c_str(), _response.length()) == -1){
-        perror("Write failed");
-        return (false);
-    } // send part by part using a buffer, while sum of buffer size sent less that responce size?
     
-    // Check if connection should be closed based on the response headers
-    std::string connection_header = getConnectionHeader(_request);
-    if (connection_header == "close") {
+    // Handle response sending
+    if (_isChunkedResponse) {
+        // For chunked responses, send all chunks in a loop
+        std::cout << "Starting chunked transfer..." << std::endl;
+        size_t total_sent = 0;
+        
+        while (!_response_obj.isFinished()) {
+            std::string chunk = _response_obj.getResponseChunk();
+            if (!chunk.empty()) {
+                ssize_t bytes_sent = write(_fd, chunk.c_str(), chunk.length());
+                if (bytes_sent == -1) {
+                    perror("Chunked write failed");
+                    return (false);
+                } else if (bytes_sent == 0) {
+                    std::cout << "Connection closed by peer during chunked transfer" << std::endl;
+                    return (false);
+                } else if (bytes_sent < (ssize_t)chunk.length()) {
+                    // Partial write - handle this case
+                    std::cout << "Partial write: " << bytes_sent << "/" << chunk.length() << " bytes" << std::endl;
+                    // For now, we'll consider this as an error and retry
+                    return (false);
+                }
+                total_sent += bytes_sent;
+                std::cout << "Sent chunk of size: " << bytes_sent << " (total: " << total_sent << " bytes)" << std::endl;
+            }
+        }
+        
+        std::cout << "Chunked response complete - Total sent: " << total_sent << " bytes" << std::endl;
         _responseDone = true;
+        _isChunkedResponse = false;
     } else {
-        // For keep-alive connections, we don't mark response as done
-        // The connection can be reused for more requests
-        _responseDone = false;
+        // Handle regular responses
+        if (_response.empty())
+            _response = DEFAULT_RESPONSE;
+            
+        if (write(_fd, _response.c_str(), _response.length()) == -1){
+            perror("Write failed");
+            return (false);
+        }
+        
+        // Check if connection should be closed based on the response headers
+        std::string connection_header = getConnectionHeader(_request);
+        if (connection_header == "close") {
+            _responseDone = true;
+        } else {
+            // For keep-alive connections, we don't mark response as done
+            // The connection can be reused for more requests
+            _responseDone = false;
+        }
     }
     return (true);
 }
@@ -165,6 +207,7 @@ void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
             response_obj.setHeader("Content-Type", response_obj.getContentType(full_error_path));
             response_obj.setHeader("Connection", connection_header);
             _response = response_obj.buildResponse();
+            _isChunkedResponse = false;
             return;
         }
     }
@@ -177,6 +220,7 @@ void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
         response_obj.setHeader("Content-Type", response_obj.getContentType(standard_error_page));
         response_obj.setHeader("Connection", connection_header);
         _response = response_obj.buildResponse();
+        _isChunkedResponse = false;
         return;
     }
     
@@ -186,6 +230,7 @@ void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
     response_obj.setHeader("Content-Type", "text/html");
     response_obj.setHeader("Connection", connection_header);
     _response = response_obj.buildResponse();
+    _isChunkedResponse = false;
 }
 
 void Connection::sendGetResponse(Request &request  , ServerConf &server){
@@ -226,11 +271,27 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
     if (stat(full_path.c_str(), &fileStat) == 0) {
         // File exists
         if (S_ISREG(fileStat.st_mode)) {
-            response_obj.setStatus(200);
-            response_obj.setBodyFromFile(full_path);
-            response_obj.setHeader("Connection", connection_header);
-            _response = response_obj.buildResponse();
-            return;
+            // Check file size to decide between regular and chunked response
+            size_t file_size = static_cast<size_t>(fileStat.st_size);
+            std::cout << "File size: " << file_size << " bytes" << std::endl;
+            
+            if (file_size > LARGE_FILE_THRESHOLD) {
+                // Use chunked transfer for large files
+                std::cout << "Using chunked transfer for large file" << std::endl;
+                _response_obj.prepareResponse(full_path);
+                _isChunkedResponse = true;
+                _response = ""; // Clear regular response since we're using chunked
+                return;
+            } else {
+                // Use regular response for small files
+                std::cout << "Using regular response for small file" << std::endl;
+                response_obj.setStatus(200);
+                response_obj.setBodyFromFile(full_path);
+                response_obj.setHeader("Connection", connection_header);
+                _response = response_obj.buildResponse();
+                _isChunkedResponse = false;
+                return;
+            }
         } else if (S_ISDIR(fileStat.st_mode)) {
             bool auto_index = false;
             std::vector<std::string> index_files;
@@ -255,11 +316,27 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
                 index_path += *it;
                 
                 if (stat(index_path.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode)) {
-                    response_obj.setStatus(200);
-                    response_obj.setBodyFromFile(index_path);
-                    response_obj.setHeader("Connection", connection_header);
-                    _response = response_obj.buildResponse();
-                    return;
+                    // Check file size to decide between regular and chunked response
+                    size_t file_size = static_cast<size_t>(fileStat.st_size);
+                    std::cout << "Index file size: " << file_size << " bytes" << std::endl;
+                    
+                    if (file_size > LARGE_FILE_THRESHOLD) {
+                        // Use chunked transfer for large index files
+                        std::cout << "Using chunked transfer for large index file" << std::endl;
+                        _response_obj.prepareResponse(index_path);
+                        _isChunkedResponse = true;
+                        _response = ""; // Clear regular response since we're using chunked
+                        return;
+                    } else {
+                        // Use regular response for small index files
+                        std::cout << "Using regular response for small index file" << std::endl;
+                        response_obj.setStatus(200);
+                        response_obj.setBodyFromFile(index_path);
+                        response_obj.setHeader("Connection", connection_header);
+                        _response = response_obj.buildResponse();
+                        _isChunkedResponse = false;
+                        return;
+                    }
                 }
             }
             
@@ -270,6 +347,7 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
                     response_obj.setHeader("Connection", connection_header);
                     response_obj.setBody("<html><body><h1>Directory listing not implemented yet</h1></body></html>");
                     _response = response_obj.buildResponse();
+                    _isChunkedResponse = false;
                     return;
                 } else {
                     // Directory listing forbidden
@@ -278,6 +356,7 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
                     response_obj.setHeader("Content-Type", "text/html");
                     response_obj.setHeader("Connection", connection_header);
                     _response = response_obj.buildResponse();
+                    _isChunkedResponse = false;
                     return;
                 }
             }
@@ -289,6 +368,7 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
             response_obj.setHeader("Content-Type", "text/html");
             response_obj.setHeader("Connection", connection_header);
             _response = response_obj.buildResponse();
+            _isChunkedResponse = false;
             return;
         }
     } else {
@@ -299,11 +379,13 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
         response_obj.setHeader("Content-Type", "text/html");
         response_obj.setHeader("Connection", connection_header);
         _response = response_obj.buildResponse();
+        _isChunkedResponse = false;
         return;
     }   
     
     // This should not be reached now since we handle all cases above
     _response = response_obj.buildResponse();
+    _isChunkedResponse = false;
 }
 
 void Connection::sendPostResponse(Request &request, int status_code, ServerConf &server) {
@@ -322,6 +404,7 @@ void Connection::sendPostResponse(Request &request, int status_code, ServerConf 
     
     response_obj.setBody(success_body);
     _response = response_obj.buildResponse();
+    _isChunkedResponse = false;
 }
 
 void Connection::printRequest(){
@@ -367,4 +450,55 @@ std::string Connection::getConnectionHeader(Request &request) {
     
     // Default to keep-alive for HTTP/1.1
     return "keep-alive";
+}
+
+std::string Connection::checkForRedirect(Request &request, ServerConf &server) {
+    std::string requested_path = request.getUri();
+    std::map<std::string, LocationConf> locations = server.getLocations();
+    
+    // Find the best matching location (longest prefix match)
+    std::string best_match = "";
+    const LocationConf* best_location = NULL;
+    
+    for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); 
+         it != locations.end(); ++it) {
+        if (requested_path.find(it->first) == 0 && it->first.length() > best_match.length()) {
+            best_match = it->first;
+            best_location = &(it->second);
+        }
+    }
+    
+    // If we found a matching location and it has a redirect URL, return it
+    if (best_location != NULL) {
+        std::string redirect_url = best_location->getRedirectUrl();
+        if (!redirect_url.empty()) {
+            std::cout << "Redirect found for path: " << requested_path << " -> " << redirect_url << std::endl;
+            return redirect_url;
+        }
+    }
+    
+    return ""; // No redirect found
+}
+
+std::string Connection::sendRedirectResponse(Request &request, const std::string &redirect_url, ServerConf &server) {
+    Response response_obj;
+    std::string connection_header = getConnectionHeader(request);
+    (void)server; // Suppress unused parameter warning
+    
+    // Set 301 status code (permanent redirect) 
+    response_obj.setStatus(301);
+    response_obj.setHeader("Location", redirect_url);
+    response_obj.setHeader("Connection", connection_header);
+    response_obj.setHeader("Content-Type", "text/html");
+    
+    std::string redirect_body = "<html><body><h1>301 Moved Permanently</h1>"
+                               "<p>The document has moved <a href=\"" + redirect_url + "\">here</a>.</p>"
+                               "</body></html>";
+    
+    response_obj.setBody(redirect_body);
+    std::string response = response_obj.buildResponse();
+    _isChunkedResponse = false; // Redirects are always small responses
+    
+    std::cout << "Sending redirect response to: " << redirect_url << std::endl;
+    return response;
 }

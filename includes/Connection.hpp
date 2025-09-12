@@ -12,17 +12,20 @@
 #include "ServerConf.hpp"
 #include "cgi.hpp"
 
+#define LARGE_FILE_THRESHOLD 1048576  // 1MB - files larger than this will use chunked transfer
+
 class Connection{
 private:
     int _fd;
     time_t _time;
     std::string _buffer;
     Request _request;
-    // Response _response;
-    std::string _response;
+    Response _response_obj;  // For chunked responses
+    std::string _response;   // For simple responses
     static ServerConf _server;
     bool _done;
     bool _responseDone;
+    bool _isChunkedResponse; // Flag to track if we're doing chunked response
 
 public:
     Connection(int, ServerConf&);
@@ -45,6 +48,8 @@ public:
     // void sendAutoIndex(Response &response_obj, const std::string &full_path, const std::string &requested_path);
     void sendErrorPage(Request &request, int code, ServerConf &server);
     std::string getConnectionHeader(Request &request);
+    std::string checkForRedirect(Request &request, ServerConf &server);
+    std::string sendRedirectResponse(Request &request, const std::string &redirect_url, ServerConf &server);
     // bool cgiResponse(int (&fd_in)[], int (&fd_out)[]);
 };
 

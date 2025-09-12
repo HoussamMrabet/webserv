@@ -16,13 +16,13 @@
 std::map<int, std::string> Response::status_map;
 
 
-Response::Response() : http_version("HTTP/1.0"), content_length(0), 
+Response::Response() : http_version("HTTP/1.1"), content_length(0), 
                       is_chunked(false), connection_close(true), 
                       is_ready(false), has_body(false), bytes_sent(0), headers_sent(false) {
     init_status_map();
 }
 
-Response::Response(int status_code) : http_version("HTTP/1.0"), content_length(0), 
+Response::Response(int status_code) : http_version("HTTP/1.1"), content_length(0), 
                       is_chunked(false), connection_close(true), 
                       is_ready(false), has_body(false), bytes_sent(0), headers_sent(false) {
     init_status_map();
@@ -40,6 +40,9 @@ void Response::init_status_map() {
     status_map[200] = "OK";
     status_map[201] = "Created";
     status_map[204] = "No Content";
+    status_map[301] = "Moved Permanently";
+    status_map[302] = "Found";
+    status_map[304] = "Not Modified";
     status_map[400] = "Bad Request";
     status_map[403] = "Forbidden";
     status_map[404] = "Not Found";
