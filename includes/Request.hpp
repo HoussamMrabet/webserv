@@ -23,6 +23,10 @@
 #include "Multipart.hpp"
 #include <fcntl.h>
 #include <unistd.h>
+#define G "\033[1;32m"
+#define C "\033[1;36m"
+#define M "\033[1;35m"
+#define B "\033[0m"
 
 #define CHUNKED true
 

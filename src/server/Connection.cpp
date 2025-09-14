@@ -11,6 +11,10 @@ struct stat fileStat;
                          "\r\n" \
                          "Received!!\r\n" // Connection keep-alive but still ends !!!!!
 
+Connection::~Connection(){ 
+    std::cout << "***********  connection destructor called!!! ***********\n";
+    delete _request;
+}
 
 Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
                                                     _done(false),
@@ -18,11 +22,12 @@ Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
                                                     _isChunkedResponse(false)/*....*/ {
     _fd = accept(fd, NULL, NULL);
     _server = server;
+    _request = new Request();
     // std::cout << "Connection constructor fd " << _fd << "\n";
     // std::cout << _server.getRoot() << std::endl;
     if (_fd == -1) {
         perror("Accept failed");
-        exit(1);/// check !!
+        // exit(1);/// check !!
     }
     setNonBlocking();
     std::cout << "New connection (fd " << _fd << ")\n" << std::endl;
@@ -44,20 +49,21 @@ bool Connection::readRequest(){
     char buffer[1024] = {0};
     ssize_t bytesRead = 0;
 
-    if  (!_request.isDone() && this->_responseDone == false)
+    if  (!_request->isDone() && this->_responseDone == false)
     {
+        std::cout << "------- read fd = " << _fd << std::endl;
         bytesRead = read(_fd, buffer, sizeof(buffer));
         if (bytesRead > 0)
         {
             _buffer.append(buffer, bytesRead);
-            _request.parseRequest(_buffer);
+            _request->parseRequest(_buffer);
             _buffer.clear();
             updateTimout();  // update activity timestamp
             // else continue;
         }
         else
         {
-            _request.parseRequest();
+            _request->parseRequest();
             // _buffer.clear();
             // std::cout << "Client disconnected!" << std::endl;
             _done = true;
@@ -72,17 +78,18 @@ bool Connection::readRequest(){
         //     return (false);
         // }
     }
-    _done = _request.isDone();
-    // _request.printRequest();
+    _done = _request->isDone();
+    // _request->printRequest();
 
 
-    // if (_request.isDone()) // remove from here and add to webserv in order to add pipe_fds to pollfds
+    // if (_request->isDone()) // remove from here and add to webserv in order to add pipe_fds to pollfds
     //     _response = CGI::executeCGI(*_request);
     return (true);
 }
 
 bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiResponse!!!
     // First, check if we're in the middle of sending a chunked response
+    // std::cout << "------- write fd = " << _fd << std::endl;
     if (_isChunkedResponse) {
         // Continue sending chunks from existing response
         if (!_response_obj.isFinished()) {
@@ -114,39 +121,39 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     
     // Regular response processing - only if not in chunked mode
     // Check for redirects first
-    std::string redirect_url = checkForRedirect(_request, _server);
+    std::string redirect_url = checkForRedirect(*_request, _server);
     if (!redirect_url.empty()) {
-        _response = sendRedirectResponse(_request, redirect_url, _server);
+        _response = sendRedirectResponse(*_request, redirect_url, _server);
         std::cout << "Redirect Response:\n" << _response << std::endl;
         updateTimout();
     }
-    else if (_request.isCGI())
+    else if (_request->isCGI())
     {
-        // std:: cout << "IT IS CGI!!!!!\n";
-        _response = CGI::executeCGI(_request, _server);
+        std:: cout << M"IT IS CGI!!!!!\n";
+        _response = CGI::executeCGI(*_request, _server);
         updateTimout();
     }
-    else if ( _request.getStatusCode() != 200){
-        std::cout << "Error status code: " << _request.getStatusCode()  << std::endl;
-        std::cout << "Error message: " << _request.getMessage()  << std::endl;
-        sendErrorPage(_request, _request.getStatusCode(), _server);
+    else if ( _request->getStatusCode() != 200){
+        std::cout << "Error status code: " << _request->getStatusCode()  << std::endl;
+        std::cout << "Error message: " << _request->getMessage()  << std::endl;
+        sendErrorPage(*_request, _request->getStatusCode(), _server);
         // std::cout << _response << std::endl;
         updateTimout();
     }
-    else if (_request.getStrMethod() == "POST"){
-        // sentPostResponse(_request, _server);
-        sendPostResponse(_request, _request.getStatusCode(), _server);
+    else if (_request->getStrMethod() == "POST"){
+        // sentPostResponse(*_request, _server);
+        sendPostResponse(*_request, _request->getStatusCode(), _server);
         std::cout << _response << std::endl;
         updateTimout();
     }
-    else if (_request.getStrMethod() == "DELETE"){
-        // sendDeleteResponse(_request, _server);
-        sendErrorPage(_request, 501, _server); // not implemented
+    else if (_request->getStrMethod() == "DELETE"){
+        // sendDeleteResponse(*_request, _server);
+        sendErrorPage(*_request, 501, _server); // not implemented
         std::cout << _response << std::endl;
         updateTimout();
     }
-    else if (_request.getStrMethod() == "GET"){ // can use pointer to member function 
-        sendGetResponse(_request, _server);
+    else if (_request->getStrMethod() == "GET"){ // can use pointer to member function 
+        sendGetResponse(*_request, _server);
         if (!_isChunkedResponse) {
             std::cout << _response << std::endl;
         }
@@ -155,15 +162,19 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     
     // Handle regular (non-chunked) response sending
     // Only executed if we're not in chunked mode or if chunked response just started
+    if (_response.empty()){
+        _response = DEFAULT_RESPONSE;
+        updateTimout();
+    }
     if (!_isChunkedResponse) {
-        if (_response.empty())
-            _response = DEFAULT_RESPONSE;
-            
-        if (write(_fd, _response.c_str(), _response.length()) == -1){
+        // std::cout << "writing on fd = " << _fd << std::endl;
+        int b = write(_fd, _response.c_str(), _response.length());
+        if (b == -1){
             perror("Write failed");
             return (false);
         }
-        
+        // std::cout << "----------- STILL HERE ---------------\n";
+        updateTimout();
         // Response is complete
         _responseDone = true;
     }
@@ -172,7 +183,7 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
 }
 
 // std::string Connection::getRequestMethod(){
-//     t_method method = _request.getMethod();
+//     t_method method = _request->getMethod();
 //     switch (method)
 //     {
 //         case GET:
@@ -186,6 +197,11 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
 //     }
 // }
 
+std::string to_str(int n){
+    std::stringstream ss; ss << n;
+    return (ss.str());
+}
+
 void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
     Response response_obj;
     std::string error_page;
@@ -193,8 +209,8 @@ void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
     std::string connection_header = getConnectionHeader(request);
     
     // Check if there's a custom error page defined in config
-    if (error_pages.find(std::to_string(code)) != error_pages.end()) {
-        error_page = error_pages[std::to_string(code)];
+    if (error_pages.find(to_str(code)) != error_pages.end()) {
+        error_page = error_pages[to_str(code)];
         // Attach ./www/errors/ to the error page path
         std::string full_error_path = "./www/errors/" + error_page;
         if (response_obj.fileExists(full_error_path)) {
@@ -209,7 +225,7 @@ void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
     }
     
     // Fallback: check for standard error pages in ./www/errors/
-    std::string standard_error_page = "./www/errors/" + std::to_string(code) + ".html";
+    std::string standard_error_page = "./www/errors/" + to_str(code) + ".html";
     if (response_obj.fileExists(standard_error_page)) {
         response_obj.setStatus(code);
         response_obj.setBodyFromFile(standard_error_page);
@@ -222,7 +238,7 @@ void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
     
     // Default error message if no custom page is found or file doesn't exist
     response_obj.setStatus(code);
-    response_obj.setBody("<html><body><h1>" + std::to_string(code) + " " + response_obj.getStatusMessage(code) + "</h1></body></html>");
+    response_obj.setBody("<html><body><h1>" + to_str(code) + " " + response_obj.getStatusMessage(code) + "</h1></body></html>");
     response_obj.setHeader("Content-Type", "text/html");
     response_obj.setHeader("Connection", connection_header);
     _response = response_obj.buildResponse();
@@ -406,7 +422,7 @@ void Connection::sendPostResponse(Request &request, int status_code, ServerConf 
 void Connection::printRequest(){
     if (_done){
         std::cout << "-------> Request received: <----------\n";
-        // _request.printRequest();
+        _request->printRequest();
         std::cout << "-------------------------------\n";
     }
     // else

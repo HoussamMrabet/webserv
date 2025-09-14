@@ -19,7 +19,7 @@ private:
     int _fd;
     time_t _time;
     std::string _buffer;
-    Request _request;
+    Request* _request;
     Response _response_obj;  // For chunked responses
     std::string _response;   // For simple responses
     static ServerConf _server;
@@ -28,6 +28,7 @@ private:
     bool _isChunkedResponse; // Flag to track if we're doing chunked response
 
 public:
+    ~Connection();
     Connection(int, ServerConf&);
     Connection(const Connection&);
     int getFd() const;

@@ -15,12 +15,14 @@
 #include <signal.h>
 // #include "ServerConf.hpp"
 #include "WebServer.hpp"
+#include <signal.h>
 
 
 std::vector<ServerConf> globalServer;
 
 int main(int ac, char **av)
 {
+	// signal(SIGPIPE, SIG_IGN);  // Ignore the signal leads to infinit loop!!!
 	try{
         // signal(SIGPIPE, SIG_IGN); // sig ignore broken pipe,q to remove later!
 		std::string config_file = "config/default.conf";

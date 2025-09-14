@@ -30,9 +30,13 @@ void CGI::generateCgiFile(){
 
 std::string CGI::executeCGI(const Request& request, ServerConf& server){
     try {
+        // std::cout << G"-------- Still here1!!!! ";
+        // std::cout << B"\n";
         CGI cgi;
         cgi._server = server;
         cgi.importData(request);
+        // std::cout << C"-------- tring to execute cgi";
+        // std::cout << B"\n";
         return (cgi.runCGI());
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
@@ -73,24 +77,32 @@ void CGI::set_HTTP_Header(){
 void CGI::importData(const Request& request){
     _fd_in = request.getCgiFdRead();
     _location = request.getLocation();
+    // std::cout << C"*********** location is  " << _location << std::endl;
     
     std::map<std::string, LocationConf> locations = _server.getLocations();
     LocationConf conf = locations[_location];
     std::map<std::string, std::string> cgis = conf.getCgi();
     
-    _root = conf.getRoot();
+    /******************* get root ******************/
+    // if ()
+    _root = conf.getRoot(); // if no root inside location get global root!!!
+    // std::cout << C"*********** root is  " << _root << std::endl;
+    // std::cout << C"*********** file is  " << request.getUriFileName() << std::endl;
+    /******************* get root ******************/
     _scriptName = request.getUri();
     
     // Handle directory requests (ending with /) - use index file
-    if (_scriptName.empty() || _scriptName.back() == '/') {
+    if (_scriptName.empty() || _scriptName[_scriptName.size() - 1] == '/') {
         std::vector<std::string> indexFiles = conf.getIndex();
         if (!indexFiles.empty()) {
             _scriptName += indexFiles[0]; // Use first index file
         }
     }
-    
-    _scriptFileName = _root + _scriptName;
-    // std::cout << "----> " << _scriptFileName << std::endl;
+    std::string name = request.getUriFileName();
+    _scriptFileName = "." + _root + "/" + name;
+    // _scriptFileName = _root + _scriptName;
+    // std::cout << M"----> " << _scriptFileName;
+    std::cout << std::endl;
     _execPath = cgis[request.getCgiType()];
     _queryString = request.getUriQueries();
     _requestMethod = request.getStrMethod();
@@ -99,10 +111,14 @@ void CGI::importData(const Request& request){
     _headers = request.getHeaders();
 
     if (_execPath.empty()) {
+        // std::cout << G"-------- Im the problem 1!!!!! ";
+        // std::cout << B"\n";
         throw std::runtime_error("CGI interpreter not found");
     }
     
     if (!validPath()) {
+        // std::cout << G"-------- Im the problem 2!!!!! ";
+        // std::cout << B"\n";
         throw std::runtime_error("Invalid CGI script path");
     }
 
@@ -128,6 +144,8 @@ void CGI::importData(const Request& request){
 }
 
 std::string CGI::runCGI(){
+    // std::cout << G"-------- Still here0!!!! ";
+    // std::cout << B"\n";
     generateCgiFile();
     printEnvironment();
     if (_fd_in != -1) {
@@ -136,6 +154,8 @@ std::string CGI::runCGI(){
 
     pid_t pid = fork();
     if (pid < 0){
+        // std::cout << G"-------- Im the problem 3!!!!! ";
+        // std::cout << B"\n";
         throw std::runtime_error("Fork failed");
     }
     
@@ -161,7 +181,10 @@ std::string CGI::runCGI(){
         argv[1] = const_cast<char*>(_scriptFileName.c_str());
         argv[2] = NULL;
 
+        // std::cout << "+++++++++++++++EXECVE+++++++++++++\n";
         execve(_execPath.c_str(), argv, &_envc[0]);
+        // std::cout << G"-------- EXEC SUCCESS!!!! ";
+        // std::cout << B"\n";
         perror("execve");
         exit(1);
     }
@@ -170,6 +193,8 @@ std::string CGI::runCGI(){
     waitpid(pid, &status, 0);
     
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        // std::cout << G"-------- Im the problem 4!!!!! ";
+        // std::cout << B"\n";
         throw std::runtime_error("CGI script failed");
     }
     
@@ -207,7 +232,7 @@ std::string CGI::parseOutput(std::string& cgi_output){
         } else {
             response << "HTTP/1.1 200 OK\r\n";
             response << headers_part;
-            if (headers_part.back() != '\n') {
+            if (headers_part[headers_part.size() - 1] != '\n') {
                 response << "\r\n";
             }
             response << body_part;
@@ -240,9 +265,29 @@ void CGI::printEnvironment(){
 // }
 
 bool CGI::validPath(){
-    if (access(_scriptFileName.c_str(), F_OK) != 0) return (false);
-    if (access(_scriptFileName.c_str(), R_OK) != 0) return (false);
-    if (access(_execPath.c_str(), X_OK) != 0) return (false);
-    if (_scriptFileName.find("../") != std::string::npos) return (false);
+    // std::cout << G"path is " << _scriptFileName;
+    // std::cout << B"\n";
+    if (access(_scriptFileName.c_str(), F_OK) != 0){
+
+        // std::cout << G"I fail!!!! 1" << _scriptFileName;
+        // std::cout << B"\n";
+        return (false);
+    } 
+    if (access(_scriptFileName.c_str(), R_OK) != 0){
+        // std::cout << G"I fail!!!! 2" << _scriptFileName;
+        // std::cout << B"\n";
+        return (false);
+    } 
+    if (access(_execPath.c_str(), X_OK) != 0){
+        // std::cout << G"I fail!!!! 3" << _execPath;
+        // std::cout << G"I fail!!!! 3" << _scriptFileName;
+        // std::cout << B"\n";
+        return (false);
+    } 
+    if (_scriptFileName.find("../") != std::string::npos){
+        // std::cout << G"I fail!!!! 4" << _scriptFileName;
+        // std::cout << B"\n";
+        return (false);
+    } 
     return (true);
 }
