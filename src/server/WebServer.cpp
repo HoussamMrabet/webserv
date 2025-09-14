@@ -32,51 +32,61 @@ void WebServ::pollLoop(){
         int n = poll(_pollfds.data(), _pollfds.size(), 1000);  // 1-second poll timeout to check timeouts regularly
         if (n == -1){
             perror("Poll failed");
-            break;
+            break; // Only break on fatal poll error
         }
         checkTimeout();
         if (n == 0) continue;  // no events, continue loop
-        for (size_t i = 0; i < _pollfds.size(); i++){
+        
+        // Process events - iterate backwards to handle erasing safely
+        for (int i = (int)_pollfds.size() - 1; i >= 0; i--){
             int fd = _pollfds[i].fd;
+            
             if (_pollfds[i].revents & POLLIN){
-                // if (newConnection(fd)){
                 if (_fdType[fd] == "listen"){
-                // if (isListening(fd)){
-                    if (!acceptConnection(fd))
-                        continue;
+                    acceptConnection(fd); // Always try to accept new connections
                 }
                 else if (_fdType[fd] == "connection"){
-                // else if (isConnection(fd)){
                     std::map<int, Connection>::iterator it = _connections.find(fd);
+                    if (it == _connections.end()) continue; // Safety check - connection not found
+                    
                     if (!it->second.readRequest()){
+                        // Connection error - clean up and continue
                         close(fd);
                         _connections.erase(it);
+                        _fdType.erase(fd);
                         _pollfds.erase(_pollfds.begin() + i);
-                        i--;
-                        break;
+                        continue;
                     }
-                    // std::cout << "HERE!!!" << it->second.isDone() << std::endl;
+                    
                     if (it->second.isDone()){
-                        _pollfds[i].revents = POLLOUT;
+                        // Request complete, switch to write mode
+                        _pollfds[i].events = POLLOUT;
+                        _pollfds[i].revents = 0;
                         it->second.printRequest(); // to remove!
-                        // std::cout << "+++++++++++++++\n";
-                        // std::cout << it->second.getFd() << std::endl;
-                        // std::cout << it->second.getServer() << std::endl;
-                        // it->second.writeResponse();
-                        // it->second.cgiResponse(pipe_fdout, pipe_fdin); // start pipefds here and add to pollfds 
                     }
                 }
             }
-            if (_pollfds[i].revents & POLLOUT){
+            else if (_pollfds[i].revents & POLLOUT){
                 std::map<int, Connection>::iterator it = _connections.find(fd);
+                if (it == _connections.end()) continue; // Safety check
+                
                 it->second.writeResponse();
-                close(fd);
-                _connections.erase(it);
-                _pollfds.erase(_pollfds.begin() + i);
-                i--;
-                break;
+                
+                if (it->second.isResponseDone()) {
+                    // Response is complete - close the connection and clean up
+                    close(fd);
+                    _connections.erase(it);
+                    _fdType.erase(fd);
+                    _pollfds.erase(_pollfds.begin() + i);
+                } else {
+                    // Response not done (chunked response in progress)
+                    _pollfds[i].events = POLLOUT;
+                    _pollfds[i].revents = 0;
+                }
             }
         }
+        // After processing all events, continue to next poll cycle
+        // The server NEVER stops listening for new connections
     }
 }
 

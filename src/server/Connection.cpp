@@ -44,7 +44,7 @@ bool Connection::readRequest(){
     char buffer[1024] = {0};
     ssize_t bytesRead = 0;
 
-    while  (!_request.isDone() && this->_responseDone == false)
+    if  (!_request.isDone() && this->_responseDone == false)
     {
         bytesRead = read(_fd, buffer, sizeof(buffer));
         if (bytesRead > 0)
@@ -82,6 +82,37 @@ bool Connection::readRequest(){
 }
 
 bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiResponse!!!
+    // First, check if we're in the middle of sending a chunked response
+    if (_isChunkedResponse) {
+        // Continue sending chunks from existing response
+        if (!_response_obj.isFinished()) {
+            std::string chunk = _response_obj.getResponseChunk();
+            if (!chunk.empty()) {
+                ssize_t bytes_sent = write(_fd, chunk.c_str(), chunk.length());
+                if (bytes_sent == -1) {
+                    perror("Chunked write failed");
+                    return (false);
+                } else if (bytes_sent == 0) {
+                    std::cout << "Connection closed by peer during chunked transfer" << std::endl;
+                    return (false);
+                } else if (bytes_sent < (ssize_t)chunk.length()) {
+                    // Partial write - handle this case
+                    std::cout << "Partial write: " << bytes_sent << "/" << chunk.length() << " bytes" << std::endl;
+                    return (false);
+                }
+                std::cout << "Sent chunk of size: " << bytes_sent << std::endl;
+                return (true); // Successfully sent a chunk, return
+            }
+        } else {
+            // All chunks sent, mark response as done
+            std::cout << "Chunked response complete" << std::endl;
+            _responseDone = true;
+            _isChunkedResponse = false;
+            return (true);
+        }
+    }
+    
+    // Regular response processing - only if not in chunked mode
     // Check for redirects first
     std::string redirect_url = checkForRedirect(_request, _server);
     if (!redirect_url.empty()) {
@@ -122,38 +153,9 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         updateTimout();
     }
     
-    // Handle response sending
-    if (_isChunkedResponse) {
-        // For chunked responses, send all chunks in a loop
-        std::cout << "Starting chunked transfer..." << std::endl;
-        size_t total_sent = 0;
-        
-        while (!_response_obj.isFinished()) {
-            std::string chunk = _response_obj.getResponseChunk();
-            if (!chunk.empty()) {
-                ssize_t bytes_sent = write(_fd, chunk.c_str(), chunk.length());
-                if (bytes_sent == -1) {
-                    perror("Chunked write failed");
-                    return (false);
-                } else if (bytes_sent == 0) {
-                    std::cout << "Connection closed by peer during chunked transfer" << std::endl;
-                    return (false);
-                } else if (bytes_sent < (ssize_t)chunk.length()) {
-                    // Partial write - handle this case
-                    std::cout << "Partial write: " << bytes_sent << "/" << chunk.length() << " bytes" << std::endl;
-                    // For now, we'll consider this as an error and retry
-                    return (false);
-                }
-                total_sent += bytes_sent;
-                std::cout << "Sent chunk of size: " << bytes_sent << " (total: " << total_sent << " bytes)" << std::endl;
-            }
-        }
-        
-        std::cout << "Chunked response complete - Total sent: " << total_sent << " bytes" << std::endl;
-        _responseDone = true;
-        _isChunkedResponse = false;
-    } else {
-        // Handle regular responses
+    // Handle regular (non-chunked) response sending
+    // Only executed if we're not in chunked mode or if chunked response just started
+    if (!_isChunkedResponse) {
         if (_response.empty())
             _response = DEFAULT_RESPONSE;
             
@@ -162,16 +164,10 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
             return (false);
         }
         
-        // Check if connection should be closed based on the response headers
-        std::string connection_header = getConnectionHeader(_request);
-        if (connection_header == "close") {
-            _responseDone = true;
-        } else {
-            // For keep-alive connections, we don't mark response as done
-            // The connection can be reused for more requests
-            _responseDone = false;
-        }
+        // Response is complete
+        _responseDone = true;
     }
+    
     return (true);
 }
 
