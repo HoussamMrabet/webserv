@@ -417,10 +417,8 @@ void Response::prepareResponse(const std::string& file_path) {
     std::ostringstream response;
     response << http_version << " " << status << " " << status_message << CRLF;
     
-    // Set Content-Length header
-    std::ostringstream content_len;
-    content_len << content_length;
-    setHeader("Content-Length", content_len.str());
+    // For chunked transfer, use Transfer-Encoding instead of Content-Length
+    setHeader("Transfer-Encoding", "chunked");
     
     // Add connection header based on HTTP version
     if (http_version == "HTTP/1.0") {
@@ -471,13 +469,25 @@ std::string Response::getResponseChunk(size_t chunk_size) {
     std::streamsize bytes_read = file_stream.gcount();
     
     if (bytes_read > 0) {
-        chunk.assign(buffer, bytes_read);
+        // Format as proper HTTP chunk: [hex_size]\r\n[data]\r\n
+        std::ostringstream hex_size;
+        hex_size << std::hex << bytes_read;
+        chunk = hex_size.str() + "\r\n";
+        chunk.append(buffer, bytes_read);
+        chunk += "\r\n";
         bytes_sent += bytes_read;
-    }
-    
-    // Check if we've sent everything
-    if (file_stream.eof() || bytes_sent >= content_length) {
-        is_ready = true; // Response is complete - server can close connection
+        
+        // Check if this was the last chunk
+        if (file_stream.eof() || bytes_sent >= content_length) {
+            // Append final chunk (0\r\n\r\n) to signal end
+            chunk += "0\r\n\r\n";
+            is_ready = true; // Response is complete
+            file_stream.close();
+        }
+    } else {
+        // No more data to read, send terminating chunk
+        chunk = "0\r\n\r\n";
+        is_ready = true; // Response is complete
         file_stream.close();
     }
     
