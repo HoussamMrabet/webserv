@@ -21,8 +21,8 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
                         fileName(""), createdFile(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false),
                         cgiFdRead(-1), cgiFdWrite(-1)
 {
-    std::cout << G"-------- Request destructor called!! ----";
-    std::cout << B"\n";
+    CHOROUK && std::cout << G"-------- Request destructor called!! ----";
+    CHOROUK && std::cout << B"\n";
     this->headers["connection"] = "keep-alive";
     const ServerConf &server = globalServer[0];
     this->uploadDir = server.getRoot() + server.getUploadDir();
@@ -30,8 +30,8 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
 
 Request::~Request()
 {
-    std::cout << G"-------- Request destructor called!! ----";
-    std::cout << B"\n";
+    CHOROUK && std::cout << G"-------- Request destructor called!! ----";
+    CHOROUK && std::cout << B"\n";
     for (size_t i = 0; i < multipartData.size(); ++i)
         delete multipartData[i];
     if (this->file != -1)

@@ -74,10 +74,23 @@ void CGI::set_HTTP_Header(){
     }
 }
 
+std::string CGI::setPath(){ // to check !!! 
+    size_t pos = _scriptName.find(_location);
+    std::string path;
+    if (pos != std::string::npos)
+        pos += _location.size();
+    path = _scriptName.substr(pos, _scriptName.size());
+    // std::cout << M"data: pos " << pos << " path " << path << " root " << _root;
+    path = _root + path;
+    // std::cout << " path " << path << " location " << _location  << std::endl;
+
+    return (path);
+}
+
 void CGI::importData(const Request& request){
     _fd_in = request.getCgiFdRead();
     _location = request.getLocation();
-    // std::cout << C"*********** location is  " << _location << std::endl;
+    CHOROUK && std::cout << C"*********** location is  " << _location << std::endl;
     
     std::map<std::string, LocationConf> locations = _server.getLocations();
     LocationConf conf = locations[_location];
@@ -86,8 +99,8 @@ void CGI::importData(const Request& request){
     /******************* get root ******************/
     // if ()
     _root = conf.getRoot(); // if no root inside location get global root!!!
-    // std::cout << C"*********** root is  " << _root << std::endl;
-    // std::cout << C"*********** file is  " << request.getUriFileName() << std::endl;
+    CHOROUK && std::cout << C"*********** root is  " << _root << std::endl;
+    CHOROUK && std::cout << C"*********** file is  " << request.getUriFileName() << std::endl;
     /******************* get root ******************/
     _scriptName = request.getUri();
     
@@ -98,11 +111,14 @@ void CGI::importData(const Request& request){
             _scriptName += indexFiles[0]; // Use first index file
         }
     }
-    std::string name = request.getUriFileName();
-    _scriptFileName = "." + _root + "/" + name;
+    // std::string name = request.getUriFileName();
+    _scriptFileName = "." + setPath(); // should be set after _scriptName _location and _root
+    CHOROUK && std::cout << C"*********** _scriptName is  " << _scriptName << std::endl;
+    CHOROUK && std::cout << C"*********** _scriptFILEName is  " << _scriptFileName << std::endl;
+    // CHOROUK && std::cout << C"*********** name is  " << name << std::endl;
     // _scriptFileName = _root + _scriptName;
-    // std::cout << M"----> " << _scriptFileName;
-    std::cout << std::endl;
+    CHOROUK && std::cout << M"----> " << _scriptFileName;
+    CHOROUK && std::cout << std::endl;
     _execPath = cgis[request.getCgiType()];
     _queryString = request.getUriQueries();
     _requestMethod = request.getStrMethod();
@@ -147,7 +163,7 @@ std::string CGI::runCGI(){
     // std::cout << G"-------- Still here0!!!! ";
     // std::cout << B"\n";
     generateCgiFile();
-    printEnvironment();
+    // printEnvironment();//////////     TO print env
     if (_fd_in != -1) {
         lseek(_fd_in, 0, SEEK_SET);
     }
@@ -183,8 +199,6 @@ std::string CGI::runCGI(){
 
         // std::cout << "+++++++++++++++EXECVE+++++++++++++\n";
         execve(_execPath.c_str(), argv, &_envc[0]);
-        // std::cout << G"-------- EXEC SUCCESS!!!! ";
-        // std::cout << B"\n";
         perror("execve");
         exit(1);
     }

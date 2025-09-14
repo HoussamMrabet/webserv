@@ -27,6 +27,8 @@
 #define C "\033[1;36m"
 #define M "\033[1;35m"
 #define B "\033[0m"
+#define MOHAMED 0
+#define CHOROUK 0
 
 #define CHUNKED true
 

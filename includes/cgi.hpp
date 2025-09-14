@@ -69,6 +69,7 @@ class CGI{ // should class name be camel-case??
         void generateCgiFile();
         void importData(const Request&);
         // void setQueryString();
+        std::string setPath();
         void setContentLenght();
         void set_HTTP_Header();
         void printEnvironment(); // to remove later

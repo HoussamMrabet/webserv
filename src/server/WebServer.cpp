@@ -11,8 +11,10 @@ bool WebServ::startServer(ServerConf& server){
     for (it = webserv._listens.begin(); it != webserv._listens.end(); it++) {
         int server_fd = Socket::StartSocket(it->first, it->second);
         webserv.addPollFd(server_fd, POLLIN, "listen");
-        std::cout << "Listening on " << it->first << ":" << it->second << "..." << std::endl;
-        std::cout << "Server socket  (fd "<< server_fd << ")" << std::endl;
+        std::cout << "Listening on http" << M" " << it->first << ":" << it->second << std::endl;
+        std::cout << B"Document root is " << M" " << server.getRoot() << std::endl;
+        std::cout << B"Press Ctrl-C to quit." << B"\n";
+        CHOROUK &&  std::cout << "Server socket  (fd "<< server_fd << ")" << std::endl;
     }
     webserv.pollLoop();
     return (true); // check return value value for all functions or remove and use exception!!
@@ -29,7 +31,7 @@ void WebServ::addPollFd(int fd, short event, const std::string& type){
 
 void WebServ::pollLoop(){
     while (true){
-        // std::cout << "----------- IN POLLOOP ---------------\n";
+        CHOROUK && std::cout << "----------- IN POLLOOP ---------------\n";
         int n = poll(_pollfds.data(), _pollfds.size(), 1000);  // 1-second poll timeout to check timeouts regularly
         if (n == -1){
             perror("Poll failed");
@@ -40,22 +42,22 @@ void WebServ::pollLoop(){
         
         // Process events - iterate backwards to handle erasing safely
         for (int i = (int)_pollfds.size() - 1; i >= 0; i--){
-            // std::cout << "----------- INSIDE POLLOOP ---------------\n";
+            CHOROUK && std::cout << "----------- INSIDE POLLOOP ---------------\n";
             int fd = _pollfds[i].fd;
             
             if (_pollfds[i].revents & POLLIN){
-                // std::cout << "----------- INSIDE POLLIN ---------------\n";
+                CHOROUK && std::cout << "----------- INSIDE POLLIN ---------------\n";
                 if (_fdType[fd] == "listen"){
-                    // std::cout << "----------- INSIDE LISTEN ---------------\n";
+                    CHOROUK && std::cout << "----------- INSIDE LISTEN ---------------\n";
                     acceptConnection(fd); // Always try to accept new connections
                 }
                 else if (_fdType[fd] == "connection"){
-                    // std::cout << "----------- INSIDE CONNECTION ---------------\n";
+                    CHOROUK && std::cout << "----------- INSIDE CONNECTION ---------------\n";
                     std::map<int, Connection*>::iterator it = _connections.find(fd);
                     if (it == _connections.end()) continue; // Safety check - connection not found
-                    // std::cout << "----------- INSIDE READ ---------------\n";
+                    CHOROUK && std::cout << "----------- INSIDE READ ---------------\n";
                     if (!it->second->readRequest()){
-                        // std::cout << "----------- READ FAIL ---------------\n";
+                        CHOROUK && std::cout << "----------- READ FAIL ---------------\n";
                         // Connection error - clean up and continue
                         close(fd);
                         delete it->second;
@@ -66,7 +68,7 @@ void WebServ::pollLoop(){
                     }
                     
                     if (it->second->isDone()){
-                        // std::cout << "----------- READ DONE ---------------\n";
+                        CHOROUK && std::cout << "----------- READ DONE ---------------\n";
                         // Request complete, switch to write mode
                         _pollfds[i].events = POLLOUT;
                         _pollfds[i].revents = 0;
@@ -75,19 +77,19 @@ void WebServ::pollLoop(){
                 }
             }
             else if (_pollfds[i].revents & POLLOUT){
-                // std::cout << "----------- INSIDE POLLOUT ---------------\n";
+                CHOROUK && std::cout << "----------- INSIDE POLLOUT ---------------\n";
                 std::map<int, Connection*>::iterator it = _connections.find(fd);
                 if (it == _connections.end()) continue; // Safety check
-                // std::cout << "----------- INSIDE WRITE ---------------\n";
+                CHOROUK && std::cout << "----------- INSIDE WRITE ---------------\n";
                 it->second->writeResponse();
-                // std::cout << "----------- AFTER WRITE ---------------\n";
+                CHOROUK && std::cout << "----------- AFTER WRITE ---------------\n";
                 if (it->second->isResponseDone()) {
-                    // std::cout << "----------- WRITE DONE ---------------\n";
+                    CHOROUK && std::cout << "----------- WRITE DONE ---------------\n";
                     _pollfds[i].events = 0;
                     _pollfds[i].revents = 0;
-                    // if (it->second->getConnectionHeader() == "close"){
+                    // if (it->second->getConnectionHeader() == "close"){ // check if "close" close connection
                     //     // closeConnection();
-                    //     std::cout << "Close connection header fd " << fd << std::endl;
+                    //     CHOROUK && std::cout << "Close connection header fd " << fd << std::endl;
                     //     delete it->second;
                     //     close(fd);
                     //     _connections.erase(it);
@@ -101,7 +103,7 @@ void WebServ::pollLoop(){
                     // _pollfds.erase(_pollfds.begin() + i);
                 }
                 else {
-                    // std::cout << "----------- WRITE NOT DONE ---------------\n";
+                    CHOROUK && std::cout << "----------- WRITE NOT DONE ---------------\n";
                     // Response not done (chunked response in progress)
                     _pollfds[i].events = POLLOUT;
                     _pollfds[i].revents = 0;
@@ -115,11 +117,11 @@ void WebServ::pollLoop(){
 }
 
 bool WebServ::acceptConnection(int fd){
-    // std::cout << "new connection fd " << fd << " " << _server.getRoot() << std::endl; 
+    CHOROUK && std::cout << "new connection fd " << fd << " " << _server.getRoot() << std::endl; 
     Connection* connection = new Connection(fd, _server);
     int connection_fd = connection->getFd();
     _connections.insert(std::make_pair(connection_fd, connection));
-    std::cout << "------- accept fd = " << connection_fd << std::endl;
+    CHOROUK && std::cout << "------- accept fd = " << connection_fd << std::endl;
     // struct pollfd client_pfd;
     // client_pfd.fd = connection_fd;
     // client_pfd.events = POLLIN;

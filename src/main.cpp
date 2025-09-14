@@ -23,6 +23,7 @@ std::vector<ServerConf> globalServer;
 int main(int ac, char **av)
 {
 	// signal(SIGPIPE, SIG_IGN);  // Ignore the signal leads to infinit loop!!!
+	std::cout << "Webserv 14.9.25 Development Server started at Sun Sep 14 15:22:14 2025\n";
 	try{
         // signal(SIGPIPE, SIG_IGN); // sig ignore broken pipe,q to remove later!
 		std::string config_file = "config/default.conf";
@@ -30,8 +31,8 @@ int main(int ac, char **av)
 		globalServer = ConfigBuilder::generateServers(config_file); // import servers from config file
 		std::vector<ServerConf> servers = globalServer; // import servers from config file
 		ServerConf server = servers[0]; // vector should have only one vector
-		// std::cout << "Server data\n";
-		std::cout << server << std::endl;
+		MOHAMED && std::cout << "Server data\n";
+		MOHAMED && std::cout << server << std::endl;
 		WebServ::startServer(server);
 
 	}
