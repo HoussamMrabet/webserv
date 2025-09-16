@@ -16,12 +16,39 @@
 // #include "ServerConf.hpp"
 #include "WebServer.hpp"
 #include <signal.h>
+#include "Request.hpp"
 
 
 std::vector<ServerConf> globalServer;
 
 int main(int ac, char **av)
 {
+	// Request::users
+
+	t_user user1;
+    user1.username = "hmrabet";
+    user1.password = "hmrabet123";
+    user1.email = "hmrabet@student.1337.ma";
+	user1.fullName = "Houssam Mrabet";
+    
+    t_user user2;
+    user2.username = "mel-hamd";
+    user2.password = "mel-hamd123";
+    user2.email = "mel-hamd@student.1337.ma";
+	user2.fullName = "Mohammed El Hamdaoui";
+
+
+    t_user user3;
+    user3.username = "cmasnaou";
+    user3.password = "cmasnaou123";
+    user3.email = "cmasnaou@student.1337.ma";
+	user3.fullName = "Chorouk Masnaoui";
+
+    // Assign them to the static vector
+    Request::users.push_back(user1);
+    Request::users.push_back(user2);
+    Request::users.push_back(user3);
+
 	// signal(SIGPIPE, SIG_IGN);  // Ignore the signal leads to infinit loop!!!
 	std::cout << "Webserv 14.9.25 Development Server started at Sun Sep 14 15:22:14 2025\n";
 	try{

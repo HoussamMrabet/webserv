@@ -95,6 +95,7 @@ void Request::parseRequest(const std::string &rawRequest)
                 this->requestData.erase(0, pos + 4);
                 this->parseHeaders();
                 this->handleThemeCookie();
+                this->handleSession();
                 if (!this->isCGI())
                     this->processResponseErrors();
                 this->setBodyInformations();

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Theme Toggle</title>
     <style>
+        /* --- Same CSS as before --- */
         :root {
             --bg-color: #ffffff;
             --text-color: #333333;
@@ -272,7 +273,6 @@
     </div>
 
     <script>
-        // Load theme from cookie on page load
         function loadTheme() {
             const theme = getCookie('theme') || 'light';
             document.documentElement.setAttribute('data-theme', theme);
@@ -285,32 +285,27 @@
         async function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            
-            // Show sending status
             showStatus('Sending theme change to server...', 'sending');
             
-            // Set the new theme cookie
-            setCookie('theme', newTheme, 30); // Set cookie for 30 days
+            setCookie('theme', newTheme, 1); // Use max-age (1 hour)
             
-            // Update UI immediately
             document.documentElement.setAttribute('data-theme', newTheme);
             updateThemeButton(newTheme);
             updateThemeStatus(newTheme);
             updateCookieInfo();
             updateTimestamp();
-            
+
             try {
-                // Send request to server with new theme
-                const response = await fetch('/cookies', {
+                const response = await fetch('/profile', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Cookie': document.cookie // Include all cookies
+                        cookie: document.cookie,
                     },
                 });
-                
+
                 if (response.ok) {
-                    showStatus(`Theme changed to ${newTheme} and sent to server successfully!`, 'success');
+                    showStatus(`Theme changed to ${newTheme} successfully!`, 'success');
                 } else {
                     showStatus(`Theme changed locally, but server returned: ${response.status}`, 'error');
                 }
@@ -324,46 +319,39 @@
             indicator.textContent = message;
             indicator.className = `status-indicator status-${type}`;
             indicator.style.display = 'block';
-            
-            // Hide after 3 seconds
-            setTimeout(() => {
-                indicator.style.display = 'none';
-            }, 3000);
+            setTimeout(() => indicator.style.display = 'none', 3000);
         }
 
         function updateThemeButton(theme) {
-            const button = document.querySelector('.theme-toggle');
-            button.textContent = theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+            document.querySelector('.theme-toggle').textContent = 
+                theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
         }
 
         function updateThemeStatus(theme) {
-            const status = document.getElementById('currentTheme');
-            status.textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
+            document.getElementById('currentTheme').textContent =
+                theme.charAt(0).toUpperCase() + theme.slice(1);
         }
 
         function updateCookieInfo() {
             const themeValue = getCookie('theme') || 'Not set';
             document.getElementById('themeCookieValue').textContent = themeValue;
-            
-            const allCookies = document.cookie || 'None';
-            document.getElementById('allCookies').textContent = allCookies;
+            document.getElementById('allCookies').textContent = document.cookie || 'None';
         }
 
         function updateTimestamp() {
-            const now = new Date();
-            document.getElementById('lastUpdated').textContent = now.toLocaleString();
+            document.getElementById('lastUpdated').textContent =
+                new Date().toLocaleString();
         }
 
-        function setCookie(name, value, days) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        function setCookie(name, value, hours) {
+            const maxAge = hours * 60 * 60;
+            document.cookie = `${name}=${value};max-age=${maxAge};path=/`;
         }
 
         function getCookie(name) {
             const nameEQ = name + "=";
             const ca = document.cookie.split(';');
-            for(let i = 0; i < ca.length; i++) {
+            for (let i = 0; i < ca.length; i++) {
                 let c = ca[i];
                 while (c.charAt(0) === ' ') c = c.substring(1, c.length);
                 if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
@@ -371,7 +359,6 @@
             return null;
         }
 
-        // Load theme on page load
         loadTheme();
     </script>
 </body>

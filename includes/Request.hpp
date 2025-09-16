@@ -48,6 +48,15 @@ typedef enum e_step
     DONE
 } t_step;
 
+typedef struct s_user
+{
+    std::string username;
+    std::string password;
+    std::string email;
+    std::string fullName;
+    std::string avatar;
+} t_user;
+
 class Request
 {
     private:
@@ -86,18 +95,24 @@ class Request
         bool inChunk;
         int cgiFdRead;
         int cgiFdWrite;
-        static std::string theme;
         void parseRequestLine();
         void parseHeaders();
         void handleThemeCookie();
+        void handleSession();
         void parseBody();
         void setBodyInformations();
         void processResponseErrors();
         void parseMultipart(bool isChunked = false);
         void parseMultipartHeaders(const std::string &multipartHeaders);
+        std::string extractQueryParam(const std::string& queryString, const std::string& paramName);
         Request(const Request&);            // don't define!!!
         Request& operator=(const Request&); // don't define!!!
     public:
+        static std::string theme;
+        static std::vector<t_user> users;
+        static t_user loggedInUser;
+        static bool loggedIn;
+
         Request();
         ~Request();
         

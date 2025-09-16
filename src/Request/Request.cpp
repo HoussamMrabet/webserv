@@ -13,6 +13,12 @@
 #include "Request.hpp"
 #include "WebServer.hpp"
 
+std::string Request::theme = "light";
+std::vector<t_user> Request::users;
+t_user Request::loggedInUser;
+bool Request::loggedIn = false;
+
+
 Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE),
                         method(UNDEFINED), reqLine(""), uri(""), uriQueries(""), uriFileName(""),
                         location(""), cgiType(""), host(""), httpVersion(""), body(""),file(-1),
@@ -143,6 +149,8 @@ void Request::printRequest()
     for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); it++)
         std::cout << it->first << ": " << it->second << std::endl;
     std::cout << std::endl;
+    // std::cout << Request::loggedInUser.username << std::endl;
+    // std::cout << Request::loggedInUser.password << std::endl;
     // if (!this->fullBody.empty())
     //     std::cout << this->fullBody << std::endl;
 }

@@ -171,7 +171,7 @@
     
     <div class="container">
         <h1>Login</h1>
-        <form id="loginForm">
+        <form id="loginForm" action="/auth" method="POST">
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>
@@ -183,7 +183,7 @@
             <button type="submit" class="login-btn">Login</button>
         </form>
         <div class="links">
-            <a href="profile.html">Go to Profile</a>
+            <a href="register.html">Don't have an account? Register</a>
         </div>
     </div>
 
@@ -274,9 +274,38 @@
 
         // Handle form submission
         document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Login functionality would be implemented here');
-            window.location.href = 'profile.html';
+            e.preventDefault(); // Prevent default form submission
+            
+            const formData = new FormData(this);
+            const username = formData.get('username');
+            const password = formData.get('password');
+            
+            // Create query parameters
+            const queryParams = new URLSearchParams();
+            queryParams.append('username', username);
+            queryParams.append('password', password);
+            
+            // Send GET request to /auth with query parameters
+            fetch(`/profile/profile.html?${queryParams.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    showStatus('Login successful!', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'profile.html';
+                    }, 1000);
+                } else {
+                    showStatus('Invalid credentials', 'error');
+                }
+            })
+            .catch(error => {
+                showStatus('Login failed', 'error');
+                console.error('Error:', error);
+            });
         });
 
         // Load theme on page load
