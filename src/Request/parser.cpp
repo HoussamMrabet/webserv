@@ -94,6 +94,7 @@ void Request::parseRequest(const std::string &rawRequest)
                 this->headersData = this->requestData.substr(0, pos);
                 this->requestData.erase(0, pos + 4);
                 this->parseHeaders();
+                this->handleThemeCookie();
                 if (!this->isCGI())
                     this->processResponseErrors();
                 this->setBodyInformations();
@@ -148,5 +149,7 @@ void Request::parseRequest(const std::string &rawRequest)
         if (this->statusCode != 200)
             close(this->cgiFdRead);
         close(this->cgiFdWrite);
+        printRequest();
+        std::cout << "appState values: theme=" << Request::theme << std::endl;
     }
 }

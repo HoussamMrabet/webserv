@@ -96,8 +96,10 @@ bool Connection::readRequest(){
 
 bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiResponse!!!
     // First, check if we're in the middle of sending a chunked response
+
     CHOROUK && std::cout << "------- write fd = " << _fd << std::endl;
     std::cout << M"" << _request->getUri() << B"\n";
+   
     if (_isChunkedResponse) {
         // Continue sending chunks from existing response
         if (!_response_obj.isFinished()) {
@@ -258,7 +260,9 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
     // Create a Response object and build it step by step
     Response response_obj;
     std::string connection_header = getConnectionHeader(request);
-
+    if (_request->getUri() == "/profile/login.html" || _request->getUri() == "/profile" || _request->getUri() == "/profile/profile.html") {
+        response_obj.setHeader("Set-Cookie", _request->getHeader("Set-Cookie"));
+    }
     std::string requested_path = request.getUri();
     std::string document_root;
     std::string full_path;

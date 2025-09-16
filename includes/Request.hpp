@@ -86,8 +86,10 @@ class Request
         bool inChunk;
         int cgiFdRead;
         int cgiFdWrite;
+        static std::string theme;
         void parseRequestLine();
         void parseHeaders();
+        void handleThemeCookie();
         void parseBody();
         void setBodyInformations();
         void processResponseErrors();

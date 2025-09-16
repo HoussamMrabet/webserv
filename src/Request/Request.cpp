@@ -143,6 +143,6 @@ void Request::printRequest()
     for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); it++)
         std::cout << it->first << ": " << it->second << std::endl;
     std::cout << std::endl;
-    if (!this->fullBody.empty())
-        std::cout << this->fullBody << std::endl;
+    // if (!this->fullBody.empty())
+    //     std::cout << this->fullBody << std::endl;
 }
