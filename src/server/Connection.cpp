@@ -55,6 +55,7 @@ bool Connection::readRequest(){
     {
         CHOROUK && std::cout << "------- read fd = " << _fd << std::endl;
         bytesRead = read(_fd, buffer, sizeof(buffer));
+        CHOROUK && std::cout << "------- bytes = " << bytesRead << std::endl;
         if (bytesRead > 0)
         {
             _buffer.append(buffer, bytesRead);
@@ -68,10 +69,14 @@ bool Connection::readRequest(){
             _request->parseRequest();
             // _buffer.clear();
             // std::cout << "Client disconnected!" << std::endl;
-            _done = true;
-            _responseDone = true;
+            // _done = true;
+            // _responseDone = true;
             // return (false);
         }
+        if (bytesRead < 1024){
+            _done = true;
+            return (true);
+        } 
         // else
         // {
         //     std::cout << "Error reading from socket" << std::endl;
@@ -125,7 +130,7 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     // Regular response processing - only if not in chunked mode
     // Check for redirects first
     std::string redirect_url = checkForRedirect(*_request, _server);
-    CHOROUK && std::cout << C"--------- REDIRECTION FOUND!!!! -----------" << B"\n";
+    // CHOROUK && std::cout << C"--------- REDIRECTION FOUND!!!! -----------" << B"\n";
     if (!redirect_url.empty()) {
         _response = sendRedirectResponse(*_request, redirect_url, _server);
         MOHAMED && std::cout << "Redirect Response:\n" << _response << std::endl;

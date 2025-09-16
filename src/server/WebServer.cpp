@@ -74,6 +74,13 @@ void WebServ::pollLoop(){
                         _pollfds[i].revents = 0;
                         // it->second->printRequest(); // to remove!
                     }
+                    else {
+                        CHOROUK && std::cout << "----------- READ NOT DONE ---------------\n";
+                        // Request complete, switch to write mode
+                        _pollfds[i].events = POLLIN;
+                        _pollfds[i].revents = 0;
+                        // it->second->printRequest(); // to remove!
+                    }
                 }
             }
             else if (_pollfds[i].revents & POLLOUT){
@@ -85,8 +92,14 @@ void WebServ::pollLoop(){
                 CHOROUK && std::cout << "----------- AFTER WRITE ---------------\n";
                 if (it->second->isResponseDone()) {
                     CHOROUK && std::cout << "----------- WRITE DONE ---------------\n";
-                    _pollfds[i].events = 0;
-                    _pollfds[i].revents = 0;
+                    // _pollfds[i].events = 0;
+                    // _pollfds[i].revents = 0;
+                        close(fd);
+                        delete it->second;
+                        _connections.erase(it);
+                        _fdType.erase(fd);
+                        _pollfds.erase(_pollfds.begin() + i);
+                        continue;
                     // if (it->second->getConnectionHeader() == "close"){ // check if "close" close connection
                     //     // closeConnection();
                     //     CHOROUK && std::cout << "Close connection header fd " << fd << std::endl;
