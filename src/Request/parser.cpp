@@ -47,9 +47,26 @@ void Request::setBodyInformations()
         }
     }
     if (this->getMethod() != POST)
-                throw 200;
+        throw 200;
     if (!this->isMultipart && !this->isCGI())
     {
+        if (this->headers.find("content-type") != this->headers.end())
+        {
+            std::string contentType = this->headers["content-type"];
+
+            try
+            {
+                checkMediaType(contentType);
+            }
+            catch (const char *error)
+            {
+                return;
+            }
+        }
+        else
+        {
+            return;
+        }
         std::string filename = generateRandomFileName(this->uploadDir + "/binary_file_");
         this->createdFile = filename;
         int fd = open(filename.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
@@ -112,7 +129,7 @@ void Request::parseRequest(const std::string &rawRequest)
         {
             if (this->getMethod() != POST)
                 throw 200;
-           
+
             this->fullBody += this->requestData;
 
             const ServerConf &server = globalServer[0];
@@ -151,6 +168,5 @@ void Request::parseRequest(const std::string &rawRequest)
             close(this->cgiFdRead);
         close(this->cgiFdWrite);
         printRequest();
-        std::cout << "appState values: theme=" << Request::theme << std::endl;
     }
 }
