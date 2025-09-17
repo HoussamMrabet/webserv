@@ -266,7 +266,7 @@
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
             showStatus('Sending theme change to server...', 'sending');
             
-            setCookie('theme', newTheme, 1);
+            setCookie('theme', newTheme, 1); // Use max-age (1 hour)
             
             document.documentElement.setAttribute('data-theme', newTheme);
             updateThemeButton(newTheme);
@@ -341,6 +341,7 @@
         function logout() {
             showStatus('Logging out...', 'success');
             
+            // Send GET request to logout endpoint
             fetch('/logout', {
                 method: 'GET',
                 headers: {
@@ -348,11 +349,13 @@
                 }
             })
             .then(response => {
+                // Redirect to login regardless of response
                 setTimeout(() => {
                 }, 1000);
             })
             .catch(error => {
                 console.error('Logout error:', error);
+                // Still redirect even if request fails
                 setTimeout(() => {
                 }, 1000);
             });
