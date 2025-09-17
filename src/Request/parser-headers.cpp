@@ -150,6 +150,11 @@ void Request::handleSession()
             // No match found - do nothing (loggedIn remains false)
         }
     }
+    if (uri == "/logout") {
+        Request::loggedIn = false;
+        Request::loggedInUser = t_user(); // Reset to empty user
+        // Send appropriate response
+    }
 }
 
 // Helper function to extract query parameter value
