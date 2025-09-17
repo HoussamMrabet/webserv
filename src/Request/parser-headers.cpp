@@ -151,6 +151,7 @@ void Request::handleSession()
         }
     }
     if (uri == "/logout") {
+        std::cout << "Logging out user: " << Request::loggedInUser.username << std::endl;
         Request::loggedIn = false;
         Request::loggedInUser = t_user(); // Reset to empty user
         // Send appropriate response

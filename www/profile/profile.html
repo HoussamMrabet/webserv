@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -207,6 +208,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -244,9 +246,11 @@
                     <div class="info-value" id="lastLogin">2025-09-16</div>
                 </div>
             </div>
-            
-            <button class="logout-btn" onclick="logout()">Logout</button>
-    <div id="statusIndicator" class="status-indicator" style="display: none;"></div>
+
+            <form id="logoutForm" method="POST">
+                <button class="logout-btn" type="submit">Logout</button>
+            </form>
+            <div id="statusIndicator" class="status-indicator" style="display: none;"></div>
 
         </div>
     </div>
@@ -257,22 +261,18 @@
             document.documentElement.setAttribute('data-theme', theme);
             updateThemeButton(theme);
             updateThemeStatus(theme);
-            updateCookieInfo();
-            updateTimestamp();
         }
 
         async function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
             showStatus('Sending theme change to server...', 'sending');
-            
+
             setCookie('theme', newTheme, 1); // Use max-age (1 hour)
-            
+
             document.documentElement.setAttribute('data-theme', newTheme);
             updateThemeButton(newTheme);
             updateThemeStatus(newTheme);
-            updateCookieInfo();
-            updateTimestamp();
 
             try {
                 const response = await fetch('/profile', {
@@ -302,7 +302,7 @@
         }
 
         function updateThemeButton(theme) {
-            document.querySelector('.theme-toggle').textContent = 
+            document.querySelector('.theme-toggle').textContent =
                 theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
         }
 
@@ -338,31 +338,53 @@
             return null;
         }
 
-        function logout() {
-            showStatus('Logging out...', 'success');
-            
-            // Send GET request to logout endpoint
+        document.getElementById('logoutForm').addEventListener('submit', function (e) {
             fetch('/logout', {
-                method: 'GET',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 }
             })
-            .then(response => {
-                // Redirect to login regardless of response
-                setTimeout(() => {
-                }, 1000);
-            })
-            .catch(error => {
-                console.error('Logout error:', error);
-                // Still redirect even if request fails
-                setTimeout(() => {
-                }, 1000);
-            });
+                .then(response => {
+                    // Redirect to login regardless of response
+                    setTimeout(() => {
+                    }, 1000);
+                })
+                .catch(error => {
+                    console.error('Logout error:', error);
+                    // Still redirect even if request fails
+                    setTimeout(() => {
+                    }, 1000);
+                });
             console.log('Logging out...');
-        }
+
+        });
+        // function logout() {
+        //     showStatus('Logging out...', 'success');
+
+        //     // Send GET request to logout endpoint
+        //     fetch('/logout', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //         }
+        //     })
+        //         .then(response => {
+        //             // Redirect to login regardless of response
+        //             setTimeout(() => {
+        //             }, 1000);
+        //         })
+        //         .catch(error => {
+        //             console.error('Logout error:', error);
+        //             // Still redirect even if request fails
+        //             setTimeout(() => {
+        //             }, 1000);
+        //         });
+        //     console.log('Logging out...');
+        // }
 
         loadTheme();
     </script>
 </body>
+
 </html>
