@@ -488,6 +488,8 @@ std::string Connection::checkForRedirect(Request &request, ServerConf &server) {
         return "/profile/login.html";
     if ((requested_path == "/profile" || requested_path == "/profile/"||requested_path == "/profile/login.html") && Request::loggedIn == true)
         return "/profile/profile.html";
+    if (requested_path == "/logout")
+        return "/profile";
     for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); 
          it != locations.end(); ++it) {
         if (requested_path.find(it->first) == 0 && it->first.length() > best_match.length()) {
