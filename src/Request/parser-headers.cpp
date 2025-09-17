@@ -129,7 +129,7 @@ void Request::handleThemeCookie()
 
 void Request::handleSession()
 {
-    if (uri == "/profile") {
+    if (uri == "/profile" || uri == "/profile/login.html" || uri == "/profile/profile.html") {
         // Parse query parameters from URI
         std::string queryString = getUriQueries();
         

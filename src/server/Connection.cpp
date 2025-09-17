@@ -484,7 +484,10 @@ std::string Connection::checkForRedirect(Request &request, ServerConf &server) {
     // Find the best matching location (longest prefix match)
     std::string best_match = "";
     const LocationConf* best_location = NULL;
-    
+    if ((requested_path == "/profile/profile.html" ) && Request::loggedIn == false)
+        return "/profile/login.html";
+    if ((requested_path == "/profile" || requested_path == "/profile/"||requested_path == "/profile/login.html") && Request::loggedIn == true)
+        return "/profile/profile.html";
     for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); 
          it != locations.end(); ++it) {
         if (requested_path.find(it->first) == 0 && it->first.length() > best_match.length()) {
