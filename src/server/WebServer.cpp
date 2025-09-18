@@ -2,6 +2,11 @@
 
 WebServ::WebServ(){/*init default data*/}
 
+WebServ::~WebServ(){
+    // loop on pollfds and close all
+    // delete connection pointers  
+}
+
 WebServ::WebServ(ServerConf& server): _server(server), _listens(server.getListen()){/*init data*/}
 
 bool WebServ::startServer(ServerConf& server){
@@ -30,6 +35,7 @@ void WebServ::addPollFd(int fd, short event, const std::string& type){
 }
 
 void WebServ::pollLoop(){
+    _cleanRead = false;
     while (true){
         CHOROUK && std::cout << "----------- IN POLLOOP ---------------\n";
         int n = poll(_pollfds.data(), _pollfds.size(), 1000);  // 1-second poll timeout to check timeouts regularly
@@ -38,20 +44,22 @@ void WebServ::pollLoop(){
             break; // Only break on fatal poll error
         }
         checkTimeout();
-        if (n == 0) continue;  // no events, continue loop
+        // if (n == 0) continue;  // no events, continue loop
         
         // Process events - iterate backwards to handle erasing safely
         for (int i = (int)_pollfds.size() - 1; i >= 0; i--){
             CHOROUK && std::cout << "----------- INSIDE POLLOOP ---------------\n";
+            // CHOROUK && std::cout << "------- pollfd_size = " << (int)_pollfds.size();
+            // CHOROUK && std::cout << "\n";
             int fd = _pollfds[i].fd;
             
-            if (_pollfds[i].revents & POLLIN){
-                CHOROUK && std::cout << "----------- INSIDE POLLIN ---------------\n";
-                if (_fdType[fd] == "listen"){
+                // CHOROUK && std::cout << "----------- INSIDE POLLIN ---------------\n";
+            if (_pollfds[i].revents & POLLIN && _fdType[fd] == "listen"){
                     CHOROUK && std::cout << "----------- INSIDE LISTEN ---------------\n";
                     acceptConnection(fd); // Always try to accept new connections
                 }
-                else if (_fdType[fd] == "connection"){
+            if ((_pollfds[i].revents & POLLIN) || !_cleanRead){
+                if (_fdType[fd] == "connection"){
                     CHOROUK && std::cout << "----------- INSIDE CONNECTION ---------------\n";
                     std::map<int, Connection*>::iterator it = _connections.find(fd);
                     if (it == _connections.end()) continue; // Safety check - connection not found
@@ -69,16 +77,17 @@ void WebServ::pollLoop(){
                     
                     if (it->second->isDone()){
                         CHOROUK && std::cout << "----------- READ DONE ---------------\n";
+                        _cleanRead = true;
                         // Request complete, switch to write mode
-                        _pollfds[i].events = POLLOUT;
-                        _pollfds[i].revents = 0;
+                        // _pollfds[i].events = POLLOUT;
+                        // _pollfds[i].revents = 0;
                         // it->second->printRequest(); // to remove!
                     }
                     else {
                         CHOROUK && std::cout << "----------- READ NOT DONE ---------------\n";
                         // Request complete, switch to write mode
-                        _pollfds[i].events = POLLIN;
-                        _pollfds[i].revents = 0;
+                        // _pollfds[i].events = POLLIN;
+                        // _pollfds[i].revents = 0;
                         // it->second->printRequest(); // to remove!
                     }
                 }
@@ -118,8 +127,8 @@ void WebServ::pollLoop(){
                 else {
                     CHOROUK && std::cout << "----------- WRITE NOT DONE ---------------\n";
                     // Response not done (chunked response in progress)
-                    _pollfds[i].events = POLLOUT;
-                    _pollfds[i].revents = 0;
+                    // _pollfds[i].events = POLLOUT;
+                    // _pollfds[i].revents = 0;
                 }
 
             }
@@ -140,7 +149,8 @@ bool WebServ::acceptConnection(int fd){
     // client_pfd.events = POLLIN;
     // client_pfd.revents = 0;
     // _pollfds.push_back(client_pfd);
-    addPollFd(connection_fd, POLLIN, "connection"); // to change later by macro
+    _cleanRead = false;
+    addPollFd(connection_fd, POLLIN|POLLOUT, "connection"); // to change later by macro
 
     return (true);
 }

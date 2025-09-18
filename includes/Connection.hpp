@@ -17,6 +17,7 @@
 class Connection{
 private:
     int _fd;
+    int _cgiFd;
     time_t _time;
     std::string _buffer;
     Request* _request;
@@ -32,6 +33,7 @@ public:
     Connection(int, ServerConf&);
     Connection(const Connection&);
     int getFd() const;
+    int getCgiFd() const;
     ServerConf getServer(); 
     time_t getTime() const;
     bool readRequest();

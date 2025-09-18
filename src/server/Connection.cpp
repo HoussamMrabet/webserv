@@ -23,6 +23,7 @@ Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
     _fd = accept(fd, NULL, NULL);
     _server = server;
     _request = new Request();
+    _cgiFd = -1;
     // std::cout << "Connection constructor fd " << _fd << "\n";
     // std::cout << _server.getRoot() << std::endl;
     if (_fd == -1) {
@@ -73,10 +74,10 @@ bool Connection::readRequest(){
             // _responseDone = true;
             // return (false);
         }
-        if (bytesRead < 1024){
-            _done = true;
-            return (true);
-        } 
+        // if (bytesRead < 1024){
+        //     _done = true;
+        //     return (true);
+        // } 
         // else
         // {
         //     std::cout << "Error reading from socket" << std::endl;
@@ -142,6 +143,7 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     {
         CHOROUK && std:: cout << M"IT IS CGI!!!!!\n";
         _response = CGI::executeCGI(*_request, _server);
+        // _cgiFd = CGI::getFd();
         updateTimout();
     }
     else if ( _request->getStatusCode() != 200){
@@ -212,6 +214,8 @@ std::string to_str(int n){
     std::stringstream ss; ss << n;
     return (ss.str());
 }
+
+int Connection::getCgiFd() const{ return (_cgiFd);}
 
 void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
     Response response_obj;
