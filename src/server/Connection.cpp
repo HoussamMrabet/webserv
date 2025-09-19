@@ -266,6 +266,13 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
     std::string connection_header = getConnectionHeader(request);
     if (_request->getUri() == "/profile/login.html" || _request->getUri() == "/profile" || _request->getUri() == "/profile/profile.html") {
         response_obj.setHeader("Set-Cookie", _request->getHeader("Set-Cookie"));
+        if (Request::loggedIn) {
+            response_obj.setHeader("X-User-Username", Request::loggedInUser.username);
+            response_obj.setHeader("X-User-Email", Request::loggedInUser.email);
+            response_obj.setHeader("X-User-FullName", Request::loggedInUser.fullName);
+            response_obj.setHeader("X-User-Avatar", Request::loggedInUser.avatar);
+            response_obj.setHeader("X-User-Job", Request::loggedInUser.job);
+        }
     }
     std::string requested_path = request.getUri();
     std::string document_root;

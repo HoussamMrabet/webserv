@@ -141,13 +141,14 @@ void Request::handleSession()
     if (uri == "/profile" || uri == "/profile/login.html" || uri == "/profile/profile.html")
     {
 
-        // if (Request::loggedIn)
-        // {
-        //     headers["X-User-Username"] = Request::loggedInUser.username;
-        //     headers["X-User-Email"] = Request::loggedInUser.email;
-        //     headers["X-User-FullName"] = Request::loggedInUser.fullName;
-        //     headers["X-User-Avatar"] = Request::loggedInUser.avatar;
-        // }
+        if (Request::loggedIn)
+        {
+            headers["X-User-Username"] = Request::loggedInUser.username;
+            headers["X-User-Email"] = Request::loggedInUser.email;
+            headers["X-User-FullName"] = Request::loggedInUser.fullName;
+            headers["X-User-Avatar"] = Request::loggedInUser.avatar;
+            headers["X-User-Job"] = Request::loggedInUser.job;
+        }
 
         // Parse query parameters from URI
         std::string queryString = getUriQueries();

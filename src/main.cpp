@@ -30,19 +30,24 @@ int main(int ac, char **av)
     user1.password = "hmrabet123";
     user1.email = "hmrabet@student.1337.ma";
 	user1.fullName = "Houssam Mrabet";
+	user1.job = "Web Developer";
+	user1.avatar = "./assets/houbet.jpeg";
     
     t_user user2;
     user2.username = "mel-hamd";
     user2.password = "mel-hamd123";
     user2.email = "mel-hamd@student.1337.ma";
 	user2.fullName = "Mohammed El Hamdaoui";
-
+	user2.job = "Backend Developer";
+	user2.avatar = "./assets/mel-hamd.jpg";
 
     t_user user3;
     user3.username = "cmasnaou";
     user3.password = "cmasnaou123";
     user3.email = "cmasnaou@student.1337.ma";
 	user3.fullName = "Chorouk Masnaoui";
+	user3.job = "Frontend Developer";
+	user3.avatar = "./assets/cmasnaou.jpg";
 
     // Assign them to the static vector
     Request::users.push_back(user1);

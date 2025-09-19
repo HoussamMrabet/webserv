@@ -55,6 +55,7 @@ typedef struct s_user
     std::string email;
     std::string fullName;
     std::string avatar;
+    std::string job;
 } t_user;
 
 class Request

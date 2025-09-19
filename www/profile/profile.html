@@ -206,6 +206,36 @@
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 2rem auto 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .logout-btn:hover::before {
+            left: 0;
+        }
+
+        .logout-btn:hover {
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.946);
+        }
+
+        .logout-btn span {
+            position: relative;
+            z-index: 1;
+        }
     </style>
 </head>
 
@@ -214,18 +244,15 @@
         <div class="header">
             <h1>User Profile</h1>
             <div>
-                <div class="theme-status">
-                    Current Theme: <span id="currentTheme"></span>
-                </div>
                 <button class="theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
             </div>
         </div>
 
         <div class="profile-card">
             <div class="profile-header">
-                <div class="avatar">👤</div>
-                <h2>John Doe</h2>
-                <p>Web Developer</p>
+                <img class="avatar" src="" alt="User Avatar" id="avatar" />
+                <h2 id="userfullName">Loading...</h2>
+                <h5 id="job">Loading...</h5>
             </div>
 
             <div class="profile-info">
@@ -238,12 +265,8 @@
                     <div class="info-value" id="email">user@example.com</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">Theme Preference:</div>
-                    <div class="info-value" id="themePreference">Light</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Last Login:</div>
-                    <div class="info-value" id="lastLogin">2025-09-16</div>
+                    <div class="info-label">Full Name:</div>
+                    <div class="info-value" id="fullName">Loading...</div>
                 </div>
             </div>
 
@@ -256,6 +279,55 @@
     </div>
 
     <script>
+        // Function to get user data from response headers
+        async function getUserDataFromHeaders() {
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'GET' // Use HEAD to get headers without body
+                });
+
+                console.log(response);
+
+                const userData = {
+                    username: response.headers.get('X-User-Username') || 'Guest',
+                    email: response.headers.get('X-User-Email') || 'No email',
+                    fullName: response.headers.get('X-User-FullName') || 'Unknown',
+                    avatar: response.headers.get('X-User-Avatar') || '',
+                    job: response.headers.get('X-User-Job') || 'None'
+                };
+
+
+                return userData;
+            } catch (error) {
+                console.log('Could not get user data from headers');
+                return {
+                    username: 'Guest',
+                    email: 'No email',
+                    fullName: 'Unknown',
+                    avatar: '',
+                    job: 'None'};
+            }
+        }
+
+        // Function to populate profile data
+        async function loadUserProfile() {
+            const userData = await getUserDataFromHeaders();
+
+            // Update profile information
+            document.getElementById('job').textContent = userData.job;
+            document.getElementById('userfullName').textContent = userData.fullName;
+            document.getElementById('username').textContent = userData.username;
+            document.getElementById('email').textContent = userData.email;
+            document.getElementById('fullName').textContent = userData.fullName;
+            document.getElementById('avatar').src = userData.avatar;
+
+            // Set theme
+            document.body.setAttribute('data-theme', userData.theme);
+            updateThemeButton(userData.theme);
+            updateThemeStatus(userData.theme);
+            updateThemePreference(userData.theme);
+        }
+
         function loadTheme() {
             const theme = getCookie('theme') || 'light';
             document.documentElement.setAttribute('data-theme', theme);
@@ -383,7 +455,10 @@
         //     console.log('Logging out...');
         // }
 
-        loadTheme();
+        document.addEventListener('DOMContentLoaded', function () {
+            loadUserProfile(); // Load user data first
+            loadTheme(); // Then load theme preferences
+        });
     </script>
 </body>
 
