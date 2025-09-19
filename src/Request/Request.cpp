@@ -149,10 +149,11 @@ void Request::printRequest()
     for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); it++)
         std::cout << it->first << ": " << it->second << std::endl;
     std::cout << std::endl;
-    std::cout << Request::loggedInUser.username << std::endl;
-    std::cout << Request::loggedInUser.password << std::endl;
+    // std::cout << Request::loggedInUser.username << std::endl;
+    // std::cout << Request::loggedInUser.password << std::endl;
 
-    std::cout << "loggedin : " << Request::loggedIn << std::endl;
+    // std::cout << "loggedin : " << Request::loggedIn << std::endl;
     // if (!this->fullBody.empty())
     //     std::cout << this->fullBody << std::endl;
+    //     std::cout << "----------------------------------------" << std::endl;
 }

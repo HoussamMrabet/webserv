@@ -62,6 +62,13 @@ void Request::setBodyInformations()
             {
                 return;
             }
+
+            if (contentType.find("application/x-www-form-urlencoded") != std::string::npos ||
+                contentType.find("application/json") != std::string::npos ||
+                contentType.find("text/") != std::string::npos)
+            {
+                return;
+            }
         }
         else
         {

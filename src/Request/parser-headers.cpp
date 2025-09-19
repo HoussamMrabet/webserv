@@ -58,7 +58,7 @@ void Request::parseHeaders()
         this->message = "Invalid headers: Host is missing";
         throw 400;
     }
-    
+
     if (this->headers.find("content-type") != this->headers.end())
     {
         std::string contentType = this->headers["content-type"];
@@ -66,7 +66,7 @@ void Request::parseHeaders()
         {
             checkMediaType(contentType);
         }
-        catch(const char *e)
+        catch (const char *e)
         {
             this->message = e;
             throw 415;
@@ -80,20 +80,24 @@ void Request::parseHeaders()
     }
 }
 
-std::string extractThemeFromCookie(const std::string& cookieString) {
+std::string extractThemeFromCookie(const std::string &cookieString)
+{
     size_t themePos = cookieString.find("theme=");
-    if (themePos != std::string::npos) {
+    if (themePos != std::string::npos)
+    {
         size_t valueStart = themePos + 6;
         size_t valueEnd = cookieString.find(";", valueStart);
-        if (valueEnd == std::string::npos) {
+        if (valueEnd == std::string::npos)
+        {
             valueEnd = cookieString.length();
         }
         std::string themeValue = cookieString.substr(valueStart, valueEnd - valueStart);
-        
-        while (!themeValue.empty() && (themeValue.back() == ' ' || themeValue.back() == '\t' || themeValue.back() == '\r')) {
+
+        while (!themeValue.empty() && (themeValue.back() == ' ' || themeValue.back() == '\t' || themeValue.back() == '\r'))
+        {
             themeValue.pop_back();
         }
-        
+
         return themeValue;
     }
     return "";
@@ -101,26 +105,31 @@ std::string extractThemeFromCookie(const std::string& cookieString) {
 
 void Request::handleThemeCookie()
 {
-    if (uri == "/profile" || uri == "/profile/login.html" || uri == "/profile/profile.html") {
-        
+    if (uri == "/profile" || uri == "/profile/login.html" || uri == "/profile/profile.html")
+    {
+
         bool cookieFound = false;
         std::string cookieValue;
-        
-        for (std::map<std::string, std::string>::iterator it = this->headers.begin(); 
-             it != this->headers.end(); ++it) {
-            if (it->first == "cookie") {
+
+        for (std::map<std::string, std::string>::iterator it = this->headers.begin();
+             it != this->headers.end(); ++it)
+        {
+            if (it->first == "cookie")
+            {
                 cookieFound = true;
                 cookieValue = it->second;
-                
+
                 std::string themeValue = extractThemeFromCookie(cookieValue);
-                if (!themeValue.empty()) {
+                if (!themeValue.empty())
+                {
                     Request::theme = themeValue;
                 }
                 break;
             }
         }
-        
-        if (!cookieFound) {
+
+        if (!cookieFound)
+        {
             std::string cookieHeader = "theme=" + Request::theme + "; Path=/; Max-Age=3600";
             headers["Set-Cookie"] = cookieHeader;
         }
@@ -129,18 +138,31 @@ void Request::handleThemeCookie()
 
 void Request::handleSession()
 {
-    if (uri == "/profile" || uri == "/profile/login.html" || uri == "/profile/profile.html") {
+    if (uri == "/profile" || uri == "/profile/login.html" || uri == "/profile/profile.html")
+    {
+
+        // if (Request::loggedIn)
+        // {
+        //     headers["X-User-Username"] = Request::loggedInUser.username;
+        //     headers["X-User-Email"] = Request::loggedInUser.email;
+        //     headers["X-User-FullName"] = Request::loggedInUser.fullName;
+        //     headers["X-User-Avatar"] = Request::loggedInUser.avatar;
+        // }
+
         // Parse query parameters from URI
         std::string queryString = getUriQueries();
-        
-        if (!queryString.empty()) {
+
+        if (!queryString.empty())
+        {
             std::string username = extractQueryParam(queryString, "username");
             std::string password = extractQueryParam(queryString, "password");
-            
+
             // Compare with users vector
-            for (std::vector<t_user>::iterator it = Request::users.begin(); 
-                 it != Request::users.end(); ++it) {
-                if (it->username == username && it->password == password) {
+            for (std::vector<t_user>::iterator it = Request::users.begin();
+                 it != Request::users.end(); ++it)
+            {
+                if (it->username == username && it->password == password)
+                {
                     // Match found - set logged in user
                     Request::loggedInUser = *it;
                     Request::loggedIn = true;
@@ -150,7 +172,8 @@ void Request::handleSession()
             // No match found - do nothing (loggedIn remains false)
         }
     }
-    if (uri == "/logout") {
+    if (uri == "/logout")
+    {
         std::cout << "Logging out user: " << Request::loggedInUser.username << std::endl;
         Request::loggedIn = false;
         Request::loggedInUser = t_user(); // Reset to empty user
@@ -159,20 +182,23 @@ void Request::handleSession()
 }
 
 // Helper function to extract query parameter value
-std::string Request::extractQueryParam(const std::string& queryString, const std::string& paramName) {
+std::string Request::extractQueryParam(const std::string &queryString, const std::string &paramName)
+{
     std::string searchPattern = paramName + "=";
     size_t startPos = queryString.find(searchPattern);
-    
-    if (startPos == std::string::npos) {
+
+    if (startPos == std::string::npos)
+    {
         return "";
     }
-    
+
     startPos += searchPattern.length();
     size_t endPos = queryString.find("&", startPos);
-    
-    if (endPos == std::string::npos) {
+
+    if (endPos == std::string::npos)
+    {
         endPos = queryString.length();
     }
-    
+
     return queryString.substr(startPos, endPos - startPos);
 }
