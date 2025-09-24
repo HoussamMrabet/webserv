@@ -49,7 +49,6 @@
                                 <p class="upload-subtext">Drag and drop files here or click to browse</p>
                                 <input type="file" id="file-input" name="files[]" class="file-input" multiple hidden>
                             </div>
-                            <!-- Display selected files -->
                             <div id="file-name-display" class="file-name-display"></div>
                         </div>
 
@@ -66,7 +65,6 @@
         </footer>
     </div>
 
-    <!-- Confirmation Popup -->
     <div id="confirmation-popup" class="popup">
         <div class="popup-content">
             <h3>Upload Successful!</h3>
@@ -87,7 +85,6 @@
 
             let selectedFiles = [];
 
-            // Function to render file list
             function renderFileList() {
                 fileNameDisplay.innerHTML = "";
                 if (selectedFiles.length > 0) {
@@ -108,19 +105,16 @@
                 }
             }
 
-            // Handle file selection
             fileInput.addEventListener('change', function() {
                 selectedFiles = Array.from(fileInput.files);
                 renderFileList();
             });
 
-            // Remove specific file
             fileNameDisplay.addEventListener('click', function(e) {
                 if (e.target.classList.contains("remove-file")) {
                     const index = e.target.getAttribute("data-index");
                     selectedFiles.splice(index, 1);
 
-                    // Update FileList manually (important for FormData)
                     const dataTransfer = new DataTransfer();
                     selectedFiles.forEach(file => dataTransfer.items.add(file));
                     fileInput.files = dataTransfer.files;
@@ -129,7 +123,6 @@
                 }
             });
 
-            // Handle form submission
             uploadForm.addEventListener('submit', async function(event) {
                 event.preventDefault();
 
@@ -156,12 +149,10 @@
                 }
             });
 
-            // Close popup
             closePopupButton.addEventListener('click', function() {
                 confirmationPopup.style.display = 'none';
             });
 
-            // Drag and drop functionality
             uploadZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 uploadZone.style.backgroundColor = '#e6f0ff';
@@ -180,7 +171,6 @@
                 renderFileList();
             });
 
-            // Clicking the zone opens file input
             uploadZone.addEventListener('click', () => fileInput.click());
         });
     </script>
