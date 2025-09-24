@@ -1,10 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Webserv Page</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webserv Project</title>
+    <link rel="stylesheet" href="./assets/main.css">
 </head>
 <body>
-    <h1>Webserv Page test</h1>
-    <p>This is index.html page</p>
+    <div class="container">
+        <header class="header">
+            <h1>Webserv Project</h1>
+            <p class="subtitle">A complete HTTP server implementation</p>
+        </header>
+
+        <nav class="main-nav">
+            <div class="nav-grid">
+                <a href="./home.html" class="nav-card">
+                    <h3>Home</h3>
+                    <p>Project overview and documentation</p>
+                </a>
+
+                <a href="./profile/profile.html" class="nav-card">
+                    <h3>Profile</h3>
+                    <p>User profile and settings</p>
+                </a>
+
+                <a href="./upload/index.html" class="nav-card">
+                    <h3>Upload</h3>
+                    <p>File upload functionality</p>
+                </a>
+            </div>
+        </nav>
+
+        <section class="features">
+            <h3>Server Features</h3>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h4>HTTP Methods</h4>
+                    <p>GET, POST, DELETE support</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Error Handling</h4>
+                    <p>Custom error pages for all status codes</p>
+                </div>
+                <div class="feature-item">
+                    <h4>File Management</h4>
+                    <p>Upload and serve static files</p>
+                </div>
+                <div class="feature-item">
+                    <h4>Configuration</h4>
+                    <p>Flexible server configuration</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>&copy; 2025 1337 - Webserv Project</p>
+            <div class="error-links">
+                <p>Error Pages:</p>
+                <a href="./errors/400.html">400</a>
+                <a href="./errors/404.html">404</a>
+                <a href="./errors/403.html">403</a>
+                <a href="./errors/500.html">500</a>
+                <a href="./errors/401.html">401</a>
+                <a href="./errors/502.html">502</a>
+            </div>
+        </footer>
+    </div>
 </body>
 </html>

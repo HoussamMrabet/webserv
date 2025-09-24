@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>400 - Bad Request</title>
+    <title>401 - Unauthorized</title>
     <link rel="stylesheet" href="../assets/error.css">
 </head>
 <body>
     <div class="error-container">
         <div class="error-content">
-            <h1 class="error-code">400</h1>
-            <h2 class="error-message">Bad Request</h2>
+            <h1 class="error-code">401</h1>
+            <h2 class="error-message">Unauthorized Access</h2>
             <p class="error-description">
-                Your request could not be understood by the server. 
-                Please check your request syntax and try again.
+                Authentication is required to access this resource. 
+                You must provide valid credentials to continue.
             </p>
             
             <div class="error-actions">
@@ -23,7 +23,7 @@
         </div>
         
         <div class="error-footer">
-            <p>Webserv - Error 400</p>
+            <p>Webserv - Error 401</p>
         </div>
     </div>
 </body>

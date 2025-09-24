@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>400 - Bad Request</title>
+    <title>502 - Bad Gateway</title>
     <link rel="stylesheet" href="../assets/error.css">
 </head>
 <body>
     <div class="error-container">
         <div class="error-content">
-            <h1 class="error-code">400</h1>
-            <h2 class="error-message">Bad Request</h2>
+            <h1 class="error-code">502</h1>
+            <h2 class="error-message">Bad Gateway</h2>
             <p class="error-description">
-                Your request could not be understood by the server. 
-                Please check your request syntax and try again.
+                The server received an invalid response from an upstream server while acting as a gateway or proxy.
+                This indicates a communication problem between servers.
             </p>
             
             <div class="error-actions">
                 <a href="../index.html" class="btn btn-primary">Go to Homepage</a>
                 <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+                <a href="javascript:location.reload()" class="btn btn-secondary">Try Again</a>
             </div>
         </div>
         
         <div class="error-footer">
-            <p>Webserv - Error 400</p>
+            <p>Webserv - Error 502</p>
         </div>
     </div>
 </body>
