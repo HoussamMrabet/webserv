@@ -149,7 +149,7 @@ void Request::parseRequest(const std::string &rawRequest)
                 if (this->fullBody.size() > location.getBodySizeLimit())
                 {
                     if (!this->createdFile.empty())
-                        unlink(this->createdFile.c_str());
+                        remove(this->createdFile.c_str());
                     if (this->isMultipart && !this->multipartData.empty())
                         this->multipartData.back()->unlinkFile();
                     this->message = "Request Body Too Large";
