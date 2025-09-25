@@ -39,9 +39,8 @@ void Request::parseRequestLine()
     else
     {
         this->message = "Invalid Method";
-        throw 400;
+        throw 405;
     }
-
     size_t pos = this->uri.find('?');
 
     if (pos != std::string::npos)
@@ -119,10 +118,10 @@ void Request::parseRequestLine()
             throw 500;
         }
 
-        if (unlink(filename.c_str()) == -1)
+        if (remove(filename.c_str()) != 0)
         {
             close(fd);
-            this->message = "Failed to unlink temporary file";
+            this->message = "Failed to remove temporary file";
             throw 500;
         }
 

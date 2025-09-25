@@ -1,0 +1,191 @@
+#include <iostream>
+#include <vector>
+#include <map>
+#include <cstring>
+#include <cstdlib>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 4096
+
+std::vector<struct pollfd> pollfds;
+std::map<int, std::string> fd_type;
+std::map<int, int> pipe_to_client;   // pipe fd → client fd
+std::map<int, pid_t> pipe_to_pid;    // pipe fd → child pid
+
+void set_non_blocking(int fd) {
+    fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+}
+
+void add_fd(int fd, short events, const std::string& type) {
+    struct pollfd pfd;
+    pfd.fd = fd;
+    pfd.events = events;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
+    fd_type[fd] = type;
+}
+
+void remove_fd(int fd) {
+    for (std::vector<struct pollfd>::iterator it = pollfds.begin(); it != pollfds.end(); ++it) {
+        if (it->fd == fd) {
+            close(fd);
+            pollfds.erase(it);
+            break;
+        }
+    }
+    fd_type.erase(fd);
+    pipe_to_client.erase(fd);
+    pipe_to_pid.erase(fd);
+}
+
+void handle_cgi_request(int client_fd) {
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        perror("pipe");
+        return;
+    }
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return;
+    }
+
+    if (pid == 0) {
+        // Child process
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        dup2(pipefd[1], STDERR_FILENO);
+        close(pipefd[1]);
+
+        char *argv[] = { (char*)"/bin/echo", (char*)"Content-Type: text/plain\n\nHello from CGI!", NULL };
+        char *envp[] = { NULL };
+        execve("/bin/echo", argv, envp);
+
+        perror("execve");
+        exit(1);
+    }
+
+    // Parent
+    close(pipefd[1]);
+    set_non_blocking(pipefd[0]);
+    add_fd(pipefd[0], POLLIN, "pipe");
+    pipe_to_client[pipefd[0]] = client_fd;
+    pipe_to_pid[pipefd[0]] = pid;
+}
+
+int main() {
+    int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (listen_fd < 0) {
+        perror("socket");
+        return 1;
+    }
+
+    int opt = 1;
+    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    struct sockaddr_in addr;
+    std::memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(PORT);
+
+    if (bind(listen_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        perror("bind");
+        return 1;
+    }
+
+    if (listen(listen_fd, 10) < 0) {
+        perror("listen");
+        return 1;
+    }
+
+    set_non_blocking(listen_fd);
+    add_fd(listen_fd, POLLIN, "listen");
+
+    std::cout << "Server listening on port " << PORT << std::endl;
+
+    char buffer[BUFFER_SIZE];
+
+    while (true) {
+        int ready = poll(&pollfds[0], pollfds.size(), -1);
+        if (ready < 0) {
+            perror("poll");
+            break;
+        }
+
+        for (size_t i = 0; i < pollfds.size(); ++i) {
+            int fd = pollfds[i].fd;
+            short revents = pollfds[i].revents;
+            if (revents == 0) continue;
+
+            if (revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                remove_fd(fd);
+                continue;
+            }
+
+            std::string type = fd_type[fd];
+
+            if (type == "listen" && (revents & POLLIN)) {
+                int client_fd = accept(fd, NULL, NULL);
+                if (client_fd >= 0) {
+                    set_non_blocking(client_fd);
+                    add_fd(client_fd, POLLIN, "connect");
+                    std::cout << "Client connected: " << client_fd << std::endl;
+                }
+            } else if (type == "connect" && (revents & POLLIN)) {
+                int n = read(fd, buffer, BUFFER_SIZE - 1);
+                if (n > 0) {
+                    buffer[n] = '\0';
+                    std::cout << "Received from client " << fd << ": " << buffer;
+
+                    // Check if it's a CGI request — dummy logic (adjust as needed)
+                    if (strstr(buffer, "/cgi-bin") != NULL) {
+                        handle_cgi_request(fd);
+                        pollfds[i].events = 0; // Stop reading from client while CGI is running
+                    } else {
+                        // Simple HTTP 200 OK Response
+                        const char* response =
+                            "HTTP/1.1 200 OK\r\n"
+                            "Content-Type: text/plain\r\n"
+                            "Content-Length: 13\r\n"
+                            "\r\n"
+                            "Hello, world!";
+                        write(fd, response, strlen(response));
+                        remove_fd(fd); // Close the connection after response
+                    }
+                } else {
+                    std::cout << "Client disconnected: " << fd << std::endl;
+                    remove_fd(fd);
+                }
+            } else if (type == "pipe" && (revents & POLLIN)) {
+                int client_fd = pipe_to_client[fd];
+                int n = read(fd, buffer, BUFFER_SIZE);
+                if (n > 0) {
+                    write(client_fd, buffer, n);
+                } else {
+                    std::cout << "CGI complete for client " << client_fd << std::endl;
+                    pid_t pid = pipe_to_pid[fd];
+                    waitpid(pid, NULL, 0);
+                    remove_fd(fd);
+                    remove_fd(client_fd);
+                }
+            }
+        }
+    }
+
+    for (size_t i = 0; i < pollfds.size(); ++i) {
+        close(pollfds[i].fd);
+    }
+
+    return 0;
+}

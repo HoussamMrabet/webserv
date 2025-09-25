@@ -1,0 +1,67 @@
+size_t bytes_written = 0;
+const char* data = _body.c_str();
+size_t data_len = _body.size();
+std::string cgi_output;
+
+bool writing_done = (data_len == 0);
+bool reading_done = false;
+
+pollfd fds[2];
+fds[0].fd = pipe_out[0];
+fds[0].events = POLLIN;
+fds[1].fd = pipe_in[1];
+fds[1].events = writing_done ? 0 : POLLOUT;
+
+while (!reading_done || !writing_done) {
+    int ret = poll(fds, 2, 5000); // 5 second timeout or whatever suits you
+    if (ret == -1) {
+        perror("poll");
+        break;
+    }
+    if (ret == 0) {
+        // timeout, handle accordingly (break or retry)
+        continue;
+    }
+
+    // Write POST body if ready
+    if (!writing_done && (fds[1].revents & POLLOUT)) {
+        ssize_t written = write(pipe_in[1], data + bytes_written, data_len - bytes_written);
+        if (written > 0) {
+            bytes_written += written;
+            if (bytes_written == data_len) {
+                writing_done = true;
+                fds[1].events = 0; // stop polling for write
+                close(pipe_in[1]); // close writing end to signal EOF to child
+            }
+        } else if (written == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+            perror("write");
+            break;
+        }
+    }
+
+    // Read CGI output if ready
+    if (!reading_done && (fds[0].revents & POLLIN)) {
+        char buffer[1024];
+        ssize_t nread = read(pipe_out[0], buffer, sizeof(buffer));
+        if (nread > 0) {
+            cgi_output.append(buffer, nread);
+        } else if (nread == 0) {
+            // EOF - child closed pipe
+            reading_done = true;
+            close(pipe_out[0]);
+        } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            perror("read");
+            break;
+        }
+    }
+}
+
+
+/***** */
+int status;
+pid_t w = waitpid(pid, &status, 0);
+if (w == -1) {
+    perror("waitpid");
+} else {
+    // check status for success or failure
+}

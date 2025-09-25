@@ -94,7 +94,7 @@ void Multipart::unlinkFile()
     }
     if (!this->fileName.empty())
     {
-        unlink(this->fileName.c_str());
+        remove(this->fileName.c_str());
         this->fileName.clear();
     }
 }

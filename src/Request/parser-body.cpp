@@ -45,11 +45,24 @@ void Request::parseBody()
                     {
                         std::string chunk = this->body.substr(0, this->chunkSize);
 
-                        ssize_t written = write(this->file, chunk.c_str(), this->chunkSize);
-                        if (written == -1)
+                        if (this->headers.find("content-type") != this->headers.end())
                         {
-                            this->message = "Failed to write to file";
-                            throw 500;
+                            std::string contentType = this->headers["content-type"];
+
+                            try
+                            {
+                                checkMediaType(contentType);
+                            }
+                            catch (const char *error)
+                            {
+                                return;
+                            }
+                            ssize_t written = write(this->file, chunk.c_str(), this->chunkSize);
+                            if (written == -1)
+                            {
+                                this->message = "Failed to write to file";
+                                throw 500;
+                            }
                         }
                     }
                     this->body.erase(0, this->chunkSize + 2);
@@ -97,17 +110,30 @@ void Request::parseBody()
             }
             else
             {
-                ssize_t written = write(this->file, this->body.c_str(), this->body.size());
-                if (written == -1)
+                if (this->headers.find("content-type") != this->headers.end())
                 {
-                    this->message = "Failed to write to file";
-                    throw 500;
-                }
+                    std::string contentType = this->headers["content-type"];
 
-                if (close(this->file) == -1)
-                {
-                    this->message = "Failed to close file";
-                    throw 500;
+                    try
+                    {
+                        checkMediaType(contentType);
+                    }
+                    catch (const char *error)
+                    {
+                        return;
+                    }
+                    ssize_t written = write(this->file, this->body.c_str(), this->body.size());
+                    if (written == -1)
+                    {
+                        this->message = "Failed to write to file";
+                        throw 500;
+                    }
+
+                    if (close(this->file) == -1)
+                    {
+                        this->message = "Failed to close file";
+                        throw 500;
+                    }
                 }
             }
             this->body.clear();
