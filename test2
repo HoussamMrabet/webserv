@@ -1,0 +1,332 @@
+#pragma once
+#include <vector>
+#include <map>
+#include <string>
+#include <poll.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <ctime>
+
+class ServerConf;
+class Request;
+class Response;
+
+struct Connection {
+    enum Type { LISTEN, CLIENT, CGI } type;
+    enum State { READING, PROCESSING, WRITING, DONE } state;
+    
+    int fd;
+    time_t activity;
+    
+    // Client data
+    std::string read_buf, write_buf;
+    size_t write_pos;
+    Request* req;
+    Response* resp;
+    
+    // CGI data  
+    int parent_fd;
+    pid_t pid;
+    
+    Connection(Type t = CLIENT) : type(t), state(READING), fd(-1), 
+        activity(time(NULL)), write_pos(0), req(nullptr), resp(nullptr),
+        parent_fd(-1), pid(-1) {}
+    
+    ~Connection() { cleanup(); }
+    
+    void cleanup() {
+        delete req; delete resp;
+        req = resp = nullptr;
+        if (pid > 0) { kill(pid, SIGTERM); waitpid(pid, nullptr, WNOHANG); }
+    }
+    
+    void touch() { activity = time(NULL); }
+    bool expired() const { return time(NULL) - activity > 30; }
+};
+
+class WebServer {
+    ServerConf& config;
+    std::vector<pollfd> fds;
+    std::map<int, Connection*> conns;
+    
+public:
+    WebServer(ServerConf& cfg) : config(cfg) {}
+    
+    ~WebServer() {
+        for (auto& pair : conns) {
+            close(pair.first);
+            delete pair.second;
+        }
+    }
+    
+    bool start() {
+        auto addresses = config.getListen();
+        for (const auto& addr : addresses) {
+            int fd = createListenSocket(addr.first, addr.second);
+            if (fd < 0) return false;
+            
+            addPoll(fd, POLLIN);
+            conns[fd] = new Connection(Connection::LISTEN);
+            conns[fd]->fd = fd;
+        }
+        return true;
+    }
+    
+    void run() {
+        while (true) {
+            int n = poll(fds.data(), fds.size(), 1000);
+            if (n < 0) break;
+            
+            cleanup();
+            
+            for (int i = fds.size() - 1; i >= 0; i--) {
+                if (fds[i].revents == 0) continue;
+                
+                int fd = fds[i].fd;
+                Connection* c = conns[fd];
+                if (!c) continue;
+                
+                c->touch();
+                
+                if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                    closeConn(fd);
+                    continue;
+                }
+                
+                switch (c->type) {
+                case Connection::LISTEN:
+                    if (fds[i].revents & POLLIN) acceptClient(fd);
+                    break;
+                    
+                case Connection::CLIENT:
+                    if (fds[i].revents & POLLIN && c->state == Connection::READING) {
+                        if (!readRequest(c)) closeConn(fd);
+                    }
+                    if (fds[i].revents & POLLOUT && c->state == Connection::WRITING) {
+                        if (!writeResponse(c)) closeConn(fd);
+                    }
+                    break;
+                    
+                case Connection::CGI:
+                    if (fds[i].revents & POLLIN) {
+                        if (!readCGI(c)) finishCGI(c);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+private:
+    void addPoll(int fd, short events) {
+        fds.push_back({fd, events, 0});
+    }
+    
+    void removePoll(int fd) {
+        for (auto it = fds.begin(); it != fds.end(); ++it) {
+            if (it->fd == fd) {
+                fds.erase(it);
+                break;
+            }
+        }
+    }
+    
+    void modifyPoll(int fd, short events) {
+        for (auto& pfd : fds) {
+            if (pfd.fd == fd) {
+                pfd.events = events;
+                break;
+            }
+        }
+    }
+    
+    void closeConn(int fd) {
+        Connection* c = conns[fd];
+        if (!c) return;
+        
+        // Close related CGI if client closes
+        if (c->type == Connection::CLIENT) {
+            for (auto& pair : conns) {
+                if (pair.second->type == Connection::CGI && 
+                    pair.second->parent_fd == fd) {
+                    closeConn(pair.first);
+                    break;
+                }
+            }
+        }
+        
+        removePoll(fd);
+        close(fd);
+        delete c;
+        conns.erase(fd);
+    }
+    
+    void cleanup() {
+        std::vector<int> expired;
+        for (const auto& pair : conns) {
+            if (pair.second->type != Connection::LISTEN && pair.second->expired()) {
+                expired.push_back(pair.first);
+            }
+        }
+        for (int fd : expired) closeConn(fd);
+    }
+    
+    void acceptClient(int listen_fd) {
+        int fd = accept(listen_fd, nullptr, nullptr);
+        if (fd < 0) return;
+        
+        fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+        
+        Connection* c = new Connection(Connection::CLIENT);
+        c->fd = fd;
+        c->req = new Request();
+        
+        conns[fd] = c;
+        addPoll(fd, POLLIN);
+    }
+    
+    bool readRequest(Connection* c) {
+        char buf[4096];
+        ssize_t n = read(c->fd, buf, sizeof(buf));
+        
+        if (n <= 0) {
+            return (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+        }
+        
+        c->read_buf.append(buf, n);
+        
+        if (c->req->parse(c->read_buf)) {
+            c->state = Connection::PROCESSING;
+            modifyPoll(c->fd, 0); // Remove POLLIN
+            return processRequest(c);
+        }
+        
+        return true;
+    }
+    
+    bool processRequest(Connection* c) {
+        if (c->req->isCGI()) {
+            return startCGI(c);
+        }
+        
+        c->resp = new Response();
+        c->resp->handle(*c->req, config);
+        c->write_buf = c->resp->build();
+        c->write_pos = 0;
+        c->state = Connection::WRITING;
+        modifyPoll(c->fd, POLLOUT);
+        return true;
+    }
+    
+    bool startCGI(Connection* c) {
+        int pipes[2];
+        if (pipe(pipes) < 0) return false;
+        
+        pid_t pid = fork();
+        if (pid < 0) {
+            close(pipes[0]); close(pipes[1]);
+            return false;
+        }
+        
+        if (pid == 0) {
+            // Child: setup and exec CGI
+            close(pipes[0]);
+            dup2(pipes[1], STDOUT_FILENO);
+            dup2(pipes[1], STDERR_FILENO);
+            close(pipes[1]);
+            
+            execCGI(*c->req, config);
+            _exit(1);
+        }
+        
+        // Parent: setup CGI connection
+        close(pipes[1]);
+        fcntl(pipes[0], F_SETFL, fcntl(pipes[0], F_GETFL) | O_NONBLOCK);
+        
+        Connection* cgi = new Connection(Connection::CGI);
+        cgi->fd = pipes[0];
+        cgi->parent_fd = c->fd;
+        cgi->pid = pid;
+        
+        conns[pipes[0]] = cgi;
+        addPoll(pipes[0], POLLIN);
+        
+        return true;
+    }
+    
+    bool readCGI(Connection* cgi) {
+        char buf[4096];
+        ssize_t n = read(cgi->fd, buf, sizeof(buf));
+        
+        if (n <= 0) {
+            return (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+        }
+        
+        cgi->read_buf.append(buf, n);
+        return true;
+    }
+    
+    void finishCGI(Connection* cgi) {
+        Connection* client = conns[cgi->parent_fd];
+        if (!client) {
+            closeConn(cgi->fd);
+            return;
+        }
+        
+        waitpid(cgi->pid, nullptr, WNOHANG);
+        
+        client->resp = new Response();
+        client->resp->fromCGI(cgi->read_buf);
+        client->write_buf = client->resp->build();
+        client->write_pos = 0;
+        client->state = Connection::WRITING;
+        modifyPoll(client->fd, POLLOUT);
+        
+        closeConn(cgi->fd);
+    }
+    
+    bool writeResponse(Connection* c) {
+        if (c->write_pos >= c->write_buf.size()) {
+            closeConn(c->fd);
+            return false;
+        }
+        
+        const char* data = c->write_buf.data() + c->write_pos;
+        size_t len = c->write_buf.size() - c->write_pos;
+        
+        ssize_t n = write(c->fd, data, len);
+        if (n <= 0) {
+            return (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+        }
+        
+        c->write_pos += n;
+        
+        if (c->write_pos >= c->write_buf.size()) {
+            closeConn(c->fd);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    int createListenSocket(const std::string& host, const std::string& port);
+    void execCGI(const Request& req, ServerConf& config);
+};
+
+// Simplified Request class interface
+class Request {
+public:
+    bool parse(const std::string& data);
+    bool isCGI() const;
+    // Add other necessary methods
+};
+
+// Simplified Response class interface  
+class Response {
+public:
+    void handle(const Request& req, ServerConf& config);
+    void fromCGI(const std::string& cgi_output);
+    std::string build() const;
+    // Add other necessary methods
+};
