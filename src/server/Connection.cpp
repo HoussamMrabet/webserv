@@ -141,6 +141,7 @@ std::string generateDirectoryListing(const std::string& directory_path, const st
 Connection::~Connection(){ 
     CHOROUK && std::cout << "***********  connection destructor called!!! ***********\n";
     delete _request;
+    delete _cgi;
 }
 
 Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
@@ -150,6 +151,7 @@ Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
     _fd = accept(fd, NULL, NULL);
     _server = server;
     _request = new Request();
+    _cgi = new CGI();
     _cgiFd = -1;
     // std::cout << "Connection constructor fd " << _fd << "\n";
     // std::cout << _server.getRoot() << std::endl;
@@ -268,11 +270,21 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     }
     else if (_request->isCGI()) // && index is found, otherwise should list dir or 403
     {
-        std:: cout << M"IT IS CGI!!!!!\n";
+        if (_cgi->readDone()){
+            _responseDone = true;
+            return (true);
+        }
         // CHOROUK && std:: cout << M"IT IS CGI!!!!!\n";
-        _response = _cgi.executeCGI(*_request, _server);
+        _response = _cgi->executeCGI(*_request, _server);
+        std:: cout << M"IT IS CGI!!!!! fd = " << _cgi->getFd() << " \n";
+        // if (!_cgi->execDone()){
+
+        // std:: cout << M"IT IS CGI!!!!! fd = " << _cgi->getFd() << " \n";
+        _cgiFd = _cgi->getFd();
+        // }
         // _cgiFd = CGI::getFd();
         updateTimout();
+        // return (true);
     }
     else if ( _request->getStatusCode() != 200){
         MOHAMED && std::cout << "Error status code: " << _request->getStatusCode()  << std::endl;
@@ -323,6 +335,7 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     return (true);
 }
 
+bool Connection::cgiDone() { return (_cgi->execDone());}
 // std::string Connection::getRequestMethod(){
 //     t_method method = _request->getMethod();
 //     switch (method)

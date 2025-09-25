@@ -22,6 +22,7 @@ class WebServ{ // Factory design
         std::map<int, Connection*> _cgis; // can use just vector?
         std::map<int, std::string> _fdType; // to check if fd is a listen, client connection, or a cgi pipe
         bool _cleanRead;
+        bool _cleanWrite;
         WebServ();
         WebServ(ServerConf&);
         // void startSocket(std::string, std::string);

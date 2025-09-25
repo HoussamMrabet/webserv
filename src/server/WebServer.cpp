@@ -36,6 +36,7 @@ void WebServ::addPollFd(int fd, short event, const std::string& type){
 
 void WebServ::pollLoop(){
     _cleanRead = false;
+    _cleanWrite = false;
     while (true){
         CHOROUK && std::cout << "----------- IN POLLOOP ---------------\n";
         int n = poll(_pollfds.data(), _pollfds.size(), 1000);  // 1-second poll timeout to check timeouts regularly
@@ -61,50 +62,50 @@ void WebServ::pollLoop(){
             if ((_pollfds[i].revents & POLLIN) || !_cleanRead){
 
 
-                if (_fdType[fd] == "cgi"){
-                    CHOROUK && std::cout << "----------- INSIDE CGI ---------------\n";
-                    std::map<int, Connection*>::iterator it = _cgis.find(fd);
-                    if (it == _cgis.end()) continue; // Safety check - connection not found
-                    CHOROUK && std::cout << "----------- INSIDE READ CGI ---------------\n";
+                // if (_fdType[fd] == "cgi"){
+                //     CHOROUK && std::cout << "----------- INSIDE CGI ---------------\n";
+                //     std::map<int, Connection*>::iterator it = _cgis.find(fd);
+                //     if (it == _cgis.end()) continue; // Safety check - connection not found
+                //     CHOROUK && std::cout << "----------- INSIDE READ CGI ---------------\n";
 
 
-                    if (!it->second->readRequest()){
-                        CHOROUK && std::cout << "----------- READ FAIL ---------------\n";
-                        // Connection error - clean up and continue
-                        close(fd);
-                        delete it->second;
-                        _cgis.erase(fd);
-                        _connections.erase(it);
-                        _fdType.erase(fd);
-                        _pollfds.erase(_pollfds.begin() + i);
-                        continue;
-                    }
+                //     if (!it->second->writeResponse()){
+                //         CHOROUK && std::cout << "----------- READ FAIL ---------------\n";
+                //         // Connection error - clean up and continue
+                //         close(fd);
+                //         delete it->second;
+                //         _cgis.erase(fd);
+                //         _connections.erase(it);
+                //         _fdType.erase(fd);
+                //         _pollfds.erase(_pollfds.begin() + i);
+                //         continue;
+                //     }
 
-                    // std::string cgi_response = it->second->sendResponse();
-                    // if (cgi_response.empty()){
-                    //     CHOROUK && std::cout << "----------- READ CGI FAIL ---------------\n";
-                    //     // Connection error - clean up and continue
-                    //     close(fd);
-                    //     delete it->second;
-                    //     _connections.erase(it);
-                    //     _fdType.erase(fd);
-                    //     _pollfds.erase(_pollfds.begin() + i);
-                    //     _cgis.erase(fd);
-                    //     continue;
-                    // }
-                    // CHOROUK && std::cout << "----------- READ CGI DONE ---------------\n";
-                    // // Request complete, switch to write mode
-                    // // _pollfds[i].events = POLLOUT;
-                    // // _pollfds[i].revents = 0;
-                    // // it->second->printRequest(); // to remove!
-                    // // Now set the response in the connection and prepare for writing
-                    // it->second->setCgiFd(-1); // reset cgi fd in connection
-                    // _cgis.erase(fd); // remove from cgi map
-                    // close(fd); // close the cgi pipe fd
-                    // it->second->sendGetResponse(*(it->second->_request), _server); // to change later by macro
-                    // _pollfds[i].events = POLLOUT;
-                    // _pollfds[i].revents = 0;
-                }
+                //     // std::string cgi_response = it->second->sendResponse();
+                //     // if (cgi_response.empty()){
+                //     //     CHOROUK && std::cout << "----------- READ CGI FAIL ---------------\n";
+                //     //     // Connection error - clean up and continue
+                //     //     close(fd);
+                //     //     delete it->second;
+                //     //     _connections.erase(it);
+                //     //     _fdType.erase(fd);
+                //     //     _pollfds.erase(_pollfds.begin() + i);
+                //     //     _cgis.erase(fd);
+                //     //     continue;
+                //     // }
+                //     // CHOROUK && std::cout << "----------- READ CGI DONE ---------------\n";
+                //     // // Request complete, switch to write mode
+                //     // // _pollfds[i].events = POLLOUT;
+                //     // // _pollfds[i].revents = 0;
+                //     // // it->second->printRequest(); // to remove!
+                //     // // Now set the response in the connection and prepare for writing
+                //     // it->second->setCgiFd(-1); // reset cgi fd in connection
+                //     // _cgis.erase(fd); // remove from cgi map
+                //     // close(fd); // close the cgi pipe fd
+                //     // it->second->sendGetResponse(*(it->second->_request), _server); // to change later by macro
+                //     // _pollfds[i].events = POLLOUT;
+                //     // _pollfds[i].revents = 0;
+                // }
 
 
                 if (_fdType[fd] == "connection"){
@@ -112,11 +113,11 @@ void WebServ::pollLoop(){
                     std::map<int, Connection*>::iterator it = _connections.find(fd);
                     if (it == _connections.end()) continue; // Safety check - connection not found
                     CHOROUK && std::cout << "----------- INSIDE READ ---------------\n";
-                    if (it->second->getCgiFd()!= -1){
-                        addPollFd(it->second->getCgiFd(), POLLIN, "cgi");
-                        _cgis[it->second->getCgiFd()] = it->second;
-                        it->second->setCgiFd(-1); // reset to avoid adding multiple times
-                    }
+                    // if (it->second->getCgiFd()!= -1){
+                    //     addPollFd(it->second->getCgiFd(), POLLIN, "cgi");
+                    //     _cgis[it->second->getCgiFd()] = it->second;
+                    //     it->second->setCgiFd(-1); // reset to avoid adding multiple times
+                    // }
                     if (!it->second->readRequest()){
                         CHOROUK && std::cout << "----------- READ FAIL ---------------\n";
                         // Connection error - clean up and continue
@@ -145,15 +146,73 @@ void WebServ::pollLoop(){
                     }
                 }
             }
-            else if (_pollfds[i].revents & POLLOUT){
+            else if ((_pollfds[i].revents & POLLOUT) || (_cleanRead && !_cleanWrite)){
+
                 CHOROUK && std::cout << "----------- INSIDE POLLOUT ---------------\n";
                 std::map<int, Connection*>::iterator it = _connections.find(fd);
                 if (it == _connections.end()) continue; // Safety check
+
+                if (_fdType[fd] == "cgi"){
+                    CHOROUK && std::cout << "----------- INSIDE CGI ---------------\n";
+                    std::map<int, Connection*>::iterator it = _cgis.find(fd);
+                    if (it == _cgis.end()) continue; // Safety check - connection not found
+
+                    CHOROUK && std::cout << "--cgi fd = " << fd;
+                    CHOROUK && std::cout << "\n";
+                    CHOROUK && std::cout << "----------- INSIDE write CGI ---------------\n";
+
+                    if (!it->second->writeResponse()){
+                        // CHOROUK && std::cout << "----------- READ FAIL ---------------\n";
+                        // Connection error - clean up and continue
+                        close(fd);
+                        delete it->second;
+                        _cgis.erase(fd);
+                        _connections.erase(it);
+                        _fdType.erase(fd);
+                        _pollfds.erase(_pollfds.begin() + i);
+                        _cleanWrite = true;
+                        continue;
+                    }
+
+                    // std::string cgi_response = it->second->sendResponse();
+                    // if (cgi_response.empty()){
+                    //     CHOROUK && std::cout << "----------- READ CGI FAIL ---------------\n";
+                    //     // Connection error - clean up and continue
+                    //     close(fd);
+                    //     delete it->second;
+                    //     _connections.erase(it);
+                    //     _fdType.erase(fd);
+                    //     _pollfds.erase(_pollfds.begin() + i);
+                    //     _cgis.erase(fd);
+                    //     continue;
+                    // }
+                    // CHOROUK && std::cout << "----------- READ CGI DONE ---------------\n";
+                    // // Request complete, switch to write mode
+                    // // _pollfds[i].events = POLLOUT;
+                    // // _pollfds[i].revents = 0;
+                    // // it->second->printRequest(); // to remove!
+                    // // Now set the response in the connection and prepare for writing
+                    // it->second->setCgiFd(-1); // reset cgi fd in connection
+                    // _cgis.erase(fd); // remove from cgi map
+                    // close(fd); // close the cgi pipe fd
+                    // it->second->sendGetResponse(*(it->second->_request), _server); // to change later by macro
+                    // _pollfds[i].events = POLLOUT;
+                    // _pollfds[i].revents = 0;
+                }
                 CHOROUK && std::cout << "----------- INSIDE WRITE ---------------\n";
                 it->second->writeResponse();
                 CHOROUK && std::cout << "----------- AFTER WRITE ---------------\n";
-                if (it->second->isResponseDone()) {
+                std::cout << "------------------------------------ cgi fd = " << it->second->getCgiFd() << "\n";
+                if (it->second->cgiDone()){
+                    CHOROUK && std::cout << "----------- CGI POLLOUT ---------------\n";
+                    addPollFd(it->second->getCgiFd(), POLLOUT, "cgi");
+                    _cgis[it->second->getCgiFd()] = it->second;
+                    // it->second->setCgiFd(-1); // reset to avoid adding multiple times
+                    continue ;
+                }
+                else if (it->second->isResponseDone()) {
                     CHOROUK && std::cout << "----------- WRITE DONE ---------------\n";
+                    _cleanWrite = true;
                     // _pollfds[i].events = 0;
                     // _pollfds[i].revents = 0;
                         close(fd);

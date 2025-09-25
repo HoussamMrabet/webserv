@@ -75,6 +75,8 @@ class CGI{ // should class name be camel-case??
         // void setQueryString();
         std::string setPath();
         int getFd() const;
+        bool readDone() const;
+        bool execDone() const;
         // void setContentLenght();
         void set_HTTP_Header();
         void printEnvironment(); // to remove later

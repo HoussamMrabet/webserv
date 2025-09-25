@@ -24,7 +24,7 @@ private:
     Response _response_obj;  // For chunked responses
     std::string _response;   // For simple responses
     static ServerConf _server;
-    CGI _cgi;
+    CGI* _cgi;
     bool _done;
     bool _responseDone;
     bool _isChunkedResponse; // Flag to track if we're doing chunked response
@@ -40,6 +40,7 @@ public:
     time_t getTime() const;
     bool readRequest();
     bool isDone();
+    bool cgiDone();
     bool isResponseDone();
     bool writeResponse();
     void printRequest(); // to remove

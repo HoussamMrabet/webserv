@@ -3,10 +3,10 @@
 
 ServerConf CGI::_server;
 
-CGI::CGI(): _fd_in(-1), _execDone(false) {}
+CGI::CGI(): _fd_in(-1), _fd_out(-1), _execDone(false), _readDone(false) {}
 
 CGI::~CGI(){
-
+    std::cout << "+++++++++++++ CGI destructor!!!!!!!!!!!!!\n";
     if (_fd_in != -1)
         close(_fd_in);
     // if (_fd_out != -1)
@@ -33,7 +33,7 @@ CGI::~CGI(){
 //     }
 // }
 
-int CGI::getFd() const { return (_fd_in);}
+int CGI::getFd() const { return (_fd_out);}
 
 // void CGI::setFd(int fd){ _fd_in = fd; }
 
@@ -244,6 +244,7 @@ void CGI::runCGI(){
         throw std::runtime_error("CGI script failed");
     }
     _execDone = true;
+    _fd_out = pipefd[1];
     // // _done = true;
     // lseek(_fd, 0, SEEK_SET);
     // // lseek(_fd_out, 0, SEEK_SET);
@@ -269,8 +270,9 @@ void CGI::runCGI(){
 }
 
 std::string CGI::sendResponse(){
+
         // _done = true;
-    lseek(_fd_in, 0, SEEK_SET);
+    lseek(_fd_out, 0, SEEK_SET);
     // lseek(_fd_out, 0, SEEK_SET);
     std::string cgi_output;
     char buffer[4096];
@@ -279,19 +281,25 @@ std::string CGI::sendResponse(){
     // add _fd and fd_out to poll and manage all without while loop!! 
     
     int read_counter = 0;
-    while ((n = read(_fd_in, buffer, sizeof(buffer))) > 0) {
+    n = read(_fd_out, buffer, sizeof(buffer));
+    if (n > 0) {
         std::cout << "read counter = " << ++read_counter << std::endl;
         cgi_output.append(buffer, n);
     }
+    else _readDone = true;
     cgi_output = parseOutput(cgi_output);
-    // std::cout << " ########## CGI ###########\n";
-    // std::cout << cgi_output << std::endl;
-    // std::cout << " ##########################\n";
+    std::cout << " ########## CGI ###########\n";
+    std::cout << cgi_output << std::endl;
+    std::cout << " ##########################\n";
 
 
 
     return (cgi_output);
 }
+
+bool CGI::readDone() const{ return (_readDone);}
+bool CGI::execDone() const{ return (_execDone);}
+// bool CGI::isDone() { return (_execDone && _readDone);}
 
 std::string CGI::parseOutput(std::string& cgi_output){
     std::ostringstream response;
