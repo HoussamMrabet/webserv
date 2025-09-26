@@ -3,12 +3,12 @@
 
 ServerConf CGI::_server;
 
-CGI::CGI(): _fd_in(-1), _fd_out(-1), _execDone(false), _readDone(false) {}
+CGI::CGI(): _fd(-1) {}
 
 CGI::~CGI(){
-    std::cout << "+++++++++++++ CGI destructor!!!!!!!!!!!!!\n";
-    if (_fd_in != -1)
-        close(_fd_in);
+
+    if (_fd != -1)
+        close(_fd);
     // if (_fd_out != -1)
     //     close(_fd_out);
     // if (!_cgiFileName.empty())
@@ -33,28 +33,16 @@ CGI::~CGI(){
 //     }
 // }
 
-int CGI::getFd() const { return (_fd_out);}
-
-// void CGI::setFd(int fd){ _fd_in = fd; }
-
 std::string CGI::executeCGI(const Request& request, ServerConf& server){
     try {
         // std::cout << G"-------- Still here1!!!! ";
         // std::cout << B"\n";
-        if (!_execDone){
-            // CGI cgi;
-            _server = server;
-            importData(request);
-            // std::cout << C"-------- tring to execute cgi";
-            // std::cout << B"\n";
-            
-            runCGI();
-            return ("");
-        }
-        else {
-            return (sendResponse());
-        }
-        // return (runCGI());
+        CGI cgi;
+        cgi._server = server;
+        cgi.importData(request);
+        // std::cout << C"-------- tring to execute cgi";
+        // std::cout << B"\n";
+        return (cgi.runCGI());
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return (SERVERERROR);
@@ -108,7 +96,7 @@ std::string CGI::setPath(){ // to check !!!
 void CGI::importData(const Request& request){
     _execDone = false;
     _execDone = false;
-    _fd_in = request.getCgiFdRead();
+    _fd = request.getCgiFdRead();
     _location = request.getLocation();
     CHOROUK && std::cout << C"*********** location is  " << _location << std::endl;
     
@@ -179,7 +167,7 @@ void CGI::importData(const Request& request){
     _envc.push_back(NULL);
 }
 
-void CGI::runCGI(){
+std::string CGI::runCGI(){
     // std::cout << G"-------- Still here0!!!! ";
     // std::cout << B"\n";
     // generateCgiFile();
@@ -187,11 +175,7 @@ void CGI::runCGI(){
     // if (_fd != -1) {
     //     lseek(_fd, 0, SEEK_SET);
     // }
-    // int pipefd[2];
-    // if (pipe(pipefd) == -1) {
-    //     perror("pipe");
-    //     return;
-    // }
+
     // pid_t pid = fork();
     // if (pid < 0){
     //     // std::cout << G"-------- Im the problem 3!!!!! ";
@@ -200,10 +184,9 @@ void CGI::runCGI(){
     // }
     
     // if (pid == 0) {
-    //     if (_fd_in != -1) {
-    //         lseek(_fd_in, 0, SEEK_SET);
-    //         dup2(_fd_in, STDIN_FILENO);
-    //         // close(_fd_in);
+    //     if (_fd != -1) {
+    //         lseek(_fd, 0, SEEK_SET);
+    //         dup2(_fd, STDIN_FILENO);
     //     }
     //     // else {
     //     //     int dev_null = open("/dev/null", O_RDONLY);
@@ -213,15 +196,11 @@ void CGI::runCGI(){
     //     //     }
     //     // }
         
-    //     // dup2(_fd_in, STDOUT_FILENO);
-    //     // // dup2(_fd_in_out, STDOUT_FILENO);
-    //     // dup2(STDOUT_FILENO, STDERR_FILENO);
+    //     dup2(_fd, STDOUT_FILENO);
+    //     // dup2(_fd_out, STDOUT_FILENO);
+    //     dup2(STDOUT_FILENO, STDERR_FILENO);
         
-    //     dup2(pipefd[1], STDOUT_FILENO);
-    //     dup2(pipefd[1], STDERR_FILENO);
-    //     close(pipefd[1]);
-
-    //     if (_fd_in != -1) close(_fd_in);
+    //     if (_fd != -1) close(_fd);
     //     // close(_fd_out);
 
         char* argv[3];
@@ -232,7 +211,7 @@ void CGI::runCGI(){
         // std::cout << "+++++++++++++++EXECVE+++++++++++++\n";
         execve(_execPath.c_str(), argv, &_envc[0]);
         perror("execve");
-        exit(1); // remove!! throw exception
+        // exit(1); // remove!! throw exception
     // }
     
     // int status;
@@ -243,14 +222,13 @@ void CGI::runCGI(){
     //     // std::cout << B"\n";
     //     throw std::runtime_error("CGI script failed");
     // }
-    // _execDone = true;
-    // _fd_out = pipefd[1];
-    // // // _done = true;
-    // // lseek(_fd, 0, SEEK_SET);
-    // // // lseek(_fd_out, 0, SEEK_SET);
-    // // std::string cgi_output;
-    // // char buffer[4096];
-    // // ssize_t n;
+    
+    // // _done = true;
+    // lseek(_fd, 0, SEEK_SET);
+    // // lseek(_fd_out, 0, SEEK_SET);
+    // std::string cgi_output;
+    // char buffer[4096];
+    // ssize_t n;
 
     // // add _fd and fd_out to poll and manage all without while loop!! 
     
@@ -266,40 +244,9 @@ void CGI::runCGI(){
 
 
 
+    return ("");
     // return (cgi_output);
 }
-
-std::string CGI::sendResponse(){
-
-        // _done = true;
-    lseek(_fd_out, 0, SEEK_SET);
-    // lseek(_fd_out, 0, SEEK_SET);
-    std::string cgi_output;
-    char buffer[4096];
-    ssize_t n;
-
-    // add _fd and fd_out to poll and manage all without while loop!! 
-    
-    int read_counter = 0;
-    n = read(_fd_out, buffer, sizeof(buffer));
-    if (n > 0) {
-        std::cout << "read counter = " << ++read_counter << std::endl;
-        cgi_output.append(buffer, n);
-    }
-    else _readDone = true;
-    cgi_output = parseOutput(cgi_output);
-    std::cout << " ########## CGI ###########\n";
-    std::cout << cgi_output << std::endl;
-    std::cout << " ##########################\n";
-
-
-
-    return (cgi_output);
-}
-
-bool CGI::readDone() const{ return (_readDone);}
-bool CGI::execDone() const{ return (_execDone);}
-// bool CGI::isDone() { return (_execDone && _readDone);}
 
 std::string CGI::parseOutput(std::string& cgi_output){
     std::ostringstream response;

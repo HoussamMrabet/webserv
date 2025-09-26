@@ -1,506 +1,381 @@
-#ifndef SERVER_HPP
-#define SERVER_HPP
+#ifndef WEBSERVER_HPP
+#define WEBSERVER_HPP
 
 #include <vector>
 #include <map>
+#include <string>
 #include <poll.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <iostream>
-#include <algorithm>
-#include <sstream>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <ctime>
 #include <cstdlib>
-#include <cerrno>
-#include <cstring>
-#include "ServerConf.hpp"
-#include "Request.hpp"
-#include "Response.hpp"
+#include <iostream>
 
-#define MAX_CLIENTS 1000
-#define BUFFER_SIZE 65536
+class ServerConf;
+class Request;
+class Response;
 
-// Helper function to convert numbers to string (C++98 compatible)
-template<typename T>
-std::string toString(T value) {
-    std::ostringstream oss;
-    oss << value;
-    return oss.str();
-}
-
-class Server {
-private:
-    std::vector<ServerConf>             _configs;
-    std::vector<struct pollfd>          _poll_fds;
-    std::map<int, sockaddr_in>          _listen_sockets;  // fd -> address
-    std::map<int, std::vector<int> >    _socket_to_servers; // listen_fd -> server_indices
-    std::map<int, int>                  _client_to_listen; // client_fd -> listen_fd
-    std::map<int, std::string>          _client_buffers;   // client_fd -> partial_request
-    std::map<int, Response>             _client_responses; // client_fd -> response
-
-public:
-    Server(const std::vector<ServerConf>& configs);
-    ~Server();
+struct Connection {
+    enum Type { LISTEN, CLIENT, CGI };
+    enum State { READING, PROCESSING, WRITING, DONE };
     
-    void    run();
+    Type type;
+    State state;
+    int fd;
+    time_t activity;
     
-private:
-    // Setup methods
-    bool    setupListenSockets();
-    int     createSocket(const std::string& host, int port);
-    bool    setNonBlocking(int fd);
+    // Client data
+    std::string read_buf;
+    std::string write_buf;
+    size_t write_pos;
+    Request* req;
+    Response* resp;
     
-    // Poll management
-    void    addToPoll(int fd, short events);
-    void    removeFromPoll(int fd);
+    // CGI data  
+    int parent_fd;
+    pid_t pid;
     
-    // Connection handling
-    void    handleNewConnection(int listen_fd);
-    void    handleClientData(int client_fd);
-    void    handleClientWrite(int client_fd);
-    void    closeClient(int client_fd);
+    Connection(Type t) : type(t), state(READING), fd(-1), 
+        activity(time(NULL)), write_pos(0), req(NULL), resp(NULL),
+        parent_fd(-1), pid(-1) {}
     
-    // Request processing
-    void    processRequest(int client_fd, const std::string& request);
-    ServerConf selectServer(int listen_fd, const std::string& host);
+    ~Connection() { 
+        cleanup(); 
+    }
     
-    // Utility methods
-    bool    isCompleteRequest(const std::string& buffer);
-    void    cleanup();
-    std::string trim(const std::string& str);
+    void cleanup() {
+        delete req; 
+        delete resp;
+        req = NULL;
+        resp = NULL;
+        if (pid > 0) { 
+            kill(pid, SIGTERM); 
+            waitpid(pid, NULL, WNOHANG); 
+        }
+    }
+    
+    void touch() { 
+        activity = time(NULL); 
+    }
+    
+    bool expired() const { 
+        return time(NULL) - activity > 30; 
+    }
 };
 
-Server::Server(const std::vector<ServerConf>& configs) : _configs(configs) {
-    if (!setupListenSockets()) {
-        throw std::runtime_error("Failed to setup listen sockets");
-    }
-}
-
-Server::~Server() {
-    cleanup();
-}
-
-void Server::run() {
-    std::cout << "Server started with " << _poll_fds.size() << " listen sockets" << std::endl;
+class WebServer {
+private:
+    ServerConf& config;
+    std::vector<struct pollfd> fds;
+    std::map<int, Connection*> conns;
     
-    while (true) {
-        int poll_count = poll(&_poll_fds[0], _poll_fds.size(), -1);
-        
-        if (poll_count < 0) {
-            perror("poll");
-            break;
+public:
+    WebServer(ServerConf& cfg) : config(cfg) {}
+    
+    ~WebServer() {
+        for (std::map<int, Connection*>::iterator it = conns.begin(); 
+             it != conns.end(); ++it) {
+            close(it->first);
+            delete it->second;
         }
-        
-        // Process events (iterate carefully to handle dynamic vector changes)
-        for (size_t i = 0; i < _poll_fds.size(); ++i) {
-            struct pollfd pfd = _poll_fds[i]; // Copy to avoid issues if vector changes
+    }
+    
+    bool start() {
+        std::vector<std::pair<std::string, std::string> > addresses = config.getListen();
+        for (size_t i = 0; i < addresses.size(); ++i) {
+            int fd = createListenSocket(addresses[i].first, addresses[i].second);
+            if (fd < 0) return false;
             
-            if (pfd.revents == 0)
-                continue;
+            addPoll(fd, POLLIN);
+            Connection* conn = new Connection(Connection::LISTEN);
+            conn->fd = fd;
+            conns[fd] = conn;
+            
+            std::cout << "Listening on " << addresses[i].first 
+                      << ":" << addresses[i].second << std::endl;
+        }
+        return true;
+    }
+    
+    void run() {
+        while (true) {
+            int n = poll(&fds[0], fds.size(), 1000);
+            if (n < 0) break;
+            
+            cleanup();
+            
+            for (int i = static_cast<int>(fds.size()) - 1; i >= 0; i--) {
+                if (fds[i].revents == 0) continue;
                 
-            // Check for errors or hangup
-            if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
-                if (_listen_sockets.find(pfd.fd) == _listen_sockets.end()) {
-                    // Client socket error
-                    closeClient(pfd.fd);
-                    --i; // Adjust index since we removed an element
-                }
-                continue;
-            }
-            
-            // Handle events
-            if (pfd.revents & POLLIN) {
-                if (_listen_sockets.find(pfd.fd) != _listen_sockets.end()) {
-                    // New connection on listen socket
-                    handleNewConnection(pfd.fd);
-                } else {
-                    // Data from client
-                    handleClientData(pfd.fd);
-                }
-            }
-            
-            if (pfd.revents & POLLOUT) {
-                // Ready to write to client
-                handleClientWrite(pfd.fd);
-            }
-        }
-    }
-}
-
-bool Server::setupListenSockets() {
-    std::map<std::pair<std::string, int>, int> address_to_fd;
-    
-    // Create unique listen sockets for each host:port combination
-    for (size_t i = 0; i < _configs.size(); ++i) {
-        const std::vector<std::pair<std::string, int> > listens = _configs[i].getListens();
-        
-        for (size_t j = 0; j < listens.size(); ++j) {
-            const std::string host = listens[j].first;
-            int port = listens[j].second;
-            std::pair<std::string, int> addr_pair = std::make_pair(host, port);
-            
-            int listen_fd;
-            if (address_to_fd.find(addr_pair) == address_to_fd.end()) {
-                // Create new socket for this address
-                listen_fd = createSocket(host, port);
-                if (listen_fd < 0) {
-                    std::cerr << "Failed to create socket for " << host << ":" << port << std::endl;
-                    return false;
-                }
-                address_to_fd[addr_pair] = listen_fd;
-                addToPoll(listen_fd, POLLIN);
+                int fd = fds[i].fd;
+                std::map<int, Connection*>::iterator it = conns.find(fd);
+                if (it == conns.end()) continue;
                 
-                std::cout << "Listening on " << host << ":" << port << " (fd: " << listen_fd << ")" << std::endl;
-            } else {
-                listen_fd = address_to_fd[addr_pair];
-            }
-            
-            // Map this listen socket to this server config
-            _socket_to_servers[listen_fd].push_back(static_cast<int>(i));
-        }
-    }
-    
-    return true;
-}
-
-int Server::createSocket(const std::string& host, int port) {
-    int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (listen_fd < 0) {
-        perror("socket");
-        return -1;
-    }
-    
-    // Set socket options
-    int opt = 1;
-    if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-        perror("setsockopt");
-        close(listen_fd);
-        return -1;
-    }
-    
-    if (!setNonBlocking(listen_fd)) {
-        close(listen_fd);
-        return -1;
-    }
-    
-    // Setup address
-    struct sockaddr_in addr;
-    std::memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(static_cast<uint16_t>(port));
-    
-    if (host == "0.0.0.0" || host.empty()) {
-        addr.sin_addr.s_addr = INADDR_ANY;
-    } else {
-        if (inet_pton(AF_INET, host.c_str(), &addr.sin_addr) <= 0) {
-            std::cerr << "Invalid address: " << host << std::endl;
-            close(listen_fd);
-            return -1;
-        }
-    }
-    
-    // Bind and listen
-    if (bind(listen_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        perror("bind");
-        close(listen_fd);
-        return -1;
-    }
-    
-    if (listen(listen_fd, SOMAXCONN) < 0) {
-        perror("listen");
-        close(listen_fd);
-        return -1;
-    }
-    
-    _listen_sockets[listen_fd] = addr;
-    return listen_fd;
-}
-
-bool Server::setNonBlocking(int fd) {
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags < 0) {
-        perror("fcntl F_GETFL");
-        return false;
-    }
-    
-    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-        perror("fcntl F_SETFL");
-        return false;
-    }
-    
-    return true;
-}
-
-void Server::addToPoll(int fd, short events) {
-    struct pollfd pfd;
-    pfd.fd = fd;
-    pfd.events = events;
-    pfd.revents = 0;
-    _poll_fds.push_back(pfd);
-}
-
-void Server::removeFromPoll(int fd) {
-    for (std::vector<struct pollfd>::iterator it = _poll_fds.begin(); it != _poll_fds.end(); ++it) {
-        if (it->fd == fd) {
-            _poll_fds.erase(it);
-            break;
-        }
-    }
-}
-
-void Server::handleNewConnection(int listen_fd) {
-    struct sockaddr_in client_addr;
-    socklen_t client_len = sizeof(client_addr);
-    
-    int client_fd = accept(listen_fd, (struct sockaddr*)&client_addr, &client_len);
-    if (client_fd < 0) {
-        if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            perror("accept");
-        }
-        return;
-    }
-    
-    if (!setNonBlocking(client_fd)) {
-        close(client_fd);
-        return;
-    }
-    
-    // Check connection limit
-    if (_poll_fds.size() >= MAX_CLIENTS) {
-        std::cerr << "Maximum clients reached, rejecting connection" << std::endl;
-        close(client_fd);
-        return;
-    }
-    
-    // Add client to poll
-    addToPoll(client_fd, POLLIN);
-    _client_to_listen[client_fd] = listen_fd;
-    _client_buffers[client_fd] = "";
-    
-    std::cout << "New connection from " << inet_ntoa(client_addr.sin_addr) 
-              << ":" << ntohs(client_addr.sin_port) << " (fd: " << client_fd << ")" << std::endl;
-}
-
-void Server::handleClientData(int client_fd) {
-    char buffer[BUFFER_SIZE];
-    ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    
-    if (bytes_read <= 0) {
-        if (bytes_read == 0) {
-            std::cout << "Client " << client_fd << " disconnected" << std::endl;
-        } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            perror("recv");
-        }
-        closeClient(client_fd);
-        return;
-    }
-    
-    buffer[bytes_read] = '\0';
-    _client_buffers[client_fd] += buffer;
-    
-    // Check if we have a complete request
-    if (isCompleteRequest(_client_buffers[client_fd])) {
-        processRequest(client_fd, _client_buffers[client_fd]);
-        _client_buffers[client_fd].clear();
-    }
-}
-
-void Server::handleClientWrite(int client_fd) {
-    std::map<int, Response>::iterator it = _client_responses.find(client_fd);
-    if (it == _client_responses.end()) {
-        // No response ready, remove POLLOUT
-        for (size_t i = 0; i < _poll_fds.size(); ++i) {
-            if (_poll_fds[i].fd == client_fd) {
-                _poll_fds[i].events = POLLIN;
-                break;
+                Connection* c = it->second;
+                c->touch();
+                
+                if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                    closeConn(fd);
+                    continue;
+                }
+                
+                switch (c->type) {
+                case Connection::LISTEN:
+                    if (fds[i].revents & POLLIN) {
+                        acceptClient(fd);
+                    }
+                    break;
+                    
+                case Connection::CLIENT:
+                    if (fds[i].revents & POLLIN && c->state == Connection::READING) {
+                        if (!readRequest(c)) {
+                            closeConn(fd);
+                        }
+                    }
+                    if (fds[i].revents & POLLOUT && c->state == Connection::WRITING) {
+                        if (!writeResponse(c)) {
+                            closeConn(fd);
+                        }
+                    }
+                    break;
+                    
+                case Connection::CGI:
+                    if (fds[i].revents & POLLIN) {
+                        if (!readCGI(c)) {
+                            finishCGI(c);
+                        }
+                    }
+                    break;
+                }
             }
         }
-        return;
+    }
+
+private:
+    void addPoll(int fd, short events) {
+        struct pollfd pfd;
+        pfd.fd = fd;
+        pfd.events = events;
+        pfd.revents = 0;
+        fds.push_back(pfd);
     }
     
-    Response response = it->second;
-    std::string response_str = response.toString();
-    
-    ssize_t bytes_sent = send(client_fd, response_str.c_str(), response_str.length(), 0);
-    
-    if (bytes_sent < 0) {
-        if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            perror("send");
-            closeClient(client_fd);
-        }
-        return;
-    }
-    
-    // Response sent successfully
-    _client_responses.erase(it);
-    
-    // Check if we should keep the connection alive
-    // For simplicity, we'll close after each response
-    closeClient(client_fd);
-}
-
-void Server::closeClient(int client_fd) {
-    close(client_fd);
-    removeFromPoll(client_fd);
-    
-    // Clean up client data
-    _client_to_listen.erase(client_fd);
-    _client_buffers.erase(client_fd);
-    _client_responses.erase(client_fd);
-}
-
-void Server::processRequest(int client_fd, const std::string& request_str) {
-    try {
-        // Parse request
-        Request request(request_str);
-        
-        // Find appropriate server configuration
-        int listen_fd = _client_to_listen[client_fd];
-        ServerConf server_conf = selectServer(listen_fd, request.getHeader("Host"));
-        
-        // Process request with the selected server configuration
-        Response response;
-        response.processRequest(request, server_conf);
-        _client_responses[client_fd] = response;
-        
-        // Set client socket to write mode
-        for (size_t i = 0; i < _poll_fds.size(); ++i) {
-            if (_poll_fds[i].fd == client_fd) {
-                _poll_fds[i].events = POLLOUT;
-                break;
-            }
-        }
-        
-    } catch (const std::exception& e) {
-        std::cerr << "Error processing request: " << e.what() << std::endl;
-        
-        // Send 400 Bad Request
-        Response response;
-        response.setStatus(400, "Bad Request");
-        response.setBody("<html><body><h1>400 Bad Request</h1></body></html>");
-        response.setHeader("Content-Type", "text/html");
-        _client_responses[client_fd] = response;
-        
-        for (size_t i = 0; i < _poll_fds.size(); ++i) {
-            if (_poll_fds[i].fd == client_fd) {
-                _poll_fds[i].events = POLLOUT;
+    void removePoll(int fd) {
+        for (std::vector<struct pollfd>::iterator it = fds.begin(); 
+             it != fds.end(); ++it) {
+            if (it->fd == fd) {
+                fds.erase(it);
                 break;
             }
         }
     }
-}
-
-ServerConf Server::selectServer(int listen_fd, const std::string& host_header) {
-    std::map<int, std::vector<int> >::iterator it = _socket_to_servers.find(listen_fd);
-    if (it == _socket_to_servers.end()) {
-        // Return default server if no mapping found
-        if (!_configs.empty()) {
-            return _configs[0];
-        }
-        throw std::runtime_error("No server configuration available");
-    }
     
-    const std::vector<int> server_indices = it->second;
-    
-    // Extract hostname from Host header (remove port if present)
-    std::string hostname = host_header;
-    size_t colon_pos = hostname.find(':');
-    if (colon_pos != std::string::npos) {
-        hostname = hostname.substr(0, colon_pos);
-    }
-    hostname = trim(hostname);
-    
-    // First pass: look for exact server_name match
-    for (size_t i = 0; i < server_indices.size(); ++i) {
-        const ServerConf conf = _configs[server_indices[i]];
-        const std::vector<std::string> server_names = conf.getServerNames();
-        
-        for (size_t j = 0; j < server_names.size(); ++j) {
-            if (server_names[j] == hostname) {
-                return conf;
+    void modifyPoll(int fd, short events) {
+        for (size_t i = 0; i < fds.size(); ++i) {
+            if (fds[i].fd == fd) {
+                fds[i].events = events;
+                break;
             }
         }
     }
     
-    // Second pass: return first server for this listen socket (default server)
-    if (!server_indices.empty()) {
-        return _configs[server_indices[0]];
+    void closeConn(int fd) {
+        std::map<int, Connection*>::iterator it = conns.find(fd);
+        if (it == conns.end()) return;
+        
+        Connection* c = it->second;
+        
+        // Close related CGI if client closes
+        if (c->type == Connection::CLIENT) {
+            for (std::map<int, Connection*>::iterator cgi_it = conns.begin();
+                 cgi_it != conns.end(); ++cgi_it) {
+                if (cgi_it->second->type == Connection::CGI && 
+                    cgi_it->second->parent_fd == fd) {
+                    closeConn(cgi_it->first);
+                    break;
+                }
+            }
+        }
+        
+        removePoll(fd);
+        close(fd);
+        delete c;
+        conns.erase(it);
     }
     
-    // Fallback
-    return _configs[0];
-}
-
-bool Server::isCompleteRequest(const std::string& buffer) {
-    // Simple check for complete HTTP request
-    // Look for double CRLF indicating end of headers
-    size_t header_end = buffer.find("\r\n\r\n");
-    if (header_end == std::string::npos) {
-        header_end = buffer.find("\n\n");
-        if (header_end == std::string::npos) {
+    void cleanup() {
+        std::vector<int> expired;
+        for (std::map<int, Connection*>::iterator it = conns.begin();
+             it != conns.end(); ++it) {
+            if (it->second->type != Connection::LISTEN && it->second->expired()) {
+                expired.push_back(it->first);
+            }
+        }
+        for (size_t i = 0; i < expired.size(); ++i) {
+            closeConn(expired[i]);
+        }
+    }
+    
+    void acceptClient(int listen_fd) {
+        int fd = accept(listen_fd, NULL, NULL);
+        if (fd < 0) return;
+        
+        fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+        
+        Connection* c = new Connection(Connection::CLIENT);
+        c->fd = fd;
+        c->req = new Request();
+        
+        conns[fd] = c;
+        addPoll(fd, POLLIN);
+    }
+    
+    bool readRequest(Connection* c) {
+        char buf[4096];
+        ssize_t n = read(c->fd, buf, sizeof(buf));
+        
+        if (n <= 0) {
+            return (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+        }
+        
+        c->read_buf.append(buf, n);
+        
+        if (c->req->parse(c->read_buf)) {
+            c->state = Connection::PROCESSING;
+            modifyPoll(c->fd, 0); // Remove POLLIN
+            return processRequest(c);
+        }
+        
+        return true;
+    }
+    
+    bool processRequest(Connection* c) {
+        if (c->req->isCGI()) {
+            return startCGI(c);
+        }
+        
+        c->resp = new Response();
+        c->resp->handle(*c->req, config);
+        c->write_buf = c->resp->build();
+        c->write_pos = 0;
+        c->state = Connection::WRITING;
+        modifyPoll(c->fd, POLLOUT);
+        return true;
+    }
+    
+    bool startCGI(Connection* c) {
+        int pipes[2];
+        if (pipe(pipes) < 0) return false;
+        
+        pid_t pid = fork();
+        if (pid < 0) {
+            close(pipes[0]); 
+            close(pipes[1]);
             return false;
         }
-    }
-    
-    // For POST/PUT requests, check if we have the complete body
-    size_t content_length_pos = buffer.find("Content-Length:");
-    if (content_length_pos != std::string::npos) {
-        // Extract content length
-        size_t value_start = buffer.find(':', content_length_pos) + 1;
-        size_t value_end = buffer.find('\r', value_start);
-        if (value_end == std::string::npos) {
-            value_end = buffer.find('\n', value_start);
+        
+        if (pid == 0) {
+            // Child: setup and exec CGI
+            close(pipes[0]);
+            dup2(pipes[1], STDOUT_FILENO);
+            dup2(pipes[1], STDERR_FILENO);
+            close(pipes[1]);
+            
+            execCGI(*c->req, config);
+            exit(1);
         }
         
-        if (value_end != std::string::npos) {
-            std::string length_str = buffer.substr(value_start, value_end - value_start);
-            length_str = trim(length_str);
-            
-            int content_length = std::atoi(length_str.c_str());
-            size_t body_start = buffer.find("\r\n\r\n");
-            if (body_start != std::string::npos) {
-                body_start += 4;
-            } else {
-                body_start = buffer.find("\n\n");
-                if (body_start != std::string::npos) {
-                    body_start += 2;
-                } else {
-                    return false;
-                }
-            }
-            
-            return static_cast<int>(buffer.length()) >= static_cast<int>(body_start) + content_length;
+        // Parent: setup CGI connection
+        close(pipes[1]);
+        fcntl(pipes[0], F_SETFL, fcntl(pipes[0], F_GETFL) | O_NONBLOCK);
+        
+        Connection* cgi = new Connection(Connection::CGI);
+        cgi->fd = pipes[0];
+        cgi->parent_fd = c->fd;
+        cgi->pid = pid;
+        
+        conns[pipes[0]] = cgi;
+        addPoll(pipes[0], POLLIN);
+        
+        return true;
+    }
+    
+    bool readCGI(Connection* cgi) {
+        char buf[4096];
+        ssize_t n = read(cgi->fd, buf, sizeof(buf));
+        
+        if (n <= 0) {
+            return (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
         }
+        
+        cgi->read_buf.append(buf, n);
+        return true;
     }
     
-    return true; // No content-length, assume complete
-}
+    void finishCGI(Connection* cgi) {
+        std::map<int, Connection*>::iterator client_it = conns.find(cgi->parent_fd);
+        if (client_it == conns.end()) {
+            closeConn(cgi->fd);
+            return;
+        }
+        
+        Connection* client = client_it->second;
+        waitpid(cgi->pid, NULL, WNOHANG);
+        
+        client->resp = new Response();
+        client->resp->fromCGI(cgi->read_buf);
+        client->write_buf = client->resp->build();
+        client->write_pos = 0;
+        client->state = Connection::WRITING;
+        modifyPoll(client->fd, POLLOUT);
+        
+        closeConn(cgi->fd);
+    }
+    
+    bool writeResponse(Connection* c) {
+        if (c->write_pos >= c->write_buf.size()) {
+            closeConn(c->fd);
+            return false;
+        }
+        
+        const char* data = c->write_buf.data() + c->write_pos;
+        size_t len = c->write_buf.size() - c->write_pos;
+        
+        ssize_t n = write(c->fd, data, len);
+        if (n <= 0) {
+            return (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+        }
+        
+        c->write_pos += n;
+        
+        if (c->write_pos >= c->write_buf.size()) {
+            closeConn(c->fd);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    int createListenSocket(const std::string& host, const std::string& port);
+    void execCGI(const Request& req, ServerConf& config);
+};
 
-void Server::cleanup() {
-    // Close all file descriptors
-    for (std::map<int, sockaddr_in>::iterator it = _listen_sockets.begin(); 
-         it != _listen_sockets.end(); ++it) {
-        close(it->first);
-    }
-    
-    for (std::map<int, int>::iterator it = _client_to_listen.begin(); 
-         it != _client_to_listen.end(); ++it) {
-        close(it->first);
-    }
-    
-    // Maps will be automatically cleaned up by their destructors
-}
+// Simplified Request class interface
+class Request {
+public:
+    bool parse(const std::string& data);
+    bool isCGI() const;
+    // Add other necessary methods
+};
 
-std::string Server::trim(const std::string& str) {
-    size_t start = str.find_first_not_of(" \t\r\n");
-    if (start == std::string::npos) {
-        return "";
-    }
-    
-    size_t end = str.find_last_not_of(" \t\r\n");
-    return str.substr(start, end - start + 1);
-}
+// Simplified Response class interface  
+class Response {
+public:
+    void handle(const Request& req, ServerConf& config);
+    void fromCGI(const std::string& cgi_output);
+    std::string build() const;
+    // Add other necessary methods
+};
 
-#endif // SERVER_HPP
+#endif
