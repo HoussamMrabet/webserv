@@ -187,42 +187,42 @@ void CGI::runCGI(){
     // if (_fd != -1) {
     //     lseek(_fd, 0, SEEK_SET);
     // }
-    int pipefd[2];
-    if (pipe(pipefd) == -1) {
-        perror("pipe");
-        return;
-    }
-    pid_t pid = fork();
-    if (pid < 0){
-        // std::cout << G"-------- Im the problem 3!!!!! ";
-        // std::cout << B"\n";
-        throw std::runtime_error("Fork failed");
-    }
+    // int pipefd[2];
+    // if (pipe(pipefd) == -1) {
+    //     perror("pipe");
+    //     return;
+    // }
+    // pid_t pid = fork();
+    // if (pid < 0){
+    //     // std::cout << G"-------- Im the problem 3!!!!! ";
+    //     // std::cout << B"\n";
+    //     throw std::runtime_error("Fork failed");
+    // }
     
-    if (pid == 0) {
-        if (_fd_in != -1) {
-            lseek(_fd_in, 0, SEEK_SET);
-            dup2(_fd_in, STDIN_FILENO);
-            // close(_fd_in);
-        }
-        // else {
-        //     int dev_null = open("/dev/null", O_RDONLY);
-        //     if (dev_null != -1) {
-        //         dup2(dev_null, STDIN_FILENO);
-        //         close(dev_null);
-        //     }
-        // }
+    // if (pid == 0) {
+    //     if (_fd_in != -1) {
+    //         lseek(_fd_in, 0, SEEK_SET);
+    //         dup2(_fd_in, STDIN_FILENO);
+    //         // close(_fd_in);
+    //     }
+    //     // else {
+    //     //     int dev_null = open("/dev/null", O_RDONLY);
+    //     //     if (dev_null != -1) {
+    //     //         dup2(dev_null, STDIN_FILENO);
+    //     //         close(dev_null);
+    //     //     }
+    //     // }
         
-        // dup2(_fd_in, STDOUT_FILENO);
-        // // dup2(_fd_in_out, STDOUT_FILENO);
-        // dup2(STDOUT_FILENO, STDERR_FILENO);
+    //     // dup2(_fd_in, STDOUT_FILENO);
+    //     // // dup2(_fd_in_out, STDOUT_FILENO);
+    //     // dup2(STDOUT_FILENO, STDERR_FILENO);
         
-        dup2(pipefd[1], STDOUT_FILENO);
-        dup2(pipefd[1], STDERR_FILENO);
-        close(pipefd[1]);
+    //     dup2(pipefd[1], STDOUT_FILENO);
+    //     dup2(pipefd[1], STDERR_FILENO);
+    //     close(pipefd[1]);
 
-        if (_fd_in != -1) close(_fd_in);
-        // close(_fd_out);
+    //     if (_fd_in != -1) close(_fd_in);
+    //     // close(_fd_out);
 
         char* argv[3];
         argv[0] = const_cast<char*>(_execPath.c_str());
@@ -233,24 +233,24 @@ void CGI::runCGI(){
         execve(_execPath.c_str(), argv, &_envc[0]);
         perror("execve");
         exit(1); // remove!! throw exception
-    }
+    // }
     
-    int status;
-    waitpid(pid, &status, 0);
+    // int status;
+    // waitpid(pid, &status, 0);
     
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-        // std::cout << G"-------- Im the problem 4!!!!! ";
-        // std::cout << B"\n";
-        throw std::runtime_error("CGI script failed");
-    }
-    _execDone = true;
-    _fd_out = pipefd[1];
-    // // _done = true;
-    // lseek(_fd, 0, SEEK_SET);
-    // // lseek(_fd_out, 0, SEEK_SET);
-    // std::string cgi_output;
-    // char buffer[4096];
-    // ssize_t n;
+    // if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+    //     // std::cout << G"-------- Im the problem 4!!!!! ";
+    //     // std::cout << B"\n";
+    //     throw std::runtime_error("CGI script failed");
+    // }
+    // _execDone = true;
+    // _fd_out = pipefd[1];
+    // // // _done = true;
+    // // lseek(_fd, 0, SEEK_SET);
+    // // // lseek(_fd_out, 0, SEEK_SET);
+    // // std::string cgi_output;
+    // // char buffer[4096];
+    // // ssize_t n;
 
     // // add _fd and fd_out to poll and manage all without while loop!! 
     
