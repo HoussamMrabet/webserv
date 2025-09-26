@@ -80,6 +80,12 @@ void Request::parseHeaders()
     }
 }
 
+char ft_back(std::string const &str)
+{
+    if (str.empty()) return ('\0');
+    return str[str.size() - 1];
+}
+
 std::string extractThemeFromCookie(const std::string &cookieString)
 {
     size_t themePos = cookieString.find("theme=");
@@ -93,9 +99,11 @@ std::string extractThemeFromCookie(const std::string &cookieString)
         }
         std::string themeValue = cookieString.substr(valueStart, valueEnd - valueStart);
 
-        while (!themeValue.empty() && (themeValue.back() == ' ' || themeValue.back() == '\t' || themeValue.back() == '\r'))
+        // while (!themeValue.empty() && (themeValue.back() == ' ' || themeValue.back() == '\t' || themeValue.back() == '\r')) // c++11
+        while (!themeValue.empty() && (ft_back(themeValue) == ' ' || ft_back(themeValue) == '\t' || ft_back(themeValue) == '\r'))
         {
-            themeValue.pop_back();
+            // themeValue.pop_back(); // c++11
+            themeValue.resize(themeValue.size() - 1);
         }
 
         return themeValue;
