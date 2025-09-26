@@ -143,6 +143,15 @@ Connection::~Connection(){
     delete _request;
 }
 
+void printRequest(const std::string& ip, int port, int status, const std::string& method, const std::string& path, const std::string& version) {
+    time_t now = time(0);
+    struct tm* t = localtime(&now);
+    char buf[80];
+    strftime(buf, sizeof(buf), "[%a %b %d %H:%M:%S %Y]", t);
+    std::cout << M"" << buf << " [" << ip << "]:" << port  << " [" << status << "]: "
+              << method << " " << path << " " << version << B"" << std::endl;
+}
+
 Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
                                                     _done(false),
                                                     _responseDone(false),
@@ -160,7 +169,7 @@ Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
     setNonBlocking();
     // std::cout << "New connection (fd " << _fd << ")\n" << std::endl;
     // std::cout << "[Sun Sep 14 15:23:11 2025] [::1]:52214 [302]: " << _scriptFileName << "\n" << std::endl;
-    std::cout << "[Sun Sep 14 15:23:11 2025] [::1]:52214 [302]: ";
+    // std::cout << "[Sun Sep 14 15:23:11 2025] [::1]:52214 [302]: ";
 }
 
 Connection::Connection(const Connection& connection){
@@ -226,8 +235,9 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     // First, check if we're in the middle of sending a chunked response
 
     CHOROUK && std::cout << "------- write fd = " << _fd << std::endl;
-    std::cout << M"" << _request->getUri() << B"\n";
-   
+    // std::cout << M"" << _request->getUri() << B"\n";
+    printRequest("127.0.0.1", 8080, _request->getStatusCode(), _request->getStrMethod(), _request->getUri(), "HTTP/1.1"); // fix ip port and http
+
     if (_isChunkedResponse) {
         // Continue sending chunks from existing response
         if (!_response_obj.isFinished()) {
