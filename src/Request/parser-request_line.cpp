@@ -39,9 +39,8 @@ void Request::parseRequestLine()
     else
     {
         this->message = "Invalid Method";
-        throw 400;
+        throw 405;
     }
-
     size_t pos = this->uri.find('?');
 
     if (pos != std::string::npos)
@@ -75,14 +74,26 @@ void Request::parseRequestLine()
     std::map<std::string, LocationConf> locations = server.getLocations();
 
     std::string matchedRoute = "";
+
+    /*********************************************/
+    bool auto_index = false;
+    std::vector<std::string> indexs;
+    /*********************************************/
+
     for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); it != locations.end(); ++it)
     {
         const std::string &route = it->first;
+
+        
         if (this->uri == route ||
             (this->uri.find(route) == 0 && route != "/" &&
-             (route[route.size() - 1] == '/' || this->uri[route.length()] == '/')))
-        //  (route.back() == '/' || this->uri[route.length()] == '/')))
-        {
+            (route[route.size() - 1] == '/' || this->uri[route.length()] == '/')))
+            //  (route.back() == '/' || this->uri[route.length()] == '/')))
+            {
+            /*********************************************/
+            auto_index = it->second.getAutoIndex();
+            indexs = it->second.getIndex();
+            /*********************************************/
             if (route.length() > matchedRoute.length())
             {
                 matchedRoute = route;
@@ -103,6 +114,55 @@ void Request::parseRequestLine()
         throw 400;
     }
 
+    /*********************************************/
+    // std::cout << "++++ lastPart: " << lastPart << std::endl;
+    // std::cout << "++++ uri: " << this->uri << std::endl;
+    
+    // if ((lastPart.empty() || (lastPart == "cgi-bin")) && 
+    //         (this->uri == "/cgi-bin/" || this->uri == "/cgi-bin") && 
+    //         auto_index == true){
+    //         // check if cgi index file exists in location 
+    //         // if first doesn't exist check for second or global index file
+    //         if (!indexs.empty()){
+    //             this->uriFileName = indexs[0];
+    //         }
+    //         else if (!server.getIndex().empty()){
+    //             this->uriFileName = server.getIndex()[0]; // global index file
+    //         }
+    //         else {
+    //             this->uriFileName = ""; // default cgi file
+    //         }
+    //         if (this->uri[this->uri.length() - 1] != '/')
+    //             this->uri += "/";
+    //         this->uri +=  this->uriFileName;
+    //         std::cout << "++++ uri after adding index: " << this->uri << std::endl;
+    // }
+    // /*********************************************/
+    // /*********************************************/
+    std::cout << "++++ lastPart: " << lastPart << std::endl;
+    std::cout << "++++ uri: " << this->uri << std::endl;
+    
+    if ((lastPart.empty() || (lastPart == "cgi-bin")) && \
+            (this->uri == "/cgi-bin/" || this->uri == "/cgi-bin") && \
+            auto_index == true){
+                this->cgiType = ".py"; // default cgi file
+    //         // check if cgi index file exists in location 
+    //         // if first doesn't exist check for second or global index file
+    //         if (!indexs.empty()){
+    //             this->uriFileName = indexs[0];
+    //         }
+    //         else if (!server.getIndex().empty()){
+    //             this->uriFileName = server.getIndex()[0]; // global index file
+    //         }
+    //         else {
+    //             this->uriFileName = ""; // default cgi file
+    //         }
+            // if (this->uri[this->uri.length() - 1] != '/')
+            //     this->uri += "/";
+            // this->uri +=  this->uriFileName;
+            // std::cout << "++++ uri after adding index: " << this->uri << std::endl;
+    }
+    // /*********************************************/
     if (this->uri.length() >= 4 && this->uri.substr(this->uri.length() - 4) == ".php")
         this->cgiType = ".php";
     else if (this->uri.length() >= 3 && this->uri.substr(this->uri.length() - 3) == ".py")
@@ -119,10 +179,10 @@ void Request::parseRequestLine()
             throw 500;
         }
 
-        if (unlink(filename.c_str()) == -1)
+        if (remove(filename.c_str()) != 0)
         {
             close(fd);
-            this->message = "Failed to unlink temporary file";
+            this->message = "Failed to remove temporary file";
             throw 500;
         }
 
