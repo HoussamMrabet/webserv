@@ -76,11 +76,11 @@ class CGI{ // should class name be camel-case??
         void set_HTTP_Header();
         void printEnvironment(); // to remove later
         std::string parseOutput(std::string &);
-        std::string runCGI();
+        std::string runCGI(const std::string&);
         bool setToNonBlocking(int);
         bool validPath();
         
     public:
-        static std::string executeCGI(const Request&, ServerConf&);
+        static std::string executeCGI(const Request&, ServerConf&, const std::string&);
         // static int getFd();
 };

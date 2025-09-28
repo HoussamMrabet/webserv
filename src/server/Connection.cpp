@@ -430,20 +430,53 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
         if (requested_path.find(it->first) == 0 && it->first.length() > location_path.length()) {
             location_path = it->first;
         }
+    } // what if location is not found!!
+    if (locations.find(location_path) == locations.end()) {
+        // No matching location found, use default root
+        document_root = server.getRoot();
+        full_path = "." + document_root + requested_path;
     }
-    
+    else{
+        document_root = locations[location_path].getRoot();
+        if (document_root.empty())
+            document_root = server.getRoot();
+        std::string file_name = request.getUriFileName();
+        full_path = "." + document_root + "/" + file_name;
+        if (file_name.empty()) {
+            // bool auto_index = locations.at(location_path).getAutoIndex();
+            // if (auto_index){
+                std::vector<std::string> indexes = locations[location_path].getIndex();
+                if (indexes.empty()) {
+                    indexes = server.getIndex();
+                }
+                else {
+                    for (std::vector<std::string>::const_iterator it = indexes.begin(); 
+                        it != indexes.end(); ++it) {
+                        std::string index_path = "." + document_root;
+                        if (index_path[index_path.length() - 1] != '/') {
+                            index_path += "/";
+                        }
+                        index_path += *it;
+                        if (stat(index_path.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode)) {
+                            full_path = index_path;
+                            break;
+                        }
+                    }
+                }
+            // }
+            // else should i check for directory listing
+            // or return error page?
+        }
+
+    }
     // Always use ./www as the document root
     // document_root = "./www";
-    document_root = "." + document_root + locations[location_path].getRoot();
-    if (document_root.empty()) {
-        document_root = server.getRoot();
-    }
+    // MOHAMED && std::cout << "Using document root: " << document_root << std::endl; 
+    // MOHAMED && std::cout << "is it a directory??: " << S_ISDIR(fileStat.st_mode) << std::endl; 
     
     // Construct full path - handle the case where requested_path starts with '/'
-    std::string file_name = request.getUriFileName(); 
     // if empty then it is a directory request, no need to check here
     
-    full_path = document_root + "/" + file_name;
     // if (requested_path[0] == '/') {
     //     full_path = document_root + requested_path;
     // } else {
@@ -453,7 +486,7 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
     MOHAMED && std::cout << "Requested path: " << requested_path << std::endl;
     MOHAMED && std::cout << "Document root: " << document_root << std::endl;
     MOHAMED && std::cout << "Full path: " << full_path << std::endl;
-    
+    MOHAMED && std::cout << "*/*/*/*/ " << (stat(full_path.c_str(), &fileStat) == 0) << std::endl;
     if (stat(full_path.c_str(), &fileStat) == 0) {
         // File exists
         if (S_ISREG(fileStat.st_mode)) {
@@ -474,7 +507,7 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
                 /*************************/
                 response_obj.setStatus(200);
                 if (_request->isCGI()){
-                    _response = CGI::executeCGI(*_request, _server);
+                    _response = CGI::executeCGI(*_request, _server, full_path);
                     response_obj.parseCgiOutput(_response);
                 }
                 else {
@@ -488,64 +521,64 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
             }
         } else if (S_ISDIR(fileStat.st_mode)) {
             MOHAMED && std::cout << "*/*/*/*/   It's a directory." << std::endl;
-            bool auto_index = false;
-            std::vector<std::string> index_files;
+            // bool auto_index = false;
+            // std::vector<std::string> index_files;
             
-            if (locations.find(location_path) != locations.end()) {
-                auto_index = locations.at(location_path).getAutoIndex();
-                index_files = locations.at(location_path).getIndex();
-            }
+            // if (locations.find(location_path) != locations.end()) {
+            //     auto_index = locations.at(location_path).getAutoIndex();
+            //     index_files = locations.at(location_path).getIndex();
+            // }
             
-            if (index_files.empty()) {
-                index_files = server.getIndex();
-            }
+            // if (index_files.empty()) {
+            //     index_files = server.getIndex();
+            // }
             
-            // Try to serve index files
-            bool index_found = false;
-            for (std::vector<std::string>::const_iterator it = index_files.begin(); 
-                 it != index_files.end(); ++it) {
-                std::string index_path = full_path;
-                if (index_path[index_path.length() - 1] != '/') {
-                    index_path += "/";
-                }
-                index_path += *it;
+            // // Try to serve index files
+            // bool index_found = false;
+            // for (std::vector<std::string>::const_iterator it = index_files.begin(); 
+            //      it != index_files.end(); ++it) {
+            //     std::string index_path = full_path;
+            //     if (index_path[index_path.length() - 1] != '/') {
+            //         index_path += "/";
+            //     }
+            //     index_path += *it;
                 
-                if (stat(index_path.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode)) {
-                    // Check file size to decide between regular and chunked response
-                    size_t file_size = static_cast<size_t>(fileStat.st_size);
-                    MOHAMED && std::cout << "Index file size: " << file_size << " bytes" << std::endl;
+                // if (stat(index_path.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode)) {
+                //     // Check file size to decide between regular and chunked response
+                //     size_t file_size = static_cast<size_t>(fileStat.st_size);
+                //     MOHAMED && std::cout << "Index file size: " << file_size << " bytes" << std::endl;
                     
-                    if (file_size > LARGE_FILE_THRESHOLD) {
-                        // Use chunked transfer for large index files
-                        MOHAMED && std::cout << "Using chunked transfer for large index file" << std::endl;
-                        _response_obj.prepareResponse(index_path);
-                        _isChunkedResponse = true;
-                        _response = ""; // Clear regular response since we're using chunked
-                        return;
-                    } else {
-                        // Use regular response for small index files
-                        MOHAMED && std::cout << "Using regular response for small index file" << std::endl;
-                        /*************************/
-                        response_obj.setStatus(200);
-                        MOHAMED && std::cout << "Index path: " << index_path << std::endl;
-                        if (_request->isCGI()){
+                //     if (file_size > LARGE_FILE_THRESHOLD) {
+                //         // Use chunked transfer for large index files
+                //         MOHAMED && std::cout << "Using chunked transfer for large index file" << std::endl;
+                //         _response_obj.prepareResponse(index_path);
+                //         _isChunkedResponse = true;
+                //         _response = ""; // Clear regular response since we're using chunked
+                //         return;
+                //     } else {
+                        // // Use regular response for small index files
+                        // MOHAMED && std::cout << "Using regular response for small index file" << std::endl;
+                        // /*************************/
+                        // response_obj.setStatus(200);
+                        // MOHAMED && std::cout << "Index path: " << index_path << std::endl;
                         // if (_request->isCGI()){
-                            _response = CGI::executeCGI(*_request, _server);
-                            response_obj.parseCgiOutput(_response);
-                        }
-                        else {
-                            response_obj.setBodyFromFile(full_path);
-                        }
-                        /**********************************/
-                        response_obj.setHeader("Connection", connection_header);
-                        _response = response_obj.buildResponse();
-                        _isChunkedResponse = false;
-                        return;
-                    }
-                }
-            }
-            
-            if (!index_found) {
+                        // // if (_request->isCGI()){
+                        //     _response = CGI::executeCGI(*_request, _server);
+                        //     response_obj.parseCgiOutput(_response);
+                        // }
+                        // else {
+                        //     response_obj.setBodyFromFile(full_path);
+                        // }
+            //             /**********************************/
+            //             response_obj.setHeader("Connection", connection_header);
+            //             _response = response_obj.buildResponse();
+            //             _isChunkedResponse = false;
+            //             return;
+            //         }
+            //     }
+            // }
+            bool auto_index = locations.at(location_path).getAutoIndex();
+            // if (!index_found) {
                 if (auto_index) {
                     // Generate directory listing
                     std::string directory_listing = generateDirectoryListing(full_path, requested_path);
@@ -566,8 +599,8 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
                     _isChunkedResponse = false;
                     return;
                 }
-            }
-            MOHAMED && std::cout << "It's a directory." << std::endl;
+            // }
+            // MOHAMED && std::cout << "It's a directory." << std::endl;
         } else {
             MOHAMED && std::cout << "It's neither a regular file nor a directory." << std::endl;
             response_obj.setStatus(403);

@@ -33,7 +33,7 @@ CGI::~CGI(){
 //     }
 // }
 
-std::string CGI::executeCGI(const Request& request, ServerConf& server){
+std::string CGI::executeCGI(const Request& request, ServerConf& server, const std::string& scriptPath){
     try {
         // std::cout << G"-------- Still here1!!!! ";
         // std::cout << B"\n";
@@ -42,7 +42,7 @@ std::string CGI::executeCGI(const Request& request, ServerConf& server){
         cgi.importData(request);
         // std::cout << C"-------- tring to execute cgi";
         // std::cout << B"\n";
-        return (cgi.runCGI());
+        return (cgi.runCGI(scriptPath));
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return (SERVERERROR);
@@ -248,7 +248,7 @@ void CGI::importData(const Request& request){
 //     return (cgi_output);
 // }
 
-std::string CGI::runCGI() {
+std::string CGI::runCGI(const std::string& fullPath) {
     int stdout_pipe[2];
     if (pipe(stdout_pipe) < 0)
         throw std::runtime_error("Pipe failed");
@@ -276,7 +276,8 @@ std::string CGI::runCGI() {
 
         char* argv[3];
         argv[0] = const_cast<char*>(_execPath.c_str());
-        argv[1] = const_cast<char*>(_scriptFileName.c_str());
+        argv[1] = const_cast<char*>(fullPath.c_str());
+        // argv[1] = const_cast<char*>(_scriptFileName.c_str());
         argv[2] = NULL;
 
         execve(_execPath.c_str(), argv, &_envc[0]);
@@ -286,7 +287,8 @@ std::string CGI::runCGI() {
 
     // --- PARENT ---
     close(stdout_pipe[1]); // close write end
-
+    std::cout << "------------- execPath = " << _execPath << std::endl;
+    std::cout << "------------- scriptFileName = " << fullPath << std::endl;
     int status;
     waitpid(pid, &status, 0);
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)

@@ -56,17 +56,23 @@ void Request::parseRequestLine()
         lastPart = this->uri.substr(lastSlash + 1);
     }
 
-    if (lastPart.empty())
-        this->uriFileName = "";
-    else if (lastPart.size() > 3 && lastPart.substr(lastPart.size() - 3) == ".py")
-        this->uriFileName = lastPart;
-    else if (lastPart.size() > 4 && lastPart.substr(lastPart.size() - 4) == ".php")
-        this->uriFileName = lastPart;
-    else if (!this->uriQueries.empty())
+    std::string check = "/" + lastPart;
+    if (check != this->uri && !lastPart.empty())
         this->uriFileName = lastPart;
     else
         this->uriFileName = "";
+    // if (lastPart.empty())
+    //     this->uriFileName = "";
+    // else if (lastPart.size() > 3 && lastPart.substr(lastPart.size() - 3) == ".py")
+    //     this->uriFileName = lastPart;
+    // else if (lastPart.size() > 4 && lastPart.substr(lastPart.size() - 4) == ".php")
+    //     this->uriFileName = lastPart;
+    // else if (!this->uriQueries.empty())
+    //     this->uriFileName = lastPart;
+    // else
+    //     this->uriFileName = "";
 
+    std::cout << "\n\n\n -+-+-++-- filename = " << uriFileName << std::endl;  
     handleUriSpecialCharacters(this->uri);
 
     const ServerConf &server = globalServer[0];
