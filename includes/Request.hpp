@@ -23,6 +23,12 @@
 #include "Multipart.hpp"
 #include <fcntl.h>
 #include <unistd.h>
+#define G "\033[1;32m"
+#define C "\033[1;36m"
+#define M "\033[1;35m"
+#define B "\033[0m"
+#define MOHAMED 1
+#define CHOROUK 0
 
 #define CHUNKED true
 
@@ -41,6 +47,16 @@ typedef enum e_step
     BODY,
     DONE
 } t_step;
+
+typedef struct s_user
+{
+    std::string username;
+    std::string password;
+    std::string email;
+    std::string fullName;
+    std::string avatar;
+    std::string job;
+} t_user;
 
 class Request
 {
@@ -82,14 +98,22 @@ class Request
         int cgiFdWrite;
         void parseRequestLine();
         void parseHeaders();
+        void handleThemeCookie();
+        void handleSession();
         void parseBody();
         void setBodyInformations();
         void processResponseErrors();
         void parseMultipart(bool isChunked = false);
         void parseMultipartHeaders(const std::string &multipartHeaders);
+        std::string extractQueryParam(const std::string& queryString, const std::string& paramName);
         Request(const Request&);            // don't define!!!
         Request& operator=(const Request&); // don't define!!!
     public:
+        static std::string theme;
+        static std::vector<t_user> users;
+        static t_user loggedInUser;
+        static bool loggedIn;
+
         Request();
         ~Request();
         
@@ -104,6 +128,7 @@ class Request
         std::string getHeader(const std::string &key) const;
         std::string getHost() const; // return server name
         std::string getCgiType() const; // return php or py as string if there is a cgi otherwise return empty string
+        void setCgiType(std::string); // set cgi type
         int getStatusCode() const;
         int getCgiFdRead() const; // return read end of cgi pipe
 
@@ -111,6 +136,7 @@ class Request
         bool isCGI() const; // check if the request is a cgi or not
         void parseRequest(const std::string& rawRequest = "");
         void printRequest();
+        std::string getMessage() const;
 };
 
 void handleUriSpecialCharacters(std::string &uri);

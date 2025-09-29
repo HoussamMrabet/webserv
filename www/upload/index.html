@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload - Webserv</title>
+    <link rel="stylesheet" href="../assets/main.css">
+    <style>
+        .file-name-display {
+            display: none;
+            margin-top: 10px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f2f2f2;
+            padding: 5px 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+        }
+        .remove-file {
+            background: none;
+            border: none;
+            color: red;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <nav class="breadcrumb">
+                <a href="../index.html">Index</a> > <span>Upload</span>
+            </nav>
+            <h1>File Upload</h1>
+            <p class="subtitle">Upload files to the webserv</p>
+        </header>
+
+        <main class="content">
+            <div class="upload-section">
+                <div class="upload-card">
+                    <h2>Upload Files</h2>
+                    <form class="upload-form" id="upload-form" method="POST" enctype="multipart/form-data">
+                        <div class="upload-area">
+                            <div class="upload-zone" id="upload-zone">
+                                <p class="upload-text">Select files to upload</p>
+                                <p class="upload-subtext">Drag and drop files here or click to browse</p>
+                                <input type="file" id="file-input" name="files[]" class="file-input" multiple hidden>
+                            </div>
+                            <div id="file-name-display" class="file-name-display"></div>
+                        </div>
+
+                        <div class="upload-actions">
+                            <button type="submit" class="btn btn-primary" id="submit-button" disabled>Upload Files</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <a href="../index.html" class="back-link">← Back to Index</a>
+        </footer>
+    </div>
+
+    <div id="confirmation-popup" class="popup">
+        <div class="popup-content">
+            <h3>Upload Successful!</h3>
+            <p>Your file has been uploaded successfully.</p>
+            <button id="close-popup" class="btn btn-primary">Close</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.getElementById('upload-form');
+            const fileInput = document.getElementById('file-input');
+            const fileNameDisplay = document.getElementById('file-name-display');
+            const submitButton = document.getElementById('submit-button');
+            const confirmationPopup = document.getElementById('confirmation-popup');
+            const closePopupButton = document.getElementById('close-popup');
+            const uploadZone = document.getElementById('upload-zone');
+
+            let selectedFiles = [];
+
+            function renderFileList() {
+                fileNameDisplay.innerHTML = "";
+                if (selectedFiles.length > 0) {
+                    fileNameDisplay.style.display = "block";
+                    selectedFiles.forEach((file, index) => {
+                        const fileDiv = document.createElement("div");
+                        fileDiv.classList.add("file-item");
+                        fileDiv.innerHTML = `
+                            <span>${file.name}</span>
+                            <button type="button" class="remove-file" data-index="${index}">✖</button>
+                        `;
+                        fileNameDisplay.appendChild(fileDiv);
+                    });
+                    submitButton.disabled = false;
+                } else {
+                    fileNameDisplay.style.display = "none";
+                    submitButton.disabled = true;
+                }
+            }
+
+            fileInput.addEventListener('change', function() {
+                selectedFiles = Array.from(fileInput.files);
+                renderFileList();
+            });
+
+            fileNameDisplay.addEventListener('click', function(e) {
+                if (e.target.classList.contains("remove-file")) {
+                    const index = e.target.getAttribute("data-index");
+                    selectedFiles.splice(index, 1);
+
+                    const dataTransfer = new DataTransfer();
+                    selectedFiles.forEach(file => dataTransfer.items.add(file));
+                    fileInput.files = dataTransfer.files;
+
+                    renderFileList();
+                }
+            });
+
+            uploadForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const formData = new FormData();
+                selectedFiles.forEach(file => formData.append('files[]', file));
+
+                try {
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (response.ok) {
+                        confirmationPopup.style.display = 'flex';
+                        selectedFiles = [];
+                        fileInput.value = "";
+                        renderFileList();
+                    } else {
+                        alert('Error: File upload failed!');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error: Could not upload files.');
+                }
+            });
+
+            closePopupButton.addEventListener('click', function() {
+                confirmationPopup.style.display = 'none';
+            });
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.style.backgroundColor = '#e6f0ff';
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.style.backgroundColor = '#f8f9fa';
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                selectedFiles = Array.from(e.dataTransfer.files);
+                const dataTransfer = new DataTransfer();
+                selectedFiles.forEach(file => dataTransfer.items.add(file));
+                fileInput.files = dataTransfer.files;
+                renderFileList();
+            });
+
+            uploadZone.addEventListener('click', () => fileInput.click());
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Webserv</title>
+    <link rel="stylesheet" href="./assets/main.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <nav class="breadcrumb">
+                <a href="./index.html">Index</a> > <span>Home</span>
+            </nav>
+            <h1>Webserv Project</h1>
+            <p class="subtitle">HTTP Server Implementation</p>
+        </header>
+
+        <main class="content">
+            <section class="project-info">
+                <h2>Project Overview</h2>
+                <p>This HTTP server implementation is part of the 1337 cursus, designed to provide a deep understanding of web server architecture and HTTP protocol handling.</p>
+                
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3>Technical Stack</h3>
+                        <ul>
+                            <li>C/C++ Implementation</li>
+                            <li>Socket Programming</li>
+                            <li>HTTP/1.1 Protocol</li>
+                            <li>Configuration File Support</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3>Supported Methods</h3>
+                        <ul>
+                            <li>GET - Retrieve resources</li>
+                            <li>POST - Submit data</li>
+                            <li>DELETE - Remove resources</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3>Features</h3>
+                        <ul>
+                            <li>Multiple port listening</li>
+                            <li>CGI script execution</li>
+                            <li>Session & Cookies management</li>
+                            <li>Custom error pages</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="documentation">
+                <h2>Documentation</h2>
+                <div class="doc-section">
+                    <h3>Configuration</h3>
+                    <p>The server uses a configuration file to define server blocks, locations, and various settings. The server block can handle multiple domains and ports.</p>
+                </div>
+                
+                <div class="doc-section">
+                    <h3>Error Handling</h3>
+                    <p>Custom error pages are implemented for various HTTP status codes including 404 (Not Found), 500 (Internal Server Error), 403 (Forbidden), and others.</p>
+                </div>
+                
+                <div class="doc-section">
+                    <h3>File Upload</h3>
+                    <p>The server supports file uploads through POST requests with multipart/form-data encoding. Uploaded files are stored in designated directories.</p>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <a href="./index.html" class="back-link">← Back to Index</a>
+        </footer>
+    </div>
+</body>
+</html>

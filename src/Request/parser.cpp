@@ -46,8 +46,34 @@ void Request::setBodyInformations()
             }
         }
     }
+    if (this->getMethod() != POST)
+        throw 200;
     if (!this->isMultipart && !this->isCGI())
     {
+        if (this->headers.find("content-type") != this->headers.end())
+        {
+            std::string contentType = this->headers["content-type"];
+
+            try
+            {
+                checkMediaType(contentType);
+            }
+            catch (const char *error)
+            {
+                return;
+            }
+
+            if (contentType.find("application/x-www-form-urlencoded") != std::string::npos ||
+                contentType.find("application/json") != std::string::npos ||
+                contentType.find("text/") != std::string::npos)
+            {
+                return;
+            }
+        }
+        else
+        {
+            return;
+        }
         std::string filename = generateRandomFileName(this->uploadDir + "/binary_file_");
         this->createdFile = filename;
         int fd = open(filename.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
@@ -92,6 +118,8 @@ void Request::parseRequest(const std::string &rawRequest)
                 this->headersData = this->requestData.substr(0, pos);
                 this->requestData.erase(0, pos + 4);
                 this->parseHeaders();
+                this->handleThemeCookie();
+                this->handleSession();
                 if (!this->isCGI())
                     this->processResponseErrors();
                 this->setBodyInformations();
@@ -106,6 +134,9 @@ void Request::parseRequest(const std::string &rawRequest)
 
         if (this->currentStep == BODY)
         {
+            if (this->getMethod() != POST)
+                throw 200;
+
             this->fullBody += this->requestData;
 
             const ServerConf &server = globalServer[0];
@@ -118,7 +149,7 @@ void Request::parseRequest(const std::string &rawRequest)
                 if (this->fullBody.size() > location.getBodySizeLimit())
                 {
                     if (!this->createdFile.empty())
-                        unlink(this->createdFile.c_str());
+                        remove(this->createdFile.c_str());
                     if (this->isMultipart && !this->multipartData.empty())
                         this->multipartData.back()->unlinkFile();
                     this->message = "Request Body Too Large";
@@ -143,5 +174,6 @@ void Request::parseRequest(const std::string &rawRequest)
         if (this->statusCode != 200)
             close(this->cgiFdRead);
         close(this->cgiFdWrite);
+        printRequest();
     }
 }

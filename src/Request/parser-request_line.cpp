@@ -39,9 +39,8 @@ void Request::parseRequestLine()
     else
     {
         this->message = "Invalid Method";
-        throw 400;
+        throw 405;
     }
-
     size_t pos = this->uri.find('?');
 
     if (pos != std::string::npos)
@@ -57,16 +56,25 @@ void Request::parseRequestLine()
         lastPart = this->uri.substr(lastSlash + 1);
     }
 
-    if (lastPart.empty())
-        this->uriFileName = "";
-    else if (lastPart.size() > 3 && lastPart.substr(lastPart.size() - 3) == ".py")
-        this->uriFileName = lastPart;
-    else if (lastPart.size() > 4 && lastPart.substr(lastPart.size() - 4) == ".php")
-        this->uriFileName = lastPart;
-    else if (!this->uriQueries.empty())
+    /************************************************************************************/
+    std::string check = "/" + lastPart;
+    if (check != this->uri && !lastPart.empty())
         this->uriFileName = lastPart;
     else
         this->uriFileName = "";
+    CHOROUK && std::cout << "\n\n\n -+-+-++-- filename = " << uriFileName << std::endl;  
+
+    // if (lastPart.empty())
+    //     this->uriFileName = "";
+    // else if (lastPart.size() > 3 && lastPart.substr(lastPart.size() - 3) == ".py")
+    //     this->uriFileName = lastPart;
+    // else if (lastPart.size() > 4 && lastPart.substr(lastPart.size() - 4) == ".php")
+    //     this->uriFileName = lastPart;
+    // else if (!this->uriQueries.empty())
+    //     this->uriFileName = lastPart;
+    // else
+    //     this->uriFileName = "";
+    /************************************************************************************/
 
     handleUriSpecialCharacters(this->uri);
 
@@ -78,10 +86,12 @@ void Request::parseRequestLine()
     for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); it != locations.end(); ++it)
     {
         const std::string &route = it->first;
+
+        
         if (this->uri == route ||
             (this->uri.find(route) == 0 && route != "/" &&
-             (route[route.size() - 1] == '/' || this->uri[route.length()] == '/')))
-        //  (route.back() == '/' || this->uri[route.length()] == '/')))
+            (route[route.size() - 1] == '/' || this->uri[route.length()] == '/')))
+            //  (route.back() == '/' || this->uri[route.length()] == '/')))
         {
             if (route.length() > matchedRoute.length())
             {
@@ -103,6 +113,11 @@ void Request::parseRequestLine()
         throw 400;
     }
 
+    /************************************************************************************/
+    CHOROUK && std::cout << "++++ lastPart: " << lastPart << std::endl;
+    CHOROUK && std::cout << "++++ uri: " << this->uri << std::endl;
+    /************************************************************************************/
+    
     if (this->uri.length() >= 4 && this->uri.substr(this->uri.length() - 4) == ".php")
         this->cgiType = ".php";
     else if (this->uri.length() >= 3 && this->uri.substr(this->uri.length() - 3) == ".py")
@@ -119,10 +134,10 @@ void Request::parseRequestLine()
             throw 500;
         }
 
-        if (unlink(filename.c_str()) == -1)
+        if (remove(filename.c_str()) != 0)
         {
             close(fd);
-            this->message = "Failed to unlink temporary file";
+            this->message = "Failed to remove temporary file";
             throw 500;
         }
 
@@ -172,3 +187,7 @@ void Request::parseRequestLine()
         throw 400;
     }
 }
+
+ void Request::setCgiType(std::string type){
+    this->cgiType = type;
+ }
