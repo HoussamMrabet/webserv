@@ -143,12 +143,13 @@ Connection::~Connection(){
     delete _request;
 }
 
-void printRequest(const std::string& ip, int port, int status, const std::string& method, const std::string& path, const std::string& version) {
+void Connection::requestInfo(int status, const std::string& method, const std::string& path, const std::string& version) {
     time_t now = time(0);
     struct tm* t = localtime(&now);
     char buf[80];
     strftime(buf, sizeof(buf), "[%a %b %d %H:%M:%S %Y]", t);
-    std::cout << M"" << buf << " [" << ip << "]:" << port  << " [" << status << "]: "
+    std::cout << M"" << buf << " [" << _server.getListen().begin()->first \
+              << "]:" << _server.getListen().begin()->second  << " [" << status << "]: "
               << method << " " << path << " " << version << B"" << std::endl;
 }
 
@@ -236,7 +237,10 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
 
     CHOROUK && std::cout << "------- write fd = " << _fd << std::endl;
     // std::cout << M"" << _request->getUri() << B"\n";
-    printRequest("127.0.0.1", 8080, _request->getStatusCode(), _request->getStrMethod(), _request->getUri(), "HTTP/1.1"); // fix ip port and http
+    requestInfo(_request->getStatusCode(), \
+            _request->getStrMethod(), \
+            _request->getUri(), \
+            _request->getHeader("httpVersion"));
 
     if (_isChunkedResponse) {
         // Continue sending chunks from existing response

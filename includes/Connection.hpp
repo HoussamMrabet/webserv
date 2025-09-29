@@ -44,6 +44,7 @@ public:
     void setNonBlocking();
     void updateTimout();
     // std::string getRequestMethod();
+    void requestInfo(int, const std::string&, const std::string&, const std::string&);
     void sendGetResponse(Request    &request, ServerConf &server);
     void sendPostResponse(Request   &request, int status_code, ServerConf &server);
     // void sentPostResponse(Request   &request, ServerConf &server);
