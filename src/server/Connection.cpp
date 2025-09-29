@@ -143,17 +143,20 @@ Connection::~Connection(){
     delete _request;
 }
 
-void Connection::requestInfo(int status, const std::string& method, const std::string& path, const std::string& version) {
+void Connection::requestInfo(const std::string& host, const std::string& port, int status, const std::string& method, const std::string& path, const std::string& version) {
     time_t now = time(0);
     struct tm* t = localtime(&now);
     char buf[80];
     strftime(buf, sizeof(buf), "[%a %b %d %H:%M:%S %Y]", t);
-    std::cout << M"" << buf << " [" << _server.getListen().begin()->first \
-              << "]:" << _server.getListen().begin()->second  << " [" << status << "]: "
+    // std::cout << M"" << buf << " [" << _server.getListen().begin()->first
+            //   << "]:" << _server.getListen().begin()->second  << " [" << status << "]: "
+    std::cout << M"" << buf << " [" << host << "]:" << port  << " [" << status << "]: "
               << method << " " << path << " " << version << B"" << std::endl;
 }
 
-Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
+Connection::Connection(int fd, ServerConf& server, const std::string& host, const std::string& port): _fd(-1),
+                                                    _host(host), _port(port),
+                                                    _time(time(NULL)),
                                                     _done(false),
                                                     _responseDone(false),
                                                     _isChunkedResponse(false)/*....*/ {
@@ -239,7 +242,8 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
 
     CHOROUK && std::cout << "------- write fd = " << _fd << std::endl;
     // std::cout << M"" << _request->getUri() << B"\n";
-    requestInfo(_request->getStatusCode(), \
+    requestInfo(_host, _port,
+                _request->getStatusCode(), \
                 _request->getStrMethod(), \
                 _request->getUri(), \
                 _request->getHeader("httpVersion"));
@@ -358,6 +362,40 @@ std::string to_str(int n){
 }
 
 int Connection::getCgiFd() const{ return (_cgiFd);}
+
+bool Connection::isCGIRequest(const std::string full_path){
+    if (_request->isCGI())
+        return (true);
+    if (full_path.length() >= 4 && full_path.substr(full_path.length() - 4) == ".php"){
+        _request->setCgiType(".php");
+        return (true);
+    }
+    else if (full_path.length() >= 3 && full_path.substr(full_path.length() - 3) == ".py"){
+        _request->setCgiType(".py");
+        return (true);
+    }
+    return (false);
+    // if ((lastPart.empty() || (lastPart == "cgi-bin")) && \
+    //         (this->uri == "/cgi-bin/" || this->uri == "/cgi-bin") /* && auto_index == true*/){
+
+    //             this->cgiType = ".py"; // default cgi file
+    // //         // check if cgi index file exists in location 
+    // //         // if first doesn't exist check for second or global index file
+    // //         if (!indexs.empty()){
+    // //             this->uriFileName = indexs[0];
+    // //         }
+    // //         else if (!server.getIndex().empty()){
+    // //             this->uriFileName = server.getIndex()[0]; // global index file
+    // //         }
+    // //         else {
+    // //             this->uriFileName = ""; // default cgi file
+    // //         }
+    //         // if (this->uri[this->uri.length() - 1] != '/')
+    //         //     this->uri += "/";
+    //         // this->uri +=  this->uriFileName;
+    //         // std::cout << "++++ uri after adding index: " << this->uri << std::endl;
+    // }
+}
 
 void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
     Response response_obj;
@@ -498,7 +536,7 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
                 // Use chunked transfer for large files
                 MOHAMED && std::cout << "Using chunked transfer for large file" << std::endl;
                 _response_obj.prepareResponse(full_path);
-                _isChunkedResponse = true;
+                _isChunkedResponse = true;  
                 _response = ""; // Clear regular response since we're using chunked
                 return;
             } else {
@@ -506,7 +544,8 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
                 MOHAMED && std::cout << "Using regular response for small file" << std::endl;
                 /*************************/
                 response_obj.setStatus(200);
-                if (_request->isCGI()){
+                // if (_request->isCGI()){
+                if (isCGIRequest(full_path)){
                     _response = CGI::executeCGI(*_request, _server, full_path);
                     response_obj.parseCgiOutput(_response);
                 }

@@ -56,11 +56,14 @@ void Request::parseRequestLine()
         lastPart = this->uri.substr(lastSlash + 1);
     }
 
+    /************************************************************************************/
     std::string check = "/" + lastPart;
     if (check != this->uri && !lastPart.empty())
         this->uriFileName = lastPart;
     else
         this->uriFileName = "";
+    CHOROUK && std::cout << "\n\n\n -+-+-++-- filename = " << uriFileName << std::endl;  
+
     // if (lastPart.empty())
     //     this->uriFileName = "";
     // else if (lastPart.size() > 3 && lastPart.substr(lastPart.size() - 3) == ".py")
@@ -71,8 +74,8 @@ void Request::parseRequestLine()
     //     this->uriFileName = lastPart;
     // else
     //     this->uriFileName = "";
+    /************************************************************************************/
 
-    std::cout << "\n\n\n -+-+-++-- filename = " << uriFileName << std::endl;  
     handleUriSpecialCharacters(this->uri);
 
     const ServerConf &server = globalServer[0];
@@ -80,12 +83,6 @@ void Request::parseRequestLine()
     std::map<std::string, LocationConf> locations = server.getLocations();
 
     std::string matchedRoute = "";
-
-    /*********************************************/
-    bool auto_index = false;
-    std::vector<std::string> indexs;
-    /*********************************************/
-
     for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); it != locations.end(); ++it)
     {
         const std::string &route = it->first;
@@ -95,11 +92,7 @@ void Request::parseRequestLine()
             (this->uri.find(route) == 0 && route != "/" &&
             (route[route.size() - 1] == '/' || this->uri[route.length()] == '/')))
             //  (route.back() == '/' || this->uri[route.length()] == '/')))
-            {
-            /*********************************************/
-            auto_index = it->second.getAutoIndex();
-            indexs = it->second.getIndex();
-            /*********************************************/
+        {
             if (route.length() > matchedRoute.length())
             {
                 matchedRoute = route;
@@ -120,55 +113,11 @@ void Request::parseRequestLine()
         throw 400;
     }
 
-    /*********************************************/
-    // std::cout << "++++ lastPart: " << lastPart << std::endl;
-    // std::cout << "++++ uri: " << this->uri << std::endl;
+    /************************************************************************************/
+    CHOROUK && std::cout << "++++ lastPart: " << lastPart << std::endl;
+    CHOROUK && std::cout << "++++ uri: " << this->uri << std::endl;
+    /************************************************************************************/
     
-    // if ((lastPart.empty() || (lastPart == "cgi-bin")) && 
-    //         (this->uri == "/cgi-bin/" || this->uri == "/cgi-bin") && 
-    //         auto_index == true){
-    //         // check if cgi index file exists in location 
-    //         // if first doesn't exist check for second or global index file
-    //         if (!indexs.empty()){
-    //             this->uriFileName = indexs[0];
-    //         }
-    //         else if (!server.getIndex().empty()){
-    //             this->uriFileName = server.getIndex()[0]; // global index file
-    //         }
-    //         else {
-    //             this->uriFileName = ""; // default cgi file
-    //         }
-    //         if (this->uri[this->uri.length() - 1] != '/')
-    //             this->uri += "/";
-    //         this->uri +=  this->uriFileName;
-    //         std::cout << "++++ uri after adding index: " << this->uri << std::endl;
-    // }
-    // /*********************************************/
-    // /*********************************************/
-    std::cout << "++++ lastPart: " << lastPart << std::endl;
-    std::cout << "++++ uri: " << this->uri << std::endl;
-    
-    if ((lastPart.empty() || (lastPart == "cgi-bin")) && \
-            (this->uri == "/cgi-bin/" || this->uri == "/cgi-bin") && \
-            auto_index == true){
-                this->cgiType = ".py"; // default cgi file
-    //         // check if cgi index file exists in location 
-    //         // if first doesn't exist check for second or global index file
-    //         if (!indexs.empty()){
-    //             this->uriFileName = indexs[0];
-    //         }
-    //         else if (!server.getIndex().empty()){
-    //             this->uriFileName = server.getIndex()[0]; // global index file
-    //         }
-    //         else {
-    //             this->uriFileName = ""; // default cgi file
-    //         }
-            // if (this->uri[this->uri.length() - 1] != '/')
-            //     this->uri += "/";
-            // this->uri +=  this->uriFileName;
-            // std::cout << "++++ uri after adding index: " << this->uri << std::endl;
-    }
-    // /*********************************************/
     if (this->uri.length() >= 4 && this->uri.substr(this->uri.length() - 4) == ".php")
         this->cgiType = ".php";
     else if (this->uri.length() >= 3 && this->uri.substr(this->uri.length() - 3) == ".py")
@@ -238,3 +187,7 @@ void Request::parseRequestLine()
         throw 400;
     }
 }
+
+ void Request::setCgiType(std::string type){
+    this->cgiType = type;
+ }

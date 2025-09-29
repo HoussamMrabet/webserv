@@ -18,6 +18,8 @@ class Connection{
 private:
     int _fd;
     int _cgiFd;
+    std::string _host;
+    std::string _port;
     time_t _time;
     std::string _buffer;
     Request* _request;
@@ -30,7 +32,7 @@ private:
 
 public:
     ~Connection();
-    Connection(int, ServerConf&);
+    Connection(int, ServerConf&, const std::string&, const std::string&);
     Connection(const Connection&);
     int getFd() const;
     int getCgiFd() const;
@@ -40,10 +42,11 @@ public:
     bool isDone();
     bool isResponseDone();
     bool writeResponse();
-    void requestInfo(int, const std::string&, const std::string&, const std::string&);
+    void requestInfo(const std::string&, const std::string&, int, const std::string&, const std::string&, const std::string&);
     void printRequest(); // to remove
     void setNonBlocking();
     void updateTimout();
+    bool isCGIRequest(const std::string);
     // std::string getRequestMethod();
     void sendGetResponse(Request    &request, ServerConf &server);
     void sendPostResponse(Request   &request, int status_code, ServerConf &server);

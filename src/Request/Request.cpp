@@ -27,7 +27,7 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
                         fileName(""), createdFile(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false),
                         cgiFdRead(-1), cgiFdWrite(-1)
 {
-    CHOROUK && std::cout << G"-------- Request destructor called!! ----";
+    CHOROUK && std::cout << G"-------- Request constructor called!! ----";
     CHOROUK && std::cout << B"\n";
     this->headers["connection"] = "keep-alive";
     const ServerConf &server = globalServer[0];

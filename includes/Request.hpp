@@ -128,6 +128,7 @@ class Request
         std::string getHeader(const std::string &key) const;
         std::string getHost() const; // return server name
         std::string getCgiType() const; // return php or py as string if there is a cgi otherwise return empty string
+        void setCgiType(std::string); // set cgi type
         int getStatusCode() const;
         int getCgiFdRead() const; // return read end of cgi pipe
 
