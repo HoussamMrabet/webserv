@@ -1,6 +1,11 @@
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
+#include <algorithm>
+#include <dirent.h>
+#include <vector>
+#include <sstream>
+
 #include <string>
 #include <ctime>
 #include <iostream>

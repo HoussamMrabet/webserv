@@ -75,7 +75,10 @@ void WebServ::pollLoop(){
                         _pollfds.erase(_pollfds.begin() + i);
                         continue;
                     }
-                    
+                    // if (it->second->isCGIRequest("")){
+                    //     CHOROUK && std::cout << "----------- CGI REQUEST ---------------\n";
+                    //     addPollFd(it->second->getCgiFd(), POLLOUT, "cgi");
+                    // }
                     if (it->second->isDone()){
                         CHOROUK && std::cout << "----------- READ DONE ---------------\n";
                         _cleanRead = true;

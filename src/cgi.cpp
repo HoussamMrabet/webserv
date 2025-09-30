@@ -3,12 +3,12 @@
 
 ServerConf CGI::_server;
 
-CGI::CGI(): _fd(-1) {}
+CGI::CGI(): _fd_in(-1) {}
 
 CGI::~CGI(){
 
-    if (_fd != -1)
-        close(_fd);
+    if (_fd_in != -1)
+        close(_fd_in);
     // if (_fd_out != -1)
     //     close(_fd_out);
     // if (!_cgiFileName.empty())
@@ -37,12 +37,12 @@ std::string CGI::executeCGI(const Request& request, ServerConf& server, const st
     try {
         // std::cout << G"-------- Still here1!!!! ";
         // std::cout << B"\n";
-        CGI cgi;
-        cgi._server = server;
-        cgi.importData(request);
+        // CGI cgi;
+        _server = server;
+        importData(request);
         // std::cout << C"-------- tring to execute cgi";
         // std::cout << B"\n";
-        return (cgi.runCGI(scriptPath));
+        return (runCGI(scriptPath));
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return (SERVERERROR);
@@ -96,7 +96,7 @@ std::string CGI::setPath(){ // to check !!!
 void CGI::importData(const Request& request){
     _execDone = false;
     _execDone = false;
-    _fd = request.getCgiFdRead();
+    _fd_in = request.getCgiFdRead();
     _location = request.getLocation();
     CHOROUK && std::cout << C"*********** location is  " << _location << std::endl;
     
@@ -252,17 +252,17 @@ std::string CGI::runCGI(const std::string& fullPath) {
     int stdout_pipe[2];
     if (pipe(stdout_pipe) < 0)
         throw std::runtime_error("Pipe failed");
-
+    _fd_out = stdout_pipe[1];
     pid_t pid = fork();
     if (pid < 0)
         throw std::runtime_error("Fork failed");
 
     if (pid == 0) {
         // --- CHILD ---
-        if (_fd != -1) {
-            lseek(_fd, 0, SEEK_SET);
-            dup2(_fd, STDIN_FILENO);
-            close(_fd);
+        if (_fd_in != -1) {
+            lseek(_fd_in, 0, SEEK_SET);
+            dup2(_fd_in, STDIN_FILENO);
+            close(_fd_in);
         } else {
             int devnull = open("/dev/null", O_RDONLY);
             dup2(devnull, STDIN_FILENO);
@@ -287,6 +287,7 @@ std::string CGI::runCGI(const std::string& fullPath) {
 
     // --- PARENT ---
     close(stdout_pipe[1]); // close write end
+    setToNonBlocking();
     std::cout << "------------- execPath = " << _execPath << std::endl;
     std::cout << "------------- scriptFileName = " << fullPath << std::endl;
     int status;
@@ -354,11 +355,11 @@ void CGI::printEnvironment(){
     std::cout << "...................................\n"; 
 }
 
-// bool CGI::setToNonBlocking(int fd){
-//     int flags = fcntl(fd, F_GETFL);
-//     if (flags == -1) return (false);
-//     return ((fcntl(fd, F_SETFL, flags | O_NONBLOCK) != -1));
-// }
+bool CGI::setToNonBlocking(){
+    int flags = fcntl(_fd_out, F_GETFL);
+    if (flags == -1) return (false);
+    return ((fcntl(_fd_out, F_SETFL, flags | O_NONBLOCK) != -1));
+}
 
 bool CGI::validPath(){
     std::cout << G"path is " << _scriptFileName;
@@ -388,4 +389,4 @@ bool CGI::validPath(){
     return (true);
 }
 
-// int CGI::getFd() { return (_fd);}
+int CGI::getFd() { return (_fd_out);}
