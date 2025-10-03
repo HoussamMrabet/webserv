@@ -47,8 +47,8 @@ public:
     void requestInfo(int, const std::string&, const std::string&, const std::string&);
     void sendGetResponse(Request    &request, ServerConf &server);
     void sendPostResponse(Request   &request, int status_code, ServerConf &server);
+    void sendDeleteResponse(Request &request, ServerConf &server);
     // void sentPostResponse(Request   &request, ServerConf &server);
-    // void sendDeleteResponse(Request &request, ServerConf &server);
     // void sendAutoIndex(Response &response_obj, const std::string &full_path, const std::string &requested_path);
     void sendErrorPage(Request &request, int code, ServerConf &server);
     std::string getConnectionHeader(Request &request);
