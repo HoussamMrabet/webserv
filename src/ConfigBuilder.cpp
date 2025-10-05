@@ -57,7 +57,15 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 	if (!stk.empty())
 		throw ConfigBuilder::ErrorConfig("Config file : You have to open and close curly bracets { }");
 	if (res.size() != 1)
-		throw ConfigBuilder::ErrorConfig("Config file : should have only one server");;
+		throw ConfigBuilder::ErrorConfig("Config file : should have only one server");
+
+
+	if (res[0].getListen().empty()) {
+		throw ConfigBuilder::ErrorConfig("Config file : 'listen' directive is required and cannot be empty");
+	}
+
+	std::cout << "Server configuration loaded successfully.\n";
+	res[0].printListen(std::cout);
 	return (res);
 }
 
