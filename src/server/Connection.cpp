@@ -316,10 +316,10 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     
     // Handle regular (non-chunked) response sending
     // Only executed if we're not in chunked mode or if chunked response just started
-    if (_response.empty()){
-        _response = DEFAULT_RESPONSE;
-        updateTimout();
-    }
+    // if (_response.empty()){
+    //     _response = DEFAULT_RESPONSE;
+    //     updateTimout();
+    // }
     if (!_isChunkedResponse) {
         CHOROUK && std::cout << "writing on fd = " << _fd << std::endl;
         int b = write(_fd, _response.c_str(), _response.length());
