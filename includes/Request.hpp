@@ -87,6 +87,7 @@ class Request
         std::string fileName;
         std::string createdFile;
         std::string fullBody;
+        std::string fullPath;
         size_t bodySizeLimit;
         std::string root;
         std::string uploadDir;
@@ -125,6 +126,7 @@ class Request
         std::string getLocation() const; // return the location matched in the config file
         std::map<std::string, std::string> getHeaders() const;
         std::string getBody() const;
+        std::string getFullPath() const;
         std::string getHeader(const std::string &key) const;
         std::string getHost() const; // return server name
         std::string getCgiType() const; // return php or py as string if there is a cgi otherwise return empty string
@@ -136,6 +138,7 @@ class Request
         void parseRequest(const std::string& rawRequest = "");
         void printRequest();
         std::string getMessage() const;
+        void processRequest();
 };
 
 void handleUriSpecialCharacters(std::string &uri);

@@ -120,9 +120,10 @@ void CGI::importData(const Request& request){
         }
     }
     // std::string name = request.getUriFileName();
-    _scriptFileName = "." + setPath(); // should be set after _scriptName _location and _root
+    _scriptFileName = request.getFullPath(); // should be set after _scriptName _location and _root
+    // _scriptFileName = "." + setPath(); // should be set after _scriptName _location and _root
     CHOROUK && std::cout << C"*********** _scriptName is  " << _scriptName << std::endl;
-    CHOROUK && std::cout << C"*********** _scriptFILEName is  " << _scriptFileName << std::endl;
+    std::cout << C"*********** _scriptFILEName is  " << _scriptFileName << std::endl;
     // CHOROUK && std::cout << C"*********** name is  " << name << std::endl;
     // _scriptFileName = _root + _scriptName;
     CHOROUK && std::cout << M"----> " << _scriptFileName;
@@ -330,3 +331,17 @@ bool CGI::validPath(){
 }
 
 // int CGI::getFd() { return (_fd);}
+
+
+// std::string CGI::readCGIOutput() {
+//     std::string cgi_output;
+//     char buffer[4096];
+//     ssize_t n = read(_fd, buffer, sizeof(buffer));
+
+//     if (n > 0) {
+//         cgi_output.append(buffer, n);
+//         cgi_output = parseOutput(cgi_output);
+//     }
+
+//     return cgi_output;
+// }

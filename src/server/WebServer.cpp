@@ -132,6 +132,14 @@ void WebServ::pollLoop(){
                 }
 
             }
+            // else if (_pollfds[i].revents & POLLIN && _fdType[fd] == "cgi_output") {
+            //     // Handle CGI output read
+            //     std::string cgi_output = readCGIOutput();
+            //     if (!cgi_output.empty()) {
+            //         // Process the CGI output (write it back to the connection, for example)
+            //         std::cout << cgi_output << std::endl;
+            //     }
+            // }
         }
         // After processing all events, continue to next poll cycle
         // The server NEVER stops listening for new connections
@@ -172,6 +180,28 @@ void WebServ::checkTimeout(){
             
         }
     }
+    
+    // if (_pid != -1) {// Check if the CGI process is finished
+    //     int status;
+    //     pid_t result = waitpid(_pid, &status, WNOHANG);
+    
+    //     if (result == -1) {
+    //         perror("waitpid failed");
+    //     } else if (result == 0) {
+    //         // Process is still running
+    //     } else {
+    //         // Process has finished
+    //         if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+    //             std::cout << "CGI process completed successfully." << std::endl;
+    //             // Mark the CGI process as done or ready to read
+    //             addPollFd(_fd, POLLIN, "cgi_output");  // Ready to read CGI output
+    //         } else {
+    //             std::cerr << "CGI process failed with status: " << WEXITSTATUS(status) << std::endl;
+    //             // Handle the failure (e.g., cleaning up, reporting errors)
+    //         }
+    //         _pid = -1;  // Clear the PID once the process is handled
+    //     }
+    // }
 }
 
 // void WebServ::closeConnection(int fd){

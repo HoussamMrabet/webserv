@@ -225,6 +225,14 @@ bool Connection::readRequest(){
         // }
     }
     _done = _request->isDone();
+    if (_request->isDone()){
+        requestInfo(_request->getStatusCode(), \
+        _request->getStrMethod(), \
+        _request->getUri(), \
+        _request->getHeader("httpVersion"));
+        
+        _request->processRequest();
+    }
     // CHOROUK && _request->printRequest();
 
 
@@ -238,10 +246,10 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
 
     CHOROUK && std::cout << "------- write fd = " << _fd << std::endl;
     // std::cout << M"" << _request->getUri() << B"\n";
-    requestInfo(_request->getStatusCode(), \
-            _request->getStrMethod(), \
-            _request->getUri(), \
-            _request->getHeader("httpVersion"));
+    // requestInfo(_request->getStatusCode(), \
+    //         _request->getStrMethod(), \
+    //         _request->getUri(), \
+    //         _request->getHeader("httpVersion"));
 
     if (_isChunkedResponse) {
         // Continue sending chunks from existing response
