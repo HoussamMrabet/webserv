@@ -38,10 +38,12 @@ public:
     time_t getTime() const;
     bool readRequest();
     bool isDone();
+    bool isCGI() const;
     bool isResponseDone();
     bool writeResponse();
     void printRequest(); // to remove
     void setNonBlocking();
+    std::string setCGIHeaders();
     void updateTimout();
     // std::string getRequestMethod();
     void requestInfo(int, const std::string&, const std::string&, const std::string&);

@@ -132,6 +132,7 @@ class Request
         std::string getCgiType() const; // return php or py as string if there is a cgi otherwise return empty string
         int getStatusCode() const;
         int getCgiFdRead() const; // return read end of cgi pipe
+        std::string getRoot() const;
 
         bool isDone() const;
         bool isCGI() const; // check if the request is a cgi or not

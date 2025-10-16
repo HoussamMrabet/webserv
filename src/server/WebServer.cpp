@@ -57,7 +57,14 @@ void WebServ::pollLoop(){
             if (_pollfds[i].revents & POLLIN && _fdType[fd] == "listen"){
                     CHOROUK && std::cout << "----------- INSIDE LISTEN ---------------\n";
                     acceptConnection(fd); // Always try to accept new connections
-                }
+            }
+            if (_pollfds[i].revents & POLLIN && _fdType[fd] == "CGI"){
+                    CHOROUK && std::cout << "----------- INSIDE CGI read ---------------\n";
+                    // keep reading from cgi fd and write to corresponding connection
+                    std::map<int, Connection*>::iterator it = _connections.find(_cgifds[fd]);
+                    it->second->writeResponse();
+                    // it->second-> 
+            }
             if ((_pollfds[i].revents & POLLIN) || !_cleanRead){
                 if (_fdType[fd] == "connection"){
                     CHOROUK && std::cout << "----------- INSIDE CONNECTION ---------------\n";
@@ -78,10 +85,21 @@ void WebServ::pollLoop(){
                     if (it->second->isDone()){
                         CHOROUK && std::cout << "----------- READ DONE ---------------\n";
                         _cleanRead = true;
-                        // Request complete, switch to write mode
-                        // _pollfds[i].events = POLLOUT;
-                        // _pollfds[i].revents = 0;
-                        // it->second->printRequest(); // to remove!
+                        if (it->second->isCGI()){
+                            int cgifd = it->second->getCgiFd();
+                            addPollFd(cgifd, POLLIN, "CGI");
+                            _cgifds[cgifd] = fd; 
+                        //     //execute cgi and get cgi fd
+                        //     // add cgi fd to pollfds if not exist!!!
+                        }
+                        // if (it->second->getCgiFd() != -1){
+                        //     // add cgi fd to pollfds if not exist!!!
+                        //     // execute cgi and get cgi fd
+                        // }
+                        // // Request complete, switch to write mode
+                        // // _pollfds[i].events = POLLOUT;
+                        // // _pollfds[i].revents = 0;
+                        // // it->second->printRequest(); // to remove!
                     }
                     else {
                         CHOROUK && std::cout << "----------- READ NOT DONE ---------------\n";

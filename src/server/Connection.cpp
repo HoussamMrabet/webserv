@@ -231,8 +231,11 @@ bool Connection::readRequest(){
         _request->getStrMethod(), \
         _request->getUri(), \
         _request->getHeader("httpVersion"));
-        
+
         _request->processRequest();
+        // std::cout << "+++++++++++++++++++++++++++++\n";
+        // std::cout << _request->isCGI() << std::endl;
+        // std::cout << "+++++++++++++++++++++++++++++\n";
         // _request->parseRequest();
     }
     // CHOROUK && _request->printRequest();
@@ -292,10 +295,11 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         MOHAMED && std::cout << "Redirect Response:\n" << _response << std::endl;
         updateTimout();
     }
-    else if (_request->isCGI())
+    else if (_request->isCGI() && _request->getStatusCode() == 200)
     {
         CHOROUK && std:: cout << M"IT IS CGI!!!!!\n";
         _response = CGI::executeCGI(*_request, _server);
+        _response = setCGIHeaders();
         // _cgiFd = CGI::getFd();
         updateTimout();
     }
@@ -345,6 +349,44 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     }
     
     return (true);
+}
+
+std::string Connection::setCGIHeaders(){
+    std::ostringstream response;
+    
+    size_t header_end = _response.find("\r\n\r\n");
+    if (header_end == std::string::npos) {
+        header_end = _response.find("\n\n");
+        if (header_end != std::string::npos) {
+            header_end += 2;
+        }
+    } else {
+        header_end += 4;
+    }
+    
+    if (header_end != std::string::npos) {
+        std::string headers_part = _response.substr(0, header_end);
+        std::string body_part = _response.substr(header_end);
+        
+        if (headers_part.find("HTTP/") == 0) {
+            return (_response);
+        } else {
+            response << "HTTP/1.1 200 OK\r\n";
+            response << headers_part;
+            if (headers_part[headers_part.size() - 1] != '\n') {
+                response << "\r\n";
+            }
+            response << body_part;
+        }
+    } else {
+        response << "HTTP/1.1 200 OK\r\n";
+        response << "Content-Type: text/html\r\n";
+        response << "Content-Length: " << _response.size() << "\r\n";
+        response << "\r\n";
+        response << _response;
+    }
+    
+    return (response.str());
 }
 
 // std::string Connection::getRequestMethod(){
@@ -443,7 +485,7 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
     }
     
     // Always use ./www as the document root
-    document_root = "./www";
+    document_root = request.getRoot();
     
     // Construct full path - handle the case where requested_path starts with '/'
     if (requested_path[0] == '/') {
@@ -864,3 +906,5 @@ std::string Connection::sendRedirectResponse(Request &request, const std::string
     MOHAMED && std::cout << "Sending redirect response to: " << redirect_url << std::endl;
     return response;
 }
+
+bool Connection::isCGI() const{ return (_request->isCGI());}

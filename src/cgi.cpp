@@ -43,7 +43,9 @@ std::string CGI::executeCGI(Request& request, ServerConf& server){
         cgi.importData(request);
         // std::cout << C"-------- tring to execute cgi";
         // std::cout << B"\n";
-        return (cgi.runCGI());
+        std::string cgi_output = cgi.runCGI();
+        // cgi_output = cgi.parseOutput(cgi_output);
+        return (cgi_output);
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return (SERVERERROR);
@@ -96,7 +98,7 @@ void CGI::set_HTTP_Header(){
 
 void CGI::importData(Request& request){
     _execDone = false;
-    _execDone = false;
+    _readDone = false;
     _fd_in = request.getCgiFdRead();
 
     _location = request.getLocation();
@@ -174,6 +176,8 @@ void CGI::importData(Request& request){
 }
 
 std::string CGI::runCGI(){
+    if (_execDone)
+        return (readOutput());
     // std::cout << G"-------- Still here0!!!! ";
     // std::cout << B"\n";
     // generateCgiFile();
@@ -184,7 +188,7 @@ std::string CGI::runCGI(){
     int stdout_pipe[2];
     if (pipe(stdout_pipe) < 0)
         throw std::runtime_error("Pipe failed");
-    _fd_out = stdout_pipe[1];
+    _fd_out = stdout_pipe[0];
     pid_t pid = fork();
     if (pid < 0){
         // std::cout << G"-------- Im the problem 3!!!!! ";
@@ -238,7 +242,7 @@ std::string CGI::runCGI(){
         exit(1); // remove!! throw exception
     }
     close(stdout_pipe[1]); // close write end
-    // setToNonBlocking();    
+    setToNonBlocking();    
     int status;
     waitpid(pid, &status, 0);
     
@@ -251,6 +255,33 @@ std::string CGI::runCGI(){
     // // _done = true;
     // lseek(_fd, 0, SEEK_SET);
     // // lseek(_fd_out, 0, SEEK_SET);
+    // std::string cgi_output;
+    // char buffer[4096];
+    // ssize_t n;
+
+    // // add _fd and fd_out to poll and manage all without while loop!! 
+    
+    // int read_counter = 0;
+    // // while ((n = read(_fd, buffer, sizeof(buffer))) > 0) {
+    // //     std::cout << "read counter = " << ++read_counter << std::endl;
+    // //     cgi_output.append(buffer, n);
+    // // }
+    // while ((n = read(stdout_pipe[0], buffer, sizeof(buffer))) > 0){
+    //     std::cout << "read counter = " << ++read_counter << std::endl;
+    //     cgi_output.append(buffer, n);
+    // }
+    // close(stdout_pipe[0]);
+    // cgi_output = parseOutput(cgi_output);
+    // // std::cout << " ########## CGI ###########\n";
+    // // std::cout << cgi_output << std::endl;
+    // // std::cout << " ##########################\n";
+
+
+    _execDone = true;
+    return (readOutput());
+}
+
+std::string CGI::readOutput(){
     std::string cgi_output;
     char buffer[4096];
     ssize_t n;
@@ -262,58 +293,58 @@ std::string CGI::runCGI(){
     //     std::cout << "read counter = " << ++read_counter << std::endl;
     //     cgi_output.append(buffer, n);
     // }
-    while ((n = read(stdout_pipe[0], buffer, sizeof(buffer))) > 0){
+    while ((n = read(_fd_out, buffer, sizeof(buffer))) > 0){
         std::cout << "read counter = " << ++read_counter << std::endl;
         cgi_output.append(buffer, n);
     }
-    close(stdout_pipe[0]);
-    cgi_output = parseOutput(cgi_output);
+    close(_fd_out);
+    // cgi_output = parseOutput(cgi_output);
     // std::cout << " ########## CGI ###########\n";
     // std::cout << cgi_output << std::endl;
     // std::cout << " ##########################\n";
 
 
-
+    _execDone = true;
     return (cgi_output);
 }
 
-std::string CGI::parseOutput(std::string& cgi_output){
-    std::ostringstream response;
+// std::string CGI::parseOutput(std::string& cgi_output){
+//     std::ostringstream response;
     
-    size_t header_end = cgi_output.find("\r\n\r\n");
-    if (header_end == std::string::npos) {
-        header_end = cgi_output.find("\n\n");
-        if (header_end != std::string::npos) {
-            header_end += 2;
-        }
-    } else {
-        header_end += 4;
-    }
+//     size_t header_end = cgi_output.find("\r\n\r\n");
+//     if (header_end == std::string::npos) {
+//         header_end = cgi_output.find("\n\n");
+//         if (header_end != std::string::npos) {
+//             header_end += 2;
+//         }
+//     } else {
+//         header_end += 4;
+//     }
     
-    if (header_end != std::string::npos) {
-        std::string headers_part = cgi_output.substr(0, header_end);
-        std::string body_part = cgi_output.substr(header_end);
+//     if (header_end != std::string::npos) {
+//         std::string headers_part = cgi_output.substr(0, header_end);
+//         std::string body_part = cgi_output.substr(header_end);
         
-        if (headers_part.find("HTTP/") == 0) {
-            return (cgi_output);
-        } else {
-            response << "HTTP/1.1 200 OK\r\n";
-            response << headers_part;
-            if (headers_part[headers_part.size() - 1] != '\n') {
-                response << "\r\n";
-            }
-            response << body_part;
-        }
-    } else {
-        response << "HTTP/1.1 200 OK\r\n";
-        response << "Content-Type: text/html\r\n";
-        response << "Content-Length: " << cgi_output.size() << "\r\n";
-        response << "\r\n";
-        response << cgi_output;
-    }
+//         if (headers_part.find("HTTP/") == 0) {
+//             return (cgi_output);
+//         } else {
+//             response << "HTTP/1.1 200 OK\r\n";
+//             response << headers_part;
+//             if (headers_part[headers_part.size() - 1] != '\n') {
+//                 response << "\r\n";
+//             }
+//             response << body_part;
+//         }
+//     } else {
+//         response << "HTTP/1.1 200 OK\r\n";
+//         response << "Content-Type: text/html\r\n";
+//         response << "Content-Length: " << cgi_output.size() << "\r\n";
+//         response << "\r\n";
+//         response << cgi_output;
+//     }
     
-    return (response.str());
-}
+//     return (response.str());
+// }
 
 void CGI::printEnvironment(){
     std::cout << "...........Environment...............\n"; 
@@ -325,11 +356,11 @@ void CGI::printEnvironment(){
     std::cout << "...................................\n"; 
 }
 
-// bool CGI::setToNonBlocking(int fd){
-//     int flags = fcntl(fd, F_GETFL);
-//     if (flags == -1) return (false);
-//     return ((fcntl(fd, F_SETFL, flags | O_NONBLOCK) != -1));
-// }
+bool CGI::setToNonBlocking(){
+    int flags = fcntl(_fd_out, F_GETFL);
+    if (flags == -1) return (false);
+    return ((fcntl(_fd_out, F_SETFL, flags | O_NONBLOCK) != -1));
+}
 
 bool CGI::validPath(){
     // std::cout << G"path is " << _scriptFileName;

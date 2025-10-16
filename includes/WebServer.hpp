@@ -19,6 +19,7 @@ class WebServ{ // Factory design
         std::vector<std::pair<std::string, std::string> > _listens;
         std::vector<struct pollfd> _pollfds;
         std::map<int, Connection*> _connections; // can use just vector?
+        std::map<int, int> _cgifds; // can use just vector?
         std::map<int, std::string> _fdType; // to check if fd is a listen, client connection, or a cgi pipe
         bool _cleanRead;
         WebServ();

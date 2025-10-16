@@ -115,6 +115,37 @@ void Request::processRequest(){
     //     this->cgiFdWrite = fd2;
     // }
 
+    int fd = open(fullPath.c_str(), O_RDONLY);
+    if (fd == -1){
+        // std::cout << G"-------- Im the problem 1!!!!! ";
+        // std::cout << B"\n";
+        this->statusCode = 404;
+        return;
+    }
+    else
+        close(fd);
+    // if (access(fullPath.c_str(), F_OK) != 0){
+
+    //     // std::cout << G"I fail!!!! 1" << fullPath;
+    //     // std::cout << B"\n";
+    //     this->statusCode = 404;
+    // } 
+    // if (access(fullPath.c_str(), R_OK) != 0){
+    //     // std::cout << G"I fail!!!! 2" << fullPath;
+    //     // std::cout << B"\n";
+    //     this->statusCode = 404;
+    // } 
+    // if (access(fullPath.c_str(), X_OK) != 0){
+    //     // std::cout << G"I fail!!!! 3" << _execPath;
+    //     // std::cout << G"I fail!!!! 3" << fullPath;
+    //     // std::cout << B"\n";
+    //     this->statusCode = 404;
+    // } 
+    // if (fullPath.find("../") != std::string::npos){
+    //     // std::cout << G"I fail!!!! 4" << _scriptFileName;
+    //     // std::cout << B"\n";
+    //     this->statusCode = 404;
+    // } 
 }
 
 std::string Request::getFullPath() const{

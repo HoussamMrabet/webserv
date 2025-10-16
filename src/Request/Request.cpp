@@ -130,6 +130,11 @@ int Request::getCgiFdRead() const
     return cgiFdRead;
 }
 
+std::string Request::getRoot() const
+{
+    return (this->root);
+}
+
 bool Request::isDone() const
 {
     return (this->currentStep == DONE);
