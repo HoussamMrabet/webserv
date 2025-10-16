@@ -18,4 +18,4 @@ print("</html>")
 # curl "localhost:8080/cgi-files/file.py?name=sunny"
 
 # or this:
-# curl -X POST -d "name=sunny" http://localhost:8080/cgi-files/file.py
+# curl -X POST -d "name=sunny" http://localhost:8080/cgi-bin/file.py
