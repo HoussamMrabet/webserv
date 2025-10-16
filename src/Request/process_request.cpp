@@ -84,35 +84,36 @@ void Request::processRequest(){
         this->cgiType = ".py";
         this->uriFileName = index;
     }
-    if (this->isCGI())
-    {
-        std::string filename = generateRandomFileName("./");
-        this->createdFile = filename;
-        int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600);
-        if (fd == -1)
-        {
-            this->message = "Failed to open temporary file";
-            throw 500;
-        }
+    // if (this->isCGI())
+    // {
+    //     std::string filename = generateRandomFileName("./");
+    //     this->createdFile = filename;
+    //     int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600);
+    //     if (fd == -1)
+    //     {
+    //         this->message = "Failed to open temporary file";
+    //         throw 500;
+    //     }
 
-        if (remove(filename.c_str()) != 0)
-        {
-            close(fd);
-            this->message = "Failed to remove temporary file";
-            throw 500;
-        }
+    //     if (remove(filename.c_str()) != 0)
+    //     {
+    //         close(fd);
+    //         this->message = "Failed to remove temporary file";
+    //         throw 500;
+    //     }
 
-        int fd2 = dup(fd);
-        if (fd2 == -1)
-        {
-            close(fd);
-            this->message = "Failed to duplicate file descriptor";
-            throw 500;
-        }
+    //     int fd2 = dup(fd);
+    //     if (fd2 == -1)
+    //     {
+    //         close(fd);
+    //         this->message = "Failed to duplicate file descriptor";
+    //         throw 500;
+    //     }
 
-        this->cgiFdRead = fd;
-        this->cgiFdWrite = fd2;
-    }
+    //     std::cout << "-*-*-*-*-*-*- >>>> pb here!!!!!!!!" << this->message << "\n";
+    //     this->cgiFdRead = fd;
+    //     this->cgiFdWrite = fd2;
+    // }
 
 }
 

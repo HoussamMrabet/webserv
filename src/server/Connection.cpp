@@ -205,6 +205,7 @@ bool Connection::readRequest(){
         }
         else
         {
+            // _request->processRequest();
             _request->parseRequest();
             // _buffer.clear();
             // std::cout << "Client disconnected!" << std::endl;
@@ -232,6 +233,7 @@ bool Connection::readRequest(){
         _request->getHeader("httpVersion"));
         
         _request->processRequest();
+        // _request->parseRequest();
     }
     // CHOROUK && _request->printRequest();
 
@@ -283,6 +285,7 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     // Regular response processing - only if not in chunked mode
     // Check for redirects first
     std::string redirect_url = checkForRedirect(*_request, _server);
+
     // CHOROUK && std::cout << C"--------- REDIRECTION FOUND!!!! -----------" << B"\n";
     if (!redirect_url.empty()) {
         _response = sendRedirectResponse(*_request, redirect_url, _server);

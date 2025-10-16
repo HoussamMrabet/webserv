@@ -1,16 +1,17 @@
 #include "cgi.hpp"
 #include <sys/time.h>
 
+
 ServerConf CGI::_server;
 
-CGI::CGI(): _fd(-1) {}
+CGI::CGI(): _fd_in(-1) {}
 
 CGI::~CGI(){
 
-    if (_fd != -1)
-        close(_fd);
-    // if (_fd_out != -1)
-    //     close(_fd_out);
+    if (_fd_in != -1)
+        close(_fd_in);
+    if (_fd_out != -1)
+        close(_fd_out);
     // if (!_cgiFileName.empty())
     //     std::remove(_cgiFileName.c_str());
 }
@@ -33,7 +34,7 @@ CGI::~CGI(){
 //     }
 // }
 
-std::string CGI::executeCGI(const Request& request, ServerConf& server){
+std::string CGI::executeCGI(Request& request, ServerConf& server){
     try {
         // std::cout << G"-------- Still here1!!!! ";
         // std::cout << B"\n";
@@ -49,15 +50,15 @@ std::string CGI::executeCGI(const Request& request, ServerConf& server){
     }
 }
 
-// void CGI::setContentLenght(){
-//     if (_requestMethod == "POST" && !_body.empty()){
-//         std::stringstream ss;
-//         ss << _body.size();
-//         _contentLenght = ss.str();
-//     } else {
-//         _contentLenght = "";
-//     }
-// }
+void CGI::setContentLenght(){
+    if (_requestMethod == "POST" && !_body.empty()){
+        std::stringstream ss;
+        ss << _body.size();
+        _contentLenght = ss.str();
+    } else {
+        _contentLenght = "";
+    }
+}
 
 void CGI::set_HTTP_Header(){
     for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); 
@@ -80,23 +81,24 @@ void CGI::set_HTTP_Header(){
     }
 }
 
-std::string CGI::setPath(){ // to check !!! 
-    size_t pos = _scriptName.find(_location);
-    std::string path;
-    if (pos != std::string::npos)
-        pos += _location.size();
-    path = _scriptName.substr(pos, _scriptName.size());
-    // std::cout << M"data: pos " << pos << " path " << path << " root " << _root;
-    path = _root + path;
-    // std::cout << " path " << path << " location " << _location  << std::endl;
+// std::string CGI::setPath(){ // to check !!! 
+//     size_t pos = _scriptName.find(_location);
+//     std::string path;
+//     if (pos != std::string::npos)
+//         pos += _location.size();
+//     path = _scriptName.substr(pos, _scriptName.size());
+//     // std::cout << M"data: pos " << pos << " path " << path << " root " << _root;
+//     path = _root + path;
+//     // std::cout << " path " << path << " location " << _location  << std::endl;
 
-    return (path);
-}
+//     return (path);
+// }
 
-void CGI::importData(const Request& request){
+void CGI::importData(Request& request){
     _execDone = false;
     _execDone = false;
-    _fd = request.getCgiFdRead();
+    _fd_in = request.getCgiFdRead();
+
     _location = request.getLocation();
     CHOROUK && std::cout << C"*********** location is  " << _location << std::endl;
     
@@ -120,6 +122,7 @@ void CGI::importData(const Request& request){
         }
     }
     // std::string name = request.getUriFileName();
+    // request.processRequest(); // to set uriFileName
     _scriptFileName = request.getFullPath(); // should be set after _scriptName _location and _root
     // _scriptFileName = "." + setPath(); // should be set after _scriptName _location and _root
     CHOROUK && std::cout << C"*********** _scriptName is  " << _scriptName << std::endl;
@@ -132,6 +135,7 @@ void CGI::importData(const Request& request){
     _queryString = request.getUriQueries();
     _requestMethod = request.getStrMethod();
     _body = request.getBody();
+    // std::cout << "*********** body is  " << _body << std::endl;
     _remoteAddr = request.getHost();
     _headers = request.getHeaders();
 
@@ -147,7 +151,8 @@ void CGI::importData(const Request& request){
         throw std::runtime_error("Invalid CGI script path");
     }
 
-    // setContentLenght();
+    setContentLenght();
+    // std::cout << "-*-*-**-**-*-*-* content lenght is " << _contentLenght << std::endl;
     set_HTTP_Header();
     
     _envs.push_back("SCRIPT_NAME=" + _scriptName);
@@ -176,7 +181,10 @@ std::string CGI::runCGI(){
     // if (_fd != -1) {
     //     lseek(_fd, 0, SEEK_SET);
     // }
-
+    int stdout_pipe[2];
+    if (pipe(stdout_pipe) < 0)
+        throw std::runtime_error("Pipe failed");
+    _fd_out = stdout_pipe[1];
     pid_t pid = fork();
     if (pid < 0){
         // std::cout << G"-------- Im the problem 3!!!!! ";
@@ -185,23 +193,38 @@ std::string CGI::runCGI(){
     }
     
     if (pid == 0) {
-        if (_fd != -1) {
-            lseek(_fd, 0, SEEK_SET);
-            dup2(_fd, STDIN_FILENO);
+        // if (_fd != -1) {
+        //     lseek(_fd, 0, SEEK_SET);
+        //     dup2(_fd, STDIN_FILENO);
+        // }
+        // // else {
+        // //     int dev_null = open("/dev/null", O_RDONLY);
+        // //     if (dev_null != -1) {
+        // //         dup2(dev_null, STDIN_FILENO);
+        // //         close(dev_null);
+        // //     }
+        // // }
+        if (_fd_in != -1) {
+            lseek(_fd_in, 0, SEEK_SET);
+            dup2(_fd_in, STDIN_FILENO);
+            close(_fd_in);
         }
         // else {
-        //     int dev_null = open("/dev/null", O_RDONLY);
-        //     if (dev_null != -1) {
-        //         dup2(dev_null, STDIN_FILENO);
-        //         close(dev_null);
-        //     }
+        //     int devnull = open("/dev/null", O_RDONLY);
+        //     dup2(devnull, STDIN_FILENO);
+        //     close(devnull);
         // }
+
+        close(stdout_pipe[0]); // close read end
+        dup2(stdout_pipe[1], STDOUT_FILENO);
+        dup2(stdout_pipe[1], STDERR_FILENO);
+        close(stdout_pipe[1]);
+
+        // dup2(_fd, STDOUT_FILENO);
+        // // dup2(_fd_out, STDOUT_FILENO);
+        // dup2(STDOUT_FILENO, STDERR_FILENO);
         
-        dup2(_fd, STDOUT_FILENO);
-        // dup2(_fd_out, STDOUT_FILENO);
-        dup2(STDOUT_FILENO, STDERR_FILENO);
-        
-        if (_fd != -1) close(_fd);
+        // if (_fd != -1) close(_fd);
         // close(_fd_out);
 
         char* argv[3];
@@ -214,7 +237,8 @@ std::string CGI::runCGI(){
         perror("execve");
         exit(1); // remove!! throw exception
     }
-    
+    close(stdout_pipe[1]); // close write end
+    // setToNonBlocking();    
     int status;
     waitpid(pid, &status, 0);
     
@@ -224,9 +248,9 @@ std::string CGI::runCGI(){
         throw std::runtime_error("CGI script failed");
     }
     
-    // _done = true;
-    lseek(_fd, 0, SEEK_SET);
-    // lseek(_fd_out, 0, SEEK_SET);
+    // // _done = true;
+    // lseek(_fd, 0, SEEK_SET);
+    // // lseek(_fd_out, 0, SEEK_SET);
     std::string cgi_output;
     char buffer[4096];
     ssize_t n;
@@ -234,10 +258,15 @@ std::string CGI::runCGI(){
     // add _fd and fd_out to poll and manage all without while loop!! 
     
     int read_counter = 0;
-    while ((n = read(_fd, buffer, sizeof(buffer))) > 0) {
+    // while ((n = read(_fd, buffer, sizeof(buffer))) > 0) {
+    //     std::cout << "read counter = " << ++read_counter << std::endl;
+    //     cgi_output.append(buffer, n);
+    // }
+    while ((n = read(stdout_pipe[0], buffer, sizeof(buffer))) > 0){
         std::cout << "read counter = " << ++read_counter << std::endl;
         cgi_output.append(buffer, n);
     }
+    close(stdout_pipe[0]);
     cgi_output = parseOutput(cgi_output);
     // std::cout << " ########## CGI ###########\n";
     // std::cout << cgi_output << std::endl;
