@@ -13,26 +13,29 @@ void Request::processRequest(){
     // Find the matching location configuration
     std::string location_path = "/";
     
-    // Find the best matching location (longest prefix match)
-    for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); 
-        it != locations.end(); ++it) {
-        if (this->uri.find(it->first) == 0 && it->first.length() > location_path.length()) {
-            location_path = it->first;
-        }
-    } // what if location is not found!!
-    if (locations.find(location_path) == locations.end()) {
-        // No matching location found, use default root
-        document_root = server.getRoot();
-        if (document_root[0] != '.') // make sure document_root starts with .
-            document_root = "." + document_root;
-        full_path = document_root + this->uri;
-    }
-    else{
+    // // Find the best matching location (longest prefix match)
+    // for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); 
+    //     it != locations.end(); ++it) {
+    //     if (this->uri.find(it->first) == 0 && it->first.length() > location_path.length()) {
+    //         location_path = it->first;
+    //     }
+    // } // what if location is not found!!
+    location_path = this->location;
+    std::cout << "*-*-*-*-*-*-*-> location_path: " << location_path << std::endl;
+    // if (locations.find(location_path) == locations.end()) {
+    //     // No matching location found, use default root
+    //     document_root = server.getRoot();
+    //     if (document_root[0] != '.') // make sure document_root starts with .
+    //         document_root = "." + document_root;
+    //     full_path = document_root + this->uri;
+    // }
+    // else{
         document_root = locations[location_path].getRoot();
         if (document_root.empty())
             document_root = server.getRoot();
         // std::cout << "*-*-*-*-*-*-*-> PB here 3 <-*-*-*-*-*-*\n";
         std::string file_name = this->uri.substr(std::min(location_path.length(), this->uri.length()));
+        std::cout << "*-*-*-*-*-*-*-> file_name: " << file_name << std::endl;
         if (file_name.length() > 0 && file_name[0] == '/')
             file_name = file_name.substr(1);
         // std::cout << "*-*-*-*-*-*-*-> file_name: " << file_name << std::endl;
@@ -67,10 +70,10 @@ void Request::processRequest(){
         }
         // std::cout << "*-*-*-*-*-*-*-> full_path: " << full_path << std::endl;
 
-    }
+    // }
 
     this->fullPath = full_path;
-    // std::cout << "*-*-*-*-*-*-*-> full_path: " << full_path << std::endl;
+    std::cout << "*-*-*-*-*-*-*-> full_path: " << full_path << std::endl;
     // std::cout << "*-*-*-*-*-*-*-> index: " << index << std::endl;
     // std::cout << "*-*-*-*-*-*-*-> PB here 4 <-*-*-*-*-*-*\n";
 
