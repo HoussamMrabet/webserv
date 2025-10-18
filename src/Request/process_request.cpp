@@ -118,6 +118,8 @@ void Request::processRequest(){
     //     this->cgiFdWrite = fd2;
     // }
 
+    std::cout << "*-*-*-*-*-*-*-> full_path: " << full_path << std::endl;
+
     int fd = open(fullPath.c_str(), O_RDONLY);
     if (fd == -1){
         // std::cout << G"-------- Im the problem 1!!!!! ";
