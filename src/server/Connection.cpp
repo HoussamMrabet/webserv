@@ -485,7 +485,7 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
     }
     
     // Always use ./www as the document root
-    document_root = "./www";
+    document_root = this->_server.getRoot();
     
     // Construct full path - handle the case where requested_path starts with '/'
     if (requested_path[0] == '/') {
