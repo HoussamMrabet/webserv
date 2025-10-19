@@ -10,6 +10,9 @@
 #include <cstdlib> // For exit() and EXIT_FAILURE
 #include <vector>
 #include <fcntl.h>
+/* useless headers ?*/
+#include <arpa/inet.h>  // For inet_ntop
+#include <netdb.h>   // For getaddrinfo
 // #include "Listen.hpp"
 #include "ServerConf.hpp"
 #define MAXCONNECTIONS 100
@@ -22,6 +25,7 @@ class Socket{
         int         _fd;
         std::string _host;
         std::string _port;
+        struct addrinfo _info, *_ip;
 
         Socket(const std::string&, const std::string&);
         void socket_start();
@@ -32,7 +36,7 @@ class Socket{
     public:
         static int StartSocket(const std::string&, const std::string&);
         // add canonical form
-        // ~Socket();
+        ~Socket();
 
 };
 

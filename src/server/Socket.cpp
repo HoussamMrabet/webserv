@@ -1,7 +1,4 @@
 #include "../includes/Socket.hpp"
-/* useless headers ?*/
-#include <arpa/inet.h>  // For inet_ntop
-#include <netdb.h>   // For getaddrinfo
 
 
 int Socket::StartSocket(const std::string& host, const std::string& port){
@@ -14,20 +11,24 @@ int Socket::StartSocket(const std::string& host, const std::string& port){
     return (socket._fd);
 }
 
+Socket::~Socket(){
+    // delete _ip;
+}
+
 Socket::Socket(const std::string& host, const std::string& port):_fd(-1), _host(host), _port(port){}
 
 void Socket::socket_start(){  // useless!!
-    struct addrinfo info, *ip;
-    memset(&info, 0, sizeof(info));
-    info.ai_family = AF_INET;  // IPv4 add
-    info.ai_socktype = SOCK_STREAM; // tcp socket
+    
+    memset(&_info, 0, sizeof(_info));
+    _info.ai_family = AF_INET;  // IPv4 add
+    _info.ai_socktype = SOCK_STREAM; // tcp socket
     /* The available socket types:
     //  - SOCK_STREAM: Provides a reliable, byte-stream-based communication (TCP)
     //  - SOCK_DGRAM: Provides a connectionless, unreliable communication (UDP)
     //  - SOCK_RAW: Provides raw network access (used in special cases like IP-level communication)
     //  - SOCK_SEQPACKET: Provides a connection-oriented, reliable communication with record boundaries
     */
-    if (int err = getaddrinfo(_host.c_str(), _port.c_str(), &info, &ip)) {
+    if (int err = getaddrinfo(_host.c_str(), _port.c_str(), &_info, &_ip)) {
         std::cerr << "getaddrinfo error: " << gai_strerror(err) << std::endl;
         exit(1);  // Exit if there was an error or exception??
     } // dont forget to free the memory allocated by getaddrinfo() !!!
@@ -73,6 +74,7 @@ void Socket::socket_bind(){
         close(_fd);
         exit(1);
     }
+    freeaddrinfo(_ip);
 }
 
 void Socket::socket_listen(){

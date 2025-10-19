@@ -5,6 +5,22 @@ WebServ::WebServ(){/*init default data*/}
 WebServ::~WebServ(){
     // loop on pollfds and close all
     // delete connection pointers  
+    for (size_t i = 0; i < _pollfds.size(); i++){
+        // int fd = _pollfds[i].fd;
+
+        // std::map<int, Connection>::iterator it = _connections.find(fd);
+        // if (it != _connections.end() && now - it->second.getTime() > 60){
+        //     std::cout << "Closing connection fd " << fd << " due to timeout." << std::endl;
+            // delete it->second;
+            close(_pollfds[i].fd);
+            // _connections.erase(it);
+            // _fdType.erase(fd);
+            _pollfds.erase(_pollfds.begin() + i);
+            i--;
+            
+        // }
+    }
+    _pollfds.clear();
 }
 
 WebServ::WebServ(ServerConf& server): _server(server) {/*init data*/}
@@ -62,77 +78,78 @@ void WebServ::pollLoop(){
             if (_pollfds[i].revents & POLLIN && _fdType[fd] == "CGI"){
                     CHOROUK && std::cout << "----------- INSIDE CGI read ---------------\n";
                     // keep reading from cgi fd and write to corresponding connection
-                    std::map<int, Connection*>::iterator it = _connections.find(_cgifds[fd]);
-                    it->second->writeResponse();
-                    // it->second-> 
+                    std::map<int, Connection>::iterator it = _connections.find(_cgifds[fd]);
+                    it->second.writeResponse();
+                    // it->second. 
             }
             if ((_pollfds[i].revents & POLLIN) || !_cleanRead){
                 if (_fdType[fd] == "connection"){
                     CHOROUK && std::cout << "----------- INSIDE CONNECTION ---------------\n";
-                    std::map<int, Connection*>::iterator it = _connections.find(fd);
+                    std::map<int, Connection>::iterator it = _connections.find(fd);
                     if (it == _connections.end()) continue; // Safety check - connection not found
                     CHOROUK && std::cout << "----------- INSIDE READ ---------------\n";
-                    if (!it->second->readRequest()){
+                    if (!it->second.readRequest()){
                         CHOROUK && std::cout << "----------- READ FAIL ---------------\n";
                         // Connection error - clean up and continue
                         close(fd);
-                        delete it->second;
+                        // delete it->second;
                         _connections.erase(it);
                         _fdType.erase(fd);
                         _pollfds.erase(_pollfds.begin() + i);
                         continue;
                     }
                     
-                    if (it->second->isDone()){
+                    if (it->second.isDone()){
                         CHOROUK && std::cout << "----------- READ DONE ---------------\n";
                         _cleanRead = true;
-                        if (it->second->isCGI()){
-                            int cgifd = it->second->getCgiFd();
+                        if (it->second.isCGI()){
+                            int cgifd = it->second.getCgiFd();
                             addPollFd(cgifd, POLLIN, "CGI");
                             _cgifds[cgifd] = fd;
                             std::cout << "*-*-*-*-*-*-*-*->> Request is CGI!! \n" << std::endl;
+                            std::cout << "cgi fd is " << fd << " connection fd is " << _cgifds[cgifd] << std::endl;
                         //     //execute cgi and get cgi fd
                         //     // add cgi fd to pollfds if not exist!!!
                         }
-                        // if (it->second->getCgiFd() != -1){
+                        // if (it->second.getCgiFd() != -1){
                         //     // add cgi fd to pollfds if not exist!!!
                         //     // execute cgi and get cgi fd
                         // }
                         // // Request complete, switch to write mode
                         // // _pollfds[i].events = POLLOUT;
                         // // _pollfds[i].revents = 0;
-                        // // it->second->printRequest(); // to remove!
+                        // // it->second.printRequest(); // to remove!
                     }
                     else {
                         CHOROUK && std::cout << "----------- READ NOT DONE ---------------\n";
                         // Request complete, switch to write mode
                         // _pollfds[i].events = POLLIN;
                         // _pollfds[i].revents = 0;
-                        // it->second->printRequest(); // to remove!
+                        // it->second.printRequest(); // to remove!
                     }
                 }
             }
             else if (_pollfds[i].revents & POLLOUT){
                 CHOROUK && std::cout << "----------- INSIDE POLLOUT ---------------\n";
-                std::map<int, Connection*>::iterator it = _connections.find(fd);
+                std::map<int, Connection>::iterator it = _connections.find(fd);
                 if (it == _connections.end()) continue; // Safety check
                 CHOROUK && std::cout << "----------- INSIDE WRITE ---------------\n";
-                it->second->writeResponse();
+                it->second.writeResponse();
                 CHOROUK && std::cout << "----------- AFTER WRITE ---------------\n";
-                if (it->second->isResponseDone()) {
+                if (it->second.isResponseDone()) {
                     CHOROUK && std::cout << "----------- WRITE DONE ---------------\n";
                     // _pollfds[i].events = 0;
                     // _pollfds[i].revents = 0;
                         close(fd);
-                        delete it->second;
+                        // delete it->second;
                         _connections.erase(it);
                         _fdType.erase(fd);
                         _pollfds.erase(_pollfds.begin() + i);
                         continue;
-                    // if (it->second->getConnectionHeader() == "close"){ // check if "close" close connection
+                    // if (it->second.getConnectionHeader() == "close"){ // check if "close" close connection
                     //     // closeConnection();
                     //     CHOROUK && std::cout << "Close connection header fd " << fd << std::endl;
-                    //     delete it->second;
+                        // delete it->second;
                     //     close(fd);
                     //     _connections.erase(it);
                     //     _fdType.erase(fd);
@@ -168,9 +185,10 @@ void WebServ::pollLoop(){
 
 bool WebServ::acceptConnection(int fd){
     CHOROUK && std::cout << "new connection fd " << fd << " " << _server.getRoot() << std::endl; 
-    // Connection* connection = new Connection(fd, _server);
-    Connection* connection = new Connection(fd, _server, _listenFds[fd].first, _listenFds[fd].second);
-    int connection_fd = connection->getFd();
+    // Connection connection = new Connection(fd, _server);
+    Connection connection = Connection(fd, _server, _listenFds[fd].first, _listenFds[fd].second);
+    // Connection connection = new Connection(fd, _server, _listenFds[fd].first, _listenFds[fd].second);
+    int connection_fd = connection.getFd();
     _connections.insert(std::make_pair(connection_fd, connection));
     CHOROUK && std::cout << "------- accept fd = " << connection_fd << std::endl;
     // struct pollfd client_pfd;
@@ -189,10 +207,10 @@ void WebServ::checkTimeout(){
     for (size_t i = 0; i < _pollfds.size(); i++){
         int fd = _pollfds[i].fd;
         if (_fdType[fd] == "listen") continue;
-        std::map<int, Connection*>::iterator it = _connections.find(fd);
-        if (it != _connections.end() && now - it->second->getTime() > 60){
+        std::map<int, Connection>::iterator it = _connections.find(fd);
+        if (it != _connections.end() && now - it->second.getTime() > 60){
             std::cout << "Closing connection fd " << fd << " due to timeout." << std::endl;
-            delete it->second;
+            // delete it->second;
             close(fd);
             _connections.erase(it);
             _fdType.erase(fd);

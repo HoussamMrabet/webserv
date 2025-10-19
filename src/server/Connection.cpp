@@ -185,6 +185,16 @@ Connection::Connection(const Connection& connection){
     _done = connection._done;
     _responseDone = connection._responseDone;
     _isChunkedResponse = connection._isChunkedResponse;
+
+    _cgiFd = connection._cgiFd;
+    _host = connection._host;
+    _port = connection._port;
+    _buffer = connection._buffer;
+    _request = connection._request;
+    // _response_obj = connection._response_obj;  // For chunked responses
+    _response = connection._response;   // For simple response = connection.s
+    _server = connection._server;
+
 }
 
 int Connection::getFd() const{ return (_fd);}
@@ -230,11 +240,11 @@ bool Connection::readRequest(){
     }
     _done = _request.isDone();
     if (_request.isDone()){
-    requestInfo(_host, _port,
-                _request.getStatusCode(), \
-                _request.getStrMethod(), \
-                _request.getUri(), \
-                _request.getHeader("httpVersion"));
+        requestInfo(_host, _port,
+            _request.getStatusCode(), \
+            _request.getStrMethod(), \
+            _request.getUri(), \
+            _request.getHeader("httpVersion"));
 
         _request.processRequest();
         // std::cout << "+++++++++++++++++++++++++++++\n";

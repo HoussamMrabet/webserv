@@ -110,8 +110,6 @@ class Request
         void parseMultipart(bool isChunked = false);
         void parseMultipartHeaders(const std::string &multipartHeaders);
         std::string extractQueryParam(const std::string& queryString, const std::string& paramName);
-        Request(const Request&);            // don't define!!!
-        Request& operator=(const Request&); // don't define!!!
     public:
         static std::string theme;
         static std::vector<t_user> users;
@@ -120,6 +118,8 @@ class Request
 
         Request();
         ~Request();
+        Request(const Request&);            // don't define!!!
+        // Request& operator=(const Request&); // don't define!!!
         
         t_method getMethod() const;
         std::string getStrMethod() const;

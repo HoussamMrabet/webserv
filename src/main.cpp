@@ -19,10 +19,10 @@
 #include "Request.hpp"
 
 
-std::vector<ServerConf> globalServer;
 
 int main(int ac, char **av)
 {
+std::vector<ServerConf> globalServer;
 	// Request::users
 
 	t_user user1;
