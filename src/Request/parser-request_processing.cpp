@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #include "Request.hpp"
-#include "WebServer.hpp"
+#include "WebServ.hpp"
 
 void Request::processResponseErrors()
 {

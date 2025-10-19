@@ -40,6 +40,11 @@ void Socket::socket_start(){  // useless!!
     }
     
     int val = 1;
+    if (setsockopt(_fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val)) < 0){ // reuse port
+        std::cerr << "Error setting socket option" << std::endl;
+        close(_fd);  // Close the socket on error
+        exit(1);  // cleanup before exit!!!
+    }
     if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){ // set the socket options
         // SO_REUSEADDR allows address reuse when binding a socket to a port that was recently closed
         // SOL_SOCKET level at which the option resides

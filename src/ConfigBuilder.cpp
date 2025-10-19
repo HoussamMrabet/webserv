@@ -66,8 +66,8 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 		throw ConfigBuilder::ErrorConfig("Config file : 'listen' directive is required and cannot be empty");
 	}
 
-	std::cout << "Server configuration loaded successfully.\n";
-	res[0].printListen(std::cout);
+	// std::cout << "Server configuration loaded successfully.\n";
+	// res[0].printListen(std::cout);
 	_server = res[0];
 	return (res);
 }

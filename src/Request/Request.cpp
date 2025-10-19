@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #include "Request.hpp"
-#include "WebServer.hpp"
+#include "WebServ.hpp"
 
 std::string Request::theme = "light";
 std::vector<t_user> Request::users;

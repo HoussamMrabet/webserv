@@ -7,6 +7,11 @@
 #include <sys/socket.h> // accept 
 #include <fcntl.h> // fcntl
 #include <unistd.h>   // read, write, close
+#include <algorithm>
+#include <dirent.h>
+#include <vector>
+#include <sstream>
+#include <errno.h>
 #include "Request.hpp"
 #include "Response.hpp"
 #include "ServerConf.hpp"
@@ -48,6 +53,7 @@ public:
     void setNonBlocking();
     std::string setCGIHeaders();
     void updateTimout();
+    std::string to_str(int);
     // std::string getRequestMethod();
     void requestInfo(const std::string&, const std::string&, int, const std::string&, const std::string&, const std::string&);
     void sendGetResponse(Request    &request, ServerConf &server);
@@ -56,6 +62,7 @@ public:
     // void sentPostResponse(Request   &request, ServerConf &server);
     // void sendAutoIndex(Response &response_obj, const std::string &full_path, const std::string &requested_path);
     void sendErrorPage(Request &request, int code, ServerConf &server);
+    std::string generateDirectoryListing(const std::string&, const std::string&);
     std::string getConnectionHeader(Request &request);
     std::string checkForRedirect(Request &request, ServerConf &server);
     std::string sendRedirectResponse(Request &request, const std::string &redirect_url, ServerConf &server);

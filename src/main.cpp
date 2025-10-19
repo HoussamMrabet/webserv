@@ -14,11 +14,22 @@
 #include <exception>
 #include <signal.h>
 // #include "ServerConf.hpp"
-#include "WebServer.hpp"
-#include <signal.h>
+#include "WebServ.hpp"
 #include "Request.hpp"
 
+void signalHandler(int) {
+    // _runServer = false;
+    // if (n == SIGINT){
+		// signal(SIGINT, SIG_IGN); // ignore
+		std::cout << C"\nAre you sure? (y/n)\n"; 
+		char res; std::cin >> res;
+		WebServ::_runServer = (res == 'y' || res == 'Y')? false: true;
+	// }
 
+    // signal(n, SIG_IGN); // ignore
+    // clean up
+    // exit(0); // then close
+}
 
 int main(int ac, char **av)
 {
@@ -65,6 +76,8 @@ std::vector<ServerConf> globalServer;
 		ServerConf server = ConfigBuilder::getServer(); // vector should have only one vector
 		MOHAMED && std::cout << "Server data\n";
 		MOHAMED && std::cout << server << std::endl;
+		signal(SIGINT, signalHandler);
+
 		WebServ::startServer(server);
 
 	}

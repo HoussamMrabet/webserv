@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <poll.h>
+#include <signal.h>
 #include "Socket.hpp"    
 // #include "Listen.hpp"
 #include "Connection.hpp"
@@ -37,5 +38,7 @@ class WebServ{ // Factory design
 
     public:
         ~WebServ();
+        static bool _runServer;
         static bool startServer(ServerConf&);
+        static void signalHandler(int);
 };

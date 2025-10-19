@@ -1,4 +1,14 @@
-#include "WebServer.hpp"
+#include "WebServ.hpp"
+
+bool WebServ::_runServer = true;
+
+void WebServ::signalHandler(int n) {
+    std::cout << C"Server closing...\n";
+    _runServer = false;
+    signal(n, SIG_IGN); // ignore
+    // clean up
+    // exit(0); // then close
+}
 
 WebServ::WebServ(){/*init default data*/}
 
@@ -53,13 +63,29 @@ void WebServ::addPollFd(int fd, short event, const std::string& type){
 
 void WebServ::pollLoop(){
     _cleanRead = false;
-    while (true){
+    while (_runServer){
         CHOROUK && std::cout << "----------- IN POLLOOP ---------------\n";
         int n = poll(_pollfds.data(), _pollfds.size(), 1000);  // 1-second poll timeout to check timeouts regularly
-        if (n == -1){
-            perror("Poll failed");
-            break; // Only break on fatal poll error
+        if (n == -1) {
+            if (errno == EINTR) {
+                // Poll interrupted by signal
+                if (!_runServer) {
+                    std::cout << "Server shutting down due to signal...\n";
+                    break;  // Exit the loop gracefully
+                }
+                else {
+                    std::cout << "Server still runing...\n";
+                    continue;  // Otherwise just continue polling
+                }
+            } else {
+                perror("Poll failed");
+                break; // Fatal error, exit loop
+            }
         }
+        // if (n == -1){
+        //     perror("Poll failed");
+        //     break; // Only break on fatal poll error
+        // }
         checkTimeout();
         // if (n == 0) continue;  // no events, continue loop
         
@@ -181,6 +207,7 @@ void WebServ::pollLoop(){
         // After processing all events, continue to next poll cycle
         // The server NEVER stops listening for new connections
     }
+    std::cout << "*-*-*-*-*-*-*- good bye!! *-*-*-*-*-*\n";
 }
 
 bool WebServ::acceptConnection(int fd){
