@@ -32,6 +32,7 @@ private:
     Response _response_obj;  // For chunked responses
     std::string _response;   // For simple responses
     ServerConf _server;
+    CGI _cgi;
     bool _done;
     // bool _isCGI;
     bool _responseDone;

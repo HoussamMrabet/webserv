@@ -2,14 +2,14 @@
 #include <sys/time.h>
 
 
-ServerConf CGI::_server;
+// ServerConf CGI::_server;
 
 CGI::CGI(): _fd_in(-1), _fd_out(-1), _execDone(false), _readDone(false) {}
 
-CGI::CGI(Request& request, ServerConf& server): _fd_in(-1), _fd_out(-1), _execDone(false), _readDone(false) {
-    _server = server;
-    importData(request);
-}
+// CGI::CGI(Request& request, ServerConf& server): _fd_in(-1), _fd_out(-1), _execDone(false), _readDone(false) {
+//     _server = server;
+//     importData(request);
+// }
 
 CGI::~CGI(){
 
@@ -39,18 +39,18 @@ CGI::~CGI(){
 //     }
 // }
 
-std::string CGI::executeCGI(){
+std::string CGI::executeCGI(Request& request, ServerConf& server){
     try {
         // std::cout << G"-------- Still here1!!!! ";
         // std::cout << B"\n";
         // CGI cgi;
-        // cgi._server = server;
-        // cgi.importData(request);
+        _server = server;
+        importData(request);
         // std::cout << C"-------- tring to execute cgi";
         // std::cout << B"\n";
-        std::string cgi_output = runCGI();
+        runCGI();
         // cgi_output = cgi.parseOutput(cgi_output);
-        return (cgi_output);
+        return (_output);
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return (SERVERERROR);
@@ -181,6 +181,8 @@ void CGI::importData(Request& request){
 }
 
 std::string CGI::runCGI(){
+    if (_readDone)
+        return (_output);
     if (_execDone)
         return (readOutput());
     // std::cout << G"-------- Still here0!!!! ";
@@ -287,27 +289,30 @@ std::string CGI::runCGI(){
 }
 
 std::string CGI::readOutput(){
-    std::string cgi_output;
+    // std::string _output;
     char buffer[4096];
     ssize_t n;
 
-    if (!_execDone) return (cgi_output);
+    if (!_execDone || _readDone) return (_output);
     // add _fd and fd_out to poll and manage all without while loop!! 
     
     int read_counter = 0;
     // while ((n = read(_fd, buffer, sizeof(buffer))) > 0) {
     //     std::cout << "read counter = " << ++read_counter << std::endl;
-    //     cgi_output.append(buffer, n);
+    //     _output.append(buffer, n);
     // }
+    // std::cout << _output << std::endl;
     while ((n = read(_fd_out, buffer, sizeof(buffer))) > 0){
-        std::cout << "read counter = " << ++read_counter << std::endl;
-        cgi_output.append(buffer, n);
+        CHOROUK && std::cout << "read counter = " << ++read_counter << std::endl;
+    // std::cout << "-*-*-*-*-* bytes read = " << n << std::endl; 
+    // std::cout << _output << std::endl;
+        _output.append(buffer, n);
     }
     if (n <= 0){
         _readDone = true;
         close(_fd_out);
     }
-    close(_fd_out); // remove later!!
+    // close(_fd_out); // remove later!!
 
     // cgi_output = parseOutput(cgi_output);
     // std::cout << " ########## CGI ###########\n";
@@ -316,7 +321,7 @@ std::string CGI::readOutput(){
 
 
     // _execDone = true;
-    return (cgi_output);
+    return (_output);
 }
 
 // std::string CGI::parseOutput(std::string& cgi_output){

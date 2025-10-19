@@ -126,8 +126,10 @@ bool Connection::readRequest(){
             _request.getHeader("httpVersion"));
 
         _request.processRequest();
-        // if (_request.isCGI())
-            // _cgiFd = 
+        if (_request.isCGI() && (_request.getStatusCode() == 200)){
+            _response = _cgi.executeCGI(_request, _server);
+            _cgiFd = _cgi.getFd();
+        }
         // std::cout << "+++++++++++++++++++++++++++++\n";
         // std::cout << _request.isCGI() << std::endl;
         // std::cout << "+++++++++++++++++++++++++++++\n";
@@ -190,12 +192,14 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         MOHAMED && std::cout << "Redirect Response:\n" << _response << std::endl;
         updateTimout();
     }
-    else if (_request.isCGI() && _request.getStatusCode() == 200)
+    else if (_request.isCGI() && (_request.getStatusCode() == 200))
     {
         CHOROUK && std:: cout << M"IT IS CGI!!!!!\n";
-        CGI cgi(_request, _server);
-        _response = cgi.executeCGI();
-        _response = setCGIHeaders();
+        // CGI cgi();
+        if (!_cgi.readDone())
+            _response = _cgi.executeCGI(_request, _server);
+        if (_cgi.readDone())
+            _response = setCGIHeaders();
         // _cgiFd = CGI::getFd();
         updateTimout();
     }
@@ -407,7 +411,7 @@ std::string Connection::sendRedirectResponse(Request &request, const std::string
     return response;
 }
 
-bool Connection::isCGI() const{ return (_request.isCGI());}
+bool Connection::isCGI() const{ return (_request.isCGI() && (_request.getStatusCode() == 200));}
 
 std::string Connection::to_str(int n){
     std::stringstream ss; ss << n;

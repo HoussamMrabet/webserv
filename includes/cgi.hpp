@@ -38,7 +38,7 @@ class CGI{ // should class name be camel-case??
     
     private:
         // env variables:
-        static ServerConf _server;
+        ServerConf _server;
         std::string _scriptName;        // filesystem path to script
         std::string _scriptFileName;        // full path to script
         std::string _location;
@@ -50,6 +50,7 @@ class CGI{ // should class name be camel-case??
         std::string _contentLenght;     // _body.size()
         std::string _contentType;       // from the headers map (should be!!)
         std::string _remoteAddr;        // remote client IP
+        std::string _output;
         int _fd_in, _fd_out;
         bool _execDone;
         bool _readDone;
@@ -68,7 +69,7 @@ class CGI{ // should class name be camel-case??
         // std::string getCGIPath();
         // void getRoot();
         // void generateCgiFile();
-        CGI();
+        // CGI();
         void importData(Request&); // remove const
         // void setQueryString();
         std::string setPath(); // remove const
@@ -82,9 +83,9 @@ class CGI{ // should class name be camel-case??
         bool validPath();
         
     public:
-        CGI(Request&, ServerConf&);
+        CGI();
         ~CGI();
-        std::string executeCGI(); // remove const in order to be able to change status code of request 
+        std::string executeCGI(Request&, ServerConf&); // remove const in order to be able to change status code of request 
         int getFd();
         bool readDone();
         bool execDone();
