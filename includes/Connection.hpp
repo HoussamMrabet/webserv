@@ -18,19 +18,22 @@ class Connection{
 private:
     int _fd;
     int _cgiFd;
+    std::string _host;
+    std::string _port;
     time_t _time;
     std::string _buffer;
-    Request* _request;
+    Request  _request;
     Response _response_obj;  // For chunked responses
     std::string _response;   // For simple responses
-    static ServerConf _server;
+    ServerConf _server;
     bool _done;
+    // bool _isCGI;
     bool _responseDone;
     bool _isChunkedResponse; // Flag to track if we're doing chunked response
 
 public:
     ~Connection();
-    Connection(int, ServerConf&);
+    Connection(int, ServerConf&, const std::string&, const std::string&);
     Connection(const Connection&);
     int getFd() const;
     int getCgiFd() const;
@@ -46,7 +49,7 @@ public:
     std::string setCGIHeaders();
     void updateTimout();
     // std::string getRequestMethod();
-    void requestInfo(int, const std::string&, const std::string&, const std::string&);
+    void requestInfo(const std::string&, const std::string&, int, const std::string&, const std::string&, const std::string&);
     void sendGetResponse(Request    &request, ServerConf &server);
     void sendPostResponse(Request   &request, int status_code, ServerConf &server);
     void sendDeleteResponse(Request &request, ServerConf &server);

@@ -4,7 +4,12 @@
 
 ServerConf CGI::_server;
 
-CGI::CGI(): _fd_in(-1) {}
+CGI::CGI(): _fd_in(-1), _fd_out(-1), _execDone(false), _readDone(false) {}
+
+CGI::CGI(Request& request, ServerConf& server): _fd_in(-1), _fd_out(-1), _execDone(false), _readDone(false) {
+    _server = server;
+    importData(request);
+}
 
 CGI::~CGI(){
 
@@ -34,16 +39,16 @@ CGI::~CGI(){
 //     }
 // }
 
-std::string CGI::executeCGI(Request& request, ServerConf& server){
+std::string CGI::executeCGI(){
     try {
         // std::cout << G"-------- Still here1!!!! ";
         // std::cout << B"\n";
-        CGI cgi;
-        cgi._server = server;
-        cgi.importData(request);
+        // CGI cgi;
+        // cgi._server = server;
+        // cgi.importData(request);
         // std::cout << C"-------- tring to execute cgi";
         // std::cout << B"\n";
-        std::string cgi_output = cgi.runCGI();
+        std::string cgi_output = runCGI();
         // cgi_output = cgi.parseOutput(cgi_output);
         return (cgi_output);
     } catch (const std::exception& e) {
@@ -128,7 +133,7 @@ void CGI::importData(Request& request){
     _scriptFileName = request.getFullPath(); // should be set after _scriptName _location and _root
     // _scriptFileName = "." + setPath(); // should be set after _scriptName _location and _root
     CHOROUK && std::cout << C"*********** _scriptName is  " << _scriptName << std::endl;
-    std::cout << C"*********** _scriptFILEName is  " << _scriptFileName << std::endl;
+    CHOROUK && std::cout << C"*********** _scriptFILEName is  " << _scriptFileName << std::endl;
     // CHOROUK && std::cout << C"*********** name is  " << name << std::endl;
     // _scriptFileName = _root + _scriptName;
     CHOROUK && std::cout << M"----> " << _scriptFileName;
@@ -286,6 +291,7 @@ std::string CGI::readOutput(){
     char buffer[4096];
     ssize_t n;
 
+    if (!_execDone) return (cgi_output);
     // add _fd and fd_out to poll and manage all without while loop!! 
     
     int read_counter = 0;
@@ -297,14 +303,19 @@ std::string CGI::readOutput(){
         std::cout << "read counter = " << ++read_counter << std::endl;
         cgi_output.append(buffer, n);
     }
-    close(_fd_out);
+    if (n <= 0){
+        _readDone = true;
+        close(_fd_out);
+    }
+    close(_fd_out); // remove later!!
+
     // cgi_output = parseOutput(cgi_output);
     // std::cout << " ########## CGI ###########\n";
     // std::cout << cgi_output << std::endl;
     // std::cout << " ##########################\n";
 
 
-    _execDone = true;
+    // _execDone = true;
     return (cgi_output);
 }
 
@@ -390,8 +401,11 @@ bool CGI::validPath(){
     return (true);
 }
 
-// int CGI::getFd() { return (_fd);}
+int CGI::getFd() { return (_fd_out);}
 
+bool CGI::readDone() { return (_readDone);}
+
+bool CGI::execDone() { return (_execDone);}
 
 // std::string CGI::readCGIOutput() {
 //     std::string cgi_output;

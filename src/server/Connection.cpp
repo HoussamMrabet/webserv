@@ -4,7 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <errno.h>
-ServerConf Connection::_server;
+// ServerConf Connection::_server;
 // ServerConf Connection::_server = ConfigBuilder::generateServers("config/config.conf").back();
 struct stat fileStat;
 
@@ -141,26 +141,29 @@ std::string generateDirectoryListing(const std::string& directory_path, const st
 
 Connection::~Connection(){ 
     CHOROUK && std::cout << "***********  connection destructor called!!! ***********\n";
-    delete _request;
+    // delete _request;
 }
 
-void Connection::requestInfo(int status, const std::string& method, const std::string& path, const std::string& version) {
+void Connection::requestInfo(const std::string& host, const std::string& port, int status, const std::string& method, const std::string& path, const std::string& version) {
     time_t now = time(0);
     struct tm* t = localtime(&now);
     char buf[80];
     strftime(buf, sizeof(buf), "[%a %b %d %H:%M:%S %Y]", t);
-    std::cout << M"" << buf << " [" << _server.getListen().begin()->first \
-              << "]:" << _server.getListen().begin()->second  << " [" << status << "]: "
+    // std::cout << M"" << buf << " [" << _server.getListen().begin()->first
+            //   << "]:" << _server.getListen().begin()->second  << " [" << status << "]: "
+    std::cout << M"" << buf << " [" << host << "]:" << port  << " [" << status << "]: "
               << method << " " << path << " " << version << B"" << std::endl;
 }
 
-Connection::Connection(int fd, ServerConf& server): _time(time(NULL)),
+Connection::Connection(int fd, ServerConf& server, const std::string& host, const std::string& port): _fd(-1),
+                                                    _host(host), _port(port),
+                                                    _time(time(NULL)),
                                                     _done(false),
                                                     _responseDone(false),
                                                     _isChunkedResponse(false)/*....*/ {
     _fd = accept(fd, NULL, NULL);
     _server = server;
-    _request = new Request();
+    // _request = new Request();
     _cgiFd = -1;
     // std::cout << "Connection constructor fd " << _fd << "\n";
     // std::cout << _server.getRoot() << std::endl;
@@ -190,7 +193,7 @@ bool Connection::readRequest(){
     char buffer[1024] = {0};
     ssize_t bytesRead = 0;
 
-    if  (!_request->isDone() && this->_responseDone == false)
+    if  (!_request.isDone() && this->_responseDone == false)
     {
         CHOROUK && std::cout << "------- read fd = " << _fd << std::endl;
         bytesRead = read(_fd, buffer, sizeof(buffer));
@@ -198,15 +201,15 @@ bool Connection::readRequest(){
         if (bytesRead > 0)
         {
             _buffer.append(buffer, bytesRead);
-            _request->parseRequest(_buffer);
+            _request.parseRequest(_buffer);
             _buffer.clear();
             updateTimout();  // update activity timestamp
             // else continue;
         }
         else
         {
-            // _request->processRequest();
-            _request->parseRequest();
+            // _request.processRequest();
+            _request.parseRequest();
             // _buffer.clear();
             // std::cout << "Client disconnected!" << std::endl;
             // _done = true;
@@ -225,24 +228,25 @@ bool Connection::readRequest(){
         //     return (false);
         // }
     }
-    _done = _request->isDone();
-    if (_request->isDone()){
-        requestInfo(_request->getStatusCode(), \
-        _request->getStrMethod(), \
-        _request->getUri(), \
-        _request->getHeader("httpVersion"));
+    _done = _request.isDone();
+    if (_request.isDone()){
+    requestInfo(_host, _port,
+                _request.getStatusCode(), \
+                _request.getStrMethod(), \
+                _request.getUri(), \
+                _request.getHeader("httpVersion"));
 
-        _request->processRequest();
+        _request.processRequest();
         // std::cout << "+++++++++++++++++++++++++++++\n";
-        // std::cout << _request->isCGI() << std::endl;
+        // std::cout << _request.isCGI() << std::endl;
         // std::cout << "+++++++++++++++++++++++++++++\n";
-        // _request->parseRequest();
+        // _request.parseRequest();
     }
-    // CHOROUK && _request->printRequest();
+    // CHOROUK && _request.printRequest();
 
 
-    // if (_request->isDone()) // remove from here and add to webserv in order to add pipe_fds to pollfds
-    //     _response = CGI::executeCGI(*_request);
+    // if (_request.isDone()) // remove from here and add to webserv in order to add pipe_fds to pollfds
+    //     _response = CGI::executeCGI(_request);
     return (true);
 }
 
@@ -250,11 +254,11 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     // First, check if we're in the middle of sending a chunked response
 
     CHOROUK && std::cout << "------- write fd = " << _fd << std::endl;
-    // std::cout << M"" << _request->getUri() << B"\n";
-    // requestInfo(_request->getStatusCode(), \
-    //         _request->getStrMethod(), \
-    //         _request->getUri(), \
-    //         _request->getHeader("httpVersion"));
+    // std::cout << M"" << _request.getUri() << B"\n";
+    // requestInfo(_request.getStatusCode(), \
+    //         _request.getStrMethod(), \
+    //         _request.getUri(), \
+    //         _request.getHeader("httpVersion"));
 
     if (_isChunkedResponse) {
         // Continue sending chunks from existing response
@@ -287,42 +291,43 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     
     // Regular response processing - only if not in chunked mode
     // Check for redirects first
-    std::string redirect_url = checkForRedirect(*_request, _server);
+    std::string redirect_url = checkForRedirect(_request, _server);
 
     // CHOROUK && std::cout << C"--------- REDIRECTION FOUND!!!! -----------" << B"\n";
     if (!redirect_url.empty()) {
-        _response = sendRedirectResponse(*_request, redirect_url, _server);
+        _response = sendRedirectResponse(_request, redirect_url, _server);
         MOHAMED && std::cout << "Redirect Response:\n" << _response << std::endl;
         updateTimout();
     }
-    else if (_request->isCGI() && _request->getStatusCode() == 200)
+    else if (_request.isCGI() && _request.getStatusCode() == 200)
     {
         CHOROUK && std:: cout << M"IT IS CGI!!!!!\n";
-        _response = CGI::executeCGI(*_request, _server);
+        CGI cgi(_request, _server);
+        _response = cgi.executeCGI();
         _response = setCGIHeaders();
         // _cgiFd = CGI::getFd();
         updateTimout();
     }
-    else if ( _request->getStatusCode() != 200){
-        MOHAMED && std::cout << "Error status code: " << _request->getStatusCode()  << std::endl;
-        MOHAMED && std::cout << "Error message: " << _request->getMessage()  << std::endl;
-        sendErrorPage(*_request, _request->getStatusCode(), _server);
+    else if ( _request.getStatusCode() != 200){
+        MOHAMED && std::cout << "Error status code: " << _request.getStatusCode()  << std::endl;
+        MOHAMED && std::cout << "Error message: " << _request.getMessage()  << std::endl;
+        sendErrorPage(_request, _request.getStatusCode(), _server);
         MOHAMED && std::cout << _response << std::endl;
         updateTimout();
     }
-    else if (_request->getStrMethod() == "POST"){
-        // sentPostResponse(*_request, _server);
-        sendPostResponse(*_request, _request->getStatusCode(), _server);
+    else if (_request.getStrMethod() == "POST"){
+        // sentPostResponse(_request, _server);
+        sendPostResponse(_request, _request.getStatusCode(), _server);
         MOHAMED && std::cout << _response << std::endl;
         updateTimout();
     }
-    else if (_request->getStrMethod() == "DELETE"){
-        sendDeleteResponse(*_request, _server);
+    else if (_request.getStrMethod() == "DELETE"){
+        sendDeleteResponse(_request, _server);
         MOHAMED && std::cout << _response << std::endl;
         updateTimout();
     }
-    else if (_request->getStrMethod() == "GET"){ // can use pointer to member function 
-        sendGetResponse(*_request, _server);
+    else if (_request.getStrMethod() == "GET"){ // can use pointer to member function 
+        sendGetResponse(_request, _server);
         if (!_isChunkedResponse) {
             MOHAMED && std::cout << _response << std::endl;
         }
@@ -390,7 +395,7 @@ std::string Connection::setCGIHeaders(){
 }
 
 // std::string Connection::getRequestMethod(){
-//     t_method method = _request->getMethod();
+//     t_method method = _request.getMethod();
 //     switch (method)
 //     {
 //         case GET:
@@ -458,8 +463,8 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
     // Create a Response object and build it step by step
     Response response_obj;
     std::string connection_header = getConnectionHeader(request);
-    if (_request->getUri() == "/profile/login.html" || _request->getUri() == "/profile" || _request->getUri() == "/profile/profile.html") {
-        response_obj.setHeader("Set-Cookie", _request->getHeader("Set-Cookie"));
+    if (_request.getUri() == "/profile/login.html" || _request.getUri() == "/profile" || _request.getUri() == "/profile/profile.html") {
+        response_obj.setHeader("Set-Cookie", _request.getHeader("Set-Cookie"));
         if (Request::loggedIn) {
             response_obj.setHeader("X-User-Username", Request::loggedInUser.username);
             response_obj.setHeader("X-User-Email", Request::loggedInUser.email);
@@ -809,7 +814,7 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
 void Connection::printRequest(){
     if (_done){
         std::cout << "-------> Request received: <----------\n";
-        _request->printRequest();
+        _request.printRequest();
         std::cout << "-------------------------------\n";
     }
     // else
@@ -907,4 +912,4 @@ std::string Connection::sendRedirectResponse(Request &request, const std::string
     return response;
 }
 
-bool Connection::isCGI() const{ return (_request->isCGI());}
+bool Connection::isCGI() const{ return (_request.isCGI());}

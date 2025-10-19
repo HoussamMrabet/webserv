@@ -12,6 +12,8 @@
 
 #include "ConfigBuilder.hpp"
 
+ServerConf ConfigBuilder::_server;
+
 ConfigBuilder::ConfigBuilder() {
 	
 }
@@ -66,6 +68,7 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 
 	std::cout << "Server configuration loaded successfully.\n";
 	res[0].printListen(std::cout);
+	_server = res[0];
 	return (res);
 }
 
@@ -194,3 +197,5 @@ bool ConfigBuilder::checkIp(std::string& str) {
 		return (true);
 	return (false);
 }
+
+ServerConf ConfigBuilder::getServer(){ return (_server);}

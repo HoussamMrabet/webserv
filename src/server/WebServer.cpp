@@ -7,20 +7,21 @@ WebServ::~WebServ(){
     // delete connection pointers  
 }
 
-WebServ::WebServ(ServerConf& server): _server(server), _listens(server.getListen()){/*init data*/}
+WebServ::WebServ(ServerConf& server): _server(server) {/*init data*/}
 
 bool WebServ::startServer(ServerConf& server){
     WebServ webserv(server);
-
+    std::vector<std::pair<std::string, std::string> > listens = server.getListen();
     std::vector<std::pair<std::string, std::string> >::iterator it;
-    for (it = webserv._listens.begin(); it != webserv._listens.end(); it++) {
+    for (it = listens.begin(); it != listens.end(); it++) {
         int server_fd = Socket::StartSocket(it->first, it->second);
         webserv.addPollFd(server_fd, POLLIN, "listen");
-        std::cout << "Listening on http" << M" " << it->first << ":" << it->second << std::endl;
-        std::cout << B"Document root is " << M" " << server.getRoot() << std::endl;
-        std::cout << B"Press Ctrl-C to quit." << B"\n";
+        std::cout << "Listening on http" << M" " << it->first << ":" << it->second << B"" << std::endl;
         CHOROUK &&  std::cout << "Server socket  (fd "<< server_fd << ")" << std::endl;
+        webserv._listenFds[server_fd] = *it;
     }
+    std::cout << B"Document root is " << M" " << server.getRoot() << std::endl;
+    std::cout << B"Press Ctrl-C to quit." << B"\n";
     webserv.pollLoop();
     return (true); // check return value value for all functions or remove and use exception!!
 }
@@ -88,7 +89,8 @@ void WebServ::pollLoop(){
                         if (it->second->isCGI()){
                             int cgifd = it->second->getCgiFd();
                             addPollFd(cgifd, POLLIN, "CGI");
-                            _cgifds[cgifd] = fd; 
+                            _cgifds[cgifd] = fd;
+                            std::cout << "*-*-*-*-*-*-*-*->> Request is CGI!! \n" << std::endl;
                         //     //execute cgi and get cgi fd
                         //     // add cgi fd to pollfds if not exist!!!
                         }
@@ -166,7 +168,8 @@ void WebServ::pollLoop(){
 
 bool WebServ::acceptConnection(int fd){
     CHOROUK && std::cout << "new connection fd " << fd << " " << _server.getRoot() << std::endl; 
-    Connection* connection = new Connection(fd, _server);
+    // Connection* connection = new Connection(fd, _server);
+    Connection* connection = new Connection(fd, _server, _listenFds[fd].first, _listenFds[fd].second);
     int connection_fd = connection->getFd();
     _connections.insert(std::make_pair(connection_fd, connection));
     CHOROUK && std::cout << "------- accept fd = " << connection_fd << std::endl;

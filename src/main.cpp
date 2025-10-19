@@ -62,7 +62,7 @@ int main(int ac, char **av)
 		if (ac > 1) config_file = av[1]; // parse config file name and path? 
 		globalServer = ConfigBuilder::generateServers(config_file); // import servers from config file
 		std::vector<ServerConf> servers = globalServer; // import servers from config file
-		ServerConf server = servers[0]; // vector should have only one vector
+		ServerConf server = ConfigBuilder::getServer(); // vector should have only one vector
 		MOHAMED && std::cout << "Server data\n";
 		MOHAMED && std::cout << server << std::endl;
 		WebServ::startServer(server);

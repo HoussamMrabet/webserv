@@ -50,9 +50,9 @@ class CGI{ // should class name be camel-case??
         std::string _contentLenght;     // _body.size()
         std::string _contentType;       // from the headers map (should be!!)
         std::string _remoteAddr;        // remote client IP
+        int _fd_in, _fd_out;
         bool _execDone;
         bool _readDone;
-        int _fd_in, _fd_out;
         /* To fix the path to file, join with root
         // if there was no root add a default path!
         std::string _location;
@@ -62,14 +62,13 @@ class CGI{ // should class name be camel-case??
         std::vector<std::string> _envs; // environment variables (string)
         std::vector<char*> _envc;       // environment for execve (should be char*)
         std::string _cgiFileName;
-        std::string cgiExecPath;
+        std::string _cgiExecPath;
 
-        CGI();
-        ~CGI();
         // int generateCgiFile();
         // std::string getCGIPath();
         // void getRoot();
         // void generateCgiFile();
+        CGI();
         void importData(Request&); // remove const
         // void setQueryString();
         std::string setPath(); // remove const
@@ -83,6 +82,10 @@ class CGI{ // should class name be camel-case??
         bool validPath();
         
     public:
-        static std::string executeCGI(Request&, ServerConf&); // remove const in order to be able to change status code of request 
-        // static int getFd();
+        CGI(Request&, ServerConf&);
+        ~CGI();
+        std::string executeCGI(); // remove const in order to be able to change status code of request 
+        int getFd();
+        bool readDone();
+        bool execDone();
 };

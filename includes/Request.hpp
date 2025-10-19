@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <string>
 #include "Multipart.hpp"
+#include "ServerConf.hpp"
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -98,6 +99,7 @@ class Request
         bool inChunk;
         int cgiFdRead;
         int cgiFdWrite;
+        ServerConf server;
         void parseRequestLine();
         void parseHeaders();
         void handleThemeCookie();

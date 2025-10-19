@@ -10,13 +10,14 @@
 // #include "ServerConf.hpp"
 
 
-extern std::vector<ServerConf> globalServer;
+// extern std::vector<ServerConf> globalServer;
 
 class WebServ{ // Factory design
     private:
         // std::vector<int> _serverfds; // can be removed?
         ServerConf _server;
-        std::vector<std::pair<std::string, std::string> > _listens;
+        // std::vector<std::pair<std::string, std::string> > _listens;
+        std::map<int, std::pair<std::string, std::string> > _listenFds;
         std::vector<struct pollfd> _pollfds;
         std::map<int, Connection*> _connections; // can use just vector?
         std::map<int, int> _cgifds; // can use just vector?

@@ -139,7 +139,7 @@ void Request::parseRequest(const std::string &rawRequest)
 
             this->fullBody += this->requestData;
 
-            const ServerConf &server = globalServer[0];
+            // const ServerConf &server = globalServer[0];
             std::map<std::string, LocationConf> locations = server.getLocations();
             std::map<std::string, LocationConf>::iterator locIt = locations.find(this->location);
 
@@ -174,6 +174,6 @@ void Request::parseRequest(const std::string &rawRequest)
         if (this->statusCode != 200)
             close(this->cgiFdRead);
         close(this->cgiFdWrite);
-        printRequest();
+        // printRequest();
     }
 }

@@ -69,7 +69,8 @@ void Request::parseRequestLine()
 
     handleUriSpecialCharacters(this->uri);
 
-    const ServerConf &server = globalServer[0];
+    // const ServerConf &server = ConfigBuilder::getServer();
+    // const ServerConf &server = globalServer[0];
 
     std::map<std::string, LocationConf> locations = server.getLocations();
 

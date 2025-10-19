@@ -25,12 +25,13 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
                         isChunked(false), isMultipart(false), isContentLength(false), boundaryKey(""),
                         contentLength(0), requestData(""), headersData(""), currentContentLength(0),
                         fileName(""), createdFile(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false),
-                        cgiFdRead(-1), cgiFdWrite(-1)
+                        cgiFdRead(-1), cgiFdWrite(-1), server(ConfigBuilder::getServer())
 {
     CHOROUK && std::cout << G"-------- Request destructor called!! ----";
     CHOROUK && std::cout << B"\n";
     this->headers["connection"] = "keep-alive";
-    const ServerConf &server = globalServer[0];
+    // const ServerConf &server = globalServer[0];
+    // const ServerConf &server = ConfigBuilder::getServer();
     this->uploadDir = server.getRoot() + server.getUploadDir();
 }
 
