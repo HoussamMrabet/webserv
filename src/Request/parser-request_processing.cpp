@@ -13,25 +13,9 @@
 #include "Request.hpp"
 #include "WebServer.hpp"
 
-// std::string methodToString(t_method method)
-// {
-//     switch (method)
-//     {
-//     case GET:
-//         return "GET";
-//     case POST:
-//         return "POST";
-//     case DELETE:
-//         return "DELETE";
-//     default:
-//         return "UNDEFINED";
-//     }
-// }
-
 void Request::processResponseErrors()
 {
     std::string methodStr = getStrMethod();
-    // std::string methodStr = methodToString(this->method);
 
     const ServerConf &server = globalServer[0];
 
@@ -68,4 +52,66 @@ void Request::processResponseErrors()
     }
 
     return;
+}
+
+void Request::processRequest()
+{
+    const ServerConf &server = globalServer[0];
+    std::map<std::string, LocationConf> locations = server.getLocations();
+    std::string document_root;
+    std::string full_path;
+    std::string index;
+    struct stat fileStat;
+
+    std::string location_path = this->location;
+
+    document_root = locations[location_path].getRoot();
+    if (document_root.empty())
+        document_root = server.getRoot();
+    std::string file_name = this->uri.substr(std::min(location_path.length(), this->uri.length()));
+    if (file_name.length() > 0 && file_name[0] == '/')
+        file_name = file_name.substr(1);
+    if (document_root[0] != '.')
+        document_root = "." + document_root;
+    full_path = document_root + "/" + file_name;
+    if (file_name.empty())
+    {
+        std::vector<std::string> indexes = locations[location_path].getIndex();
+        if (indexes.empty())
+            indexes = server.getIndex();
+        for (std::vector<std::string>::const_iterator it = indexes.begin(); it != indexes.end(); ++it)
+        {
+            std::string index_path = document_root;
+            if (index_path[index_path.length() - 1] != '/')
+                index_path += "/";
+            index_path += *it;
+            index = *it;
+            if (stat(index_path.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode))
+            {
+                full_path = index_path;
+                break;
+            }
+        }
+    }
+
+    this->fullPath = full_path;
+
+    if (this->fullPath.length() >= 4 && this->fullPath.substr(this->fullPath.length() - 4) == ".php")
+    {
+        this->cgiType = ".php";
+        this->uriFileName = index;
+    }
+    else if (this->fullPath.length() >= 3 && this->fullPath.substr(this->fullPath.length() - 3) == ".py")
+    {
+        this->cgiType = ".py";
+        this->uriFileName = index;
+    }
+    int fd = open(fullPath.c_str(), O_RDONLY);
+    if (fd == -1)
+    {
+        this->statusCode = 404;
+        return;
+    }
+    else
+        close(fd);
 }

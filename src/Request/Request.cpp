@@ -135,6 +135,10 @@ std::string Request::getRoot() const
     return (this->root);
 }
 
+std::string Request::getFullPath() const{
+    return (this->fullPath);
+}
+
 bool Request::isDone() const
 {
     return (this->currentStep == DONE);
