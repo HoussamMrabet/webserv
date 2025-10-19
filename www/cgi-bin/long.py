@@ -56,5 +56,6 @@ lorem = (
 for i in range(10):
     print(f"<p>{lorem}</p>")
 
+print("end.")
 print("</body>")
 print("</html>")

@@ -26,7 +26,19 @@ Connection::Connection(int fd, ServerConf& server, const std::string& host, cons
                                                     _done(false),
                                                     _responseDone(false),
                                                     _isChunkedResponse(false)/*....*/ {
-    _fd = accept(fd, NULL, NULL);
+    // _fd = accept(fd, NULL, NULL);
+    struct sockaddr_in addr;
+    socklen_t len = sizeof(addr);
+    _fd = accept(fd, (struct sockaddr*)&addr, &len);
+    if (_fd == -1) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            // No incoming connections right now - just return false or ignore
+            return ;
+        } else {
+            perror("Accept failed");
+            return ; // or handle fatal error
+        }
+    }
     _server = server;
     // _request = new Request();
     _cgiFd = -1;
@@ -106,7 +118,7 @@ bool Connection::readRequest(){
     }
     _done = _request.isDone();
     if (_request.isDone()){
-        std::cout << "--> bytesRead = " << bytesRead << std::endl;
+        CHOROUK && std::cout << "--> bytesRead = " << bytesRead << std::endl;
         requestInfo(_host, _port,
             _request.getStatusCode(), \
             _request.getStrMethod(), \
@@ -114,6 +126,8 @@ bool Connection::readRequest(){
             _request.getHeader("httpVersion"));
 
         _request.processRequest();
+        // if (_request.isCGI())
+            // _cgiFd = 
         // std::cout << "+++++++++++++++++++++++++++++\n";
         // std::cout << _request.isCGI() << std::endl;
         // std::cout << "+++++++++++++++++++++++++++++\n";

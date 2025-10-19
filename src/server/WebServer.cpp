@@ -2,20 +2,20 @@
 
 bool WebServ::_runServer = true;
 
-void WebServ::signalHandler(int n) {
-    std::cout << C"Server closing...\n";
-    _runServer = false;
-    signal(n, SIG_IGN); // ignore
-    // clean up
-    // exit(0); // then close
-}
+// void WebServ::signalHandler(int n) {
+//     std::cout << C"Server closing...\n";
+//     _runServer = false;
+//     signal(n, SIG_IGN); // ignore
+//     // clean up
+//     // exit(0); // then close
+// }
 
 WebServ::WebServ(){/*init default data*/}
 
 WebServ::~WebServ(){
     // loop on pollfds and close all
     // delete connection pointers  
-    for (size_t i = 0; i < _pollfds.size(); i++){
+    for (int i = 0; i < (int)_pollfds.size(); i++){
         // int fd = _pollfds[i].fd;
 
         // std::map<int, Connection>::iterator it = _connections.find(fd);
@@ -66,6 +66,7 @@ void WebServ::pollLoop(){
     while (_runServer){
         CHOROUK && std::cout << "----------- IN POLLOOP ---------------\n";
         int n = poll(_pollfds.data(), _pollfds.size(), 1000);  // 1-second poll timeout to check timeouts regularly
+        CHOROUK && std::cout << "pollfs size = " << _pollfds.size() << std::endl;
         if (n == -1) {
             if (errno == EINTR) {
                 // Poll interrupted by signal
@@ -92,8 +93,8 @@ void WebServ::pollLoop(){
         // Process events - iterate backwards to handle erasing safely
         for (int i = (int)_pollfds.size() - 1; i >= 0; i--){
             CHOROUK && std::cout << "----------- INSIDE POLLOOP ---------------\n";
-            // CHOROUK && std::cout << "------- pollfd_size = " << (int)_pollfds.size();
-            // CHOROUK && std::cout << "\n";
+            CHOROUK && std::cout << "------- pollfd_size = " << (int)_pollfds.size() << std::endl;
+            CHOROUK && std::cout << "i = " << i << "\n";
             int fd = _pollfds[i].fd;
             
                 // CHOROUK && std::cout << "----------- INSIDE POLLIN ---------------\n";
@@ -133,7 +134,7 @@ void WebServ::pollLoop(){
                             addPollFd(cgifd, POLLIN, "CGI");
                             _cgifds[cgifd] = fd;
                             std::cout << "*-*-*-*-*-*-*-*->> Request is CGI!! \n" << std::endl;
-                            std::cout << "cgi fd is " << fd << " connection fd is " << _cgifds[cgifd] << std::endl;
+                            std::cout << "cgi fd is " << cgifd << " connection fd is " << _cgifds[cgifd] << std::endl;
                         //     //execute cgi and get cgi fd
                         //     // add cgi fd to pollfds if not exist!!!
                         }
@@ -207,6 +208,7 @@ void WebServ::pollLoop(){
         // After processing all events, continue to next poll cycle
         // The server NEVER stops listening for new connections
     }
+    // cleanUp();
     std::cout << "*-*-*-*-*-*-*- good bye!! *-*-*-*-*-*\n";
 }
 
@@ -229,9 +231,17 @@ bool WebServ::acceptConnection(int fd){
     return (true);
 }
 
+void WebServ::cleanUp(){
+    for (int i = (int)_pollfds.size() - 1; i >= 0 ; i--){
+        close(_pollfds[i].fd);
+        _pollfds.erase(_pollfds.begin() + i);
+    }
+    _pollfds.clear();
+}
+
 void WebServ::checkTimeout(){
     time_t now = time(NULL);
-    for (size_t i = 0; i < _pollfds.size(); i++){
+    for (int i = 0; i < (int)_pollfds.size(); i++){
         int fd = _pollfds[i].fd;
         if (_fdType[fd] == "listen") continue;
         std::map<int, Connection>::iterator it = _connections.find(fd);

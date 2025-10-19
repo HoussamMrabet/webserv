@@ -33,6 +33,7 @@ class WebServ{ // Factory design
     //     bool isListening(int);
         bool acceptConnection(int);
         void checkTimeout();
+        void cleanUp();
         void addPollFd(int, short, const std::string&);
     //     void removePollFd(int);
 
@@ -40,5 +41,5 @@ class WebServ{ // Factory design
         ~WebServ();
         static bool _runServer;
         static bool startServer(ServerConf&);
-        static void signalHandler(int);
+        // static void signalHandler(int);
 };

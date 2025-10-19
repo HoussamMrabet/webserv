@@ -12,6 +12,7 @@
 #include <vector>
 #include <sstream>
 #include <errno.h>
+#include <arpa/inet.h>
 #include "Request.hpp"
 #include "Response.hpp"
 #include "ServerConf.hpp"
