@@ -53,7 +53,7 @@ lorem = (
     "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 )
 
-for i in range(10):
+for i in range(100):
     print(f"<p>{lorem}</p>")
 
 print("end.")

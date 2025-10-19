@@ -184,7 +184,7 @@ std::string CGI::runCGI(){
     if (_readDone)
         return (_output);
     if (_execDone)
-        return (readOutput());
+        return (_output);
     // std::cout << G"-------- Still here0!!!! ";
     // std::cout << B"\n";
     // generateCgiFile();
@@ -302,7 +302,7 @@ std::string CGI::readOutput(){
     //     _output.append(buffer, n);
     // }
     // std::cout << _output << std::endl;
-    while ((n = read(_fd_out, buffer, sizeof(buffer))) > 0){
+    if ((n = read(_fd_out, buffer, sizeof(buffer))) > 0){
         CHOROUK && std::cout << "read counter = " << ++read_counter << std::endl;
     // std::cout << "-*-*-*-*-* bytes read = " << n << std::endl; 
     // std::cout << _output << std::endl;

@@ -33,6 +33,7 @@ private:
     std::string _response;   // For simple responses
     ServerConf _server;
     CGI _cgi;
+    // std::string cgiOutput;
     bool _done;
     // bool _isCGI;
     bool _responseDone;
@@ -48,7 +49,9 @@ public:
     time_t getTime() const;
     bool readRequest();
     bool isDone();
+    bool cgiDone();
     bool isCGI() const;
+    void readCGIOutput();
     bool isResponseDone();
     bool writeResponse();
     void printRequest(); // to remove

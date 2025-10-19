@@ -126,8 +126,8 @@ bool Connection::readRequest(){
             _request.getHeader("httpVersion"));
 
         _request.processRequest();
-        if (_request.isCGI() && (_request.getStatusCode() == 200)){
-            _response = _cgi.executeCGI(_request, _server);
+        if (_request.isCGI() && (_request.getStatusCode() == 200) && !_cgi.execDone()){
+            _cgi.executeCGI(_request, _server);
             _cgiFd = _cgi.getFd();
         }
         // std::cout << "+++++++++++++++++++++++++++++\n";
@@ -197,7 +197,9 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         CHOROUK && std:: cout << M"IT IS CGI!!!!!\n";
         // CGI cgi();
         if (!_cgi.readDone())
-            _response = _cgi.executeCGI(_request, _server);
+            // _response = _cgi.readOutput();
+            readCGIOutput();
+            // _response = _cgi.executeCGI(_request, _server);
         if (_cgi.readDone())
             _response = setCGIHeaders();
         // _cgiFd = CGI::getFd();
@@ -417,3 +419,7 @@ std::string Connection::to_str(int n){
     std::stringstream ss; ss << n;
     return (ss.str());
 }
+
+void Connection::readCGIOutput(){ _response = _cgi.readOutput();}
+
+bool Connection::cgiDone(){ return (_cgi.readDone());}

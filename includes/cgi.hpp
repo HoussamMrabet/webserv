@@ -78,7 +78,6 @@ class CGI{ // should class name be camel-case??
         void printEnvironment(); // to remove later
         // std::string parseOutput(std::string &);
         std::string runCGI();
-        std::string readOutput();
         bool setToNonBlocking();
         bool validPath();
         
@@ -86,6 +85,7 @@ class CGI{ // should class name be camel-case??
         CGI();
         ~CGI();
         std::string executeCGI(Request&, ServerConf&); // remove const in order to be able to change status code of request 
+        std::string readOutput();
         int getFd();
         bool readDone();
         bool execDone();

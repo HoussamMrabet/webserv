@@ -92,10 +92,13 @@ void WebServ::pollLoop(){
         
         // Process events - iterate backwards to handle erasing safely
         for (int i = (int)_pollfds.size() - 1; i >= 0; i--){
+            // sleep (1);
             CHOROUK && std::cout << "----------- INSIDE POLLOOP ---------------\n";
             CHOROUK && std::cout << "------- pollfd_size = " << (int)_pollfds.size() << std::endl;
             CHOROUK && std::cout << "i = " << i << "\n";
             int fd = _pollfds[i].fd;
+            CHOROUK && std::cout << "fd = " << fd << std::endl;
+            CHOROUK && std::cout << "fdType = " << _fdType[fd] << std::endl;
             
                 // CHOROUK && std::cout << "----------- INSIDE POLLIN ---------------\n";
             if (_pollfds[i].revents & POLLIN && _fdType[fd] == "listen"){
@@ -106,10 +109,12 @@ void WebServ::pollLoop(){
                     CHOROUK && std::cout << "----------- INSIDE CGI read ---------------\n";
                     // keep reading from cgi fd and write to corresponding connection
                     std::map<int, Connection>::iterator it = _connections.find(_cgifds[fd]);
-                    it->second.writeResponse();
+                    // it->second.writeResponse();
+                    it->second.readCGIOutput();
+                    // continue;
                     // it->second. 
             }
-            if ((_pollfds[i].revents & POLLIN) || !_cleanRead){
+            else if ((_pollfds[i].revents & POLLIN) || !_cleanRead){
                 if (_fdType[fd] == "connection"){
                     CHOROUK && std::cout << "----------- INSIDE CONNECTION ---------------\n";
                     std::map<int, Connection>::iterator it = _connections.find(fd);
@@ -129,12 +134,17 @@ void WebServ::pollLoop(){
                     if (it->second.isDone()){
                         CHOROUK && std::cout << "----------- READ DONE ---------------\n";
                         _cleanRead = true;
-                        if (it->second.isCGI()){
-                            int cgifd = it->second.getCgiFd();
-                            addPollFd(cgifd, POLLIN, "CGI");
-                            _cgifds[cgifd] = fd;
-                            std::cout << "*-*-*-*-*-*-*-*->> Request is CGI!! \n" << std::endl;
-                            std::cout << "cgi fd is " << cgifd << " connection fd is " << _cgifds[cgifd] << std::endl;
+                        if (it->second.isCGI()/* && it->second.execDone()*/){
+                            std::map<int, int>::iterator itt = _cgifds.begin();
+                            while ((itt != _cgifds.end()) && (itt->first != fd)) itt++;
+                            if (itt == _cgifds.end()){
+                                int cgifd = it->second.getCgiFd();
+                                addPollFd(cgifd, POLLIN, "CGI");
+                                _cgifds[cgifd] = fd;
+                                CHOROUK && std::cout << "*-*-*-*-*-*-*-*->> Request is CGI!! \n" << std::endl;
+                                CHOROUK && std::cout << "cgi fd is " << cgifd << " connection fd is " << _cgifds[cgifd] << std::endl;
+                            }
+                        
                         //     //execute cgi and get cgi fd
                         //     // add cgi fd to pollfds if not exist!!!
                         }
@@ -160,6 +170,7 @@ void WebServ::pollLoop(){
                 CHOROUK && std::cout << "----------- INSIDE POLLOUT ---------------\n";
                 std::map<int, Connection>::iterator it = _connections.find(fd);
                 if (it == _connections.end()) continue; // Safety check
+                if (it->second.isCGI() && !it->second.cgiDone()) continue;
                 CHOROUK && std::cout << "----------- INSIDE WRITE ---------------\n";
                 it->second.writeResponse();
                 CHOROUK && std::cout << "----------- AFTER WRITE ---------------\n";
@@ -169,10 +180,25 @@ void WebServ::pollLoop(){
                     // _pollfds[i].revents = 0;
                         close(fd);
                         // delete it->second;
+                        if (it->second.isCGI()){
+                            int n = it->second.getCgiFd();
+                            close(n);
+                            _fdType.erase(n);
+                            int k = 0;
+                            while (k < (int)_pollfds.size()){
+                                if (_pollfds[k].fd == n){
+                                    _pollfds.erase(_pollfds.begin() + k);
+                                    break;
+                                }
+                                k++;
+                            }
+                        }
                         _connections.erase(it);
+
+                        // _cgiFd[]
                         _fdType.erase(fd);
                         _pollfds.erase(_pollfds.begin() + i);
-                        continue;
+                        // continue;
                     // if (it->second.getConnectionHeader() == "close"){ // check if "close" close connection
                     //     // closeConnection();
                     //     CHOROUK && std::cout << "Close connection header fd " << fd << std::endl;
@@ -209,7 +235,8 @@ void WebServ::pollLoop(){
         // The server NEVER stops listening for new connections
     }
     // cleanUp();
-    std::cout << "*-*-*-*-*-*-*- good bye!! *-*-*-*-*-*\n";
+    sleep(1);
+    std::cout << M"Server closed.\n";
 }
 
 bool WebServ::acceptConnection(int fd){
@@ -284,3 +311,5 @@ void WebServ::checkTimeout(){
 
 
 // }
+
+// void Connection::readCGIOutput() {_cgi}
