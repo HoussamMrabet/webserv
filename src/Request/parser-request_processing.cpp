@@ -16,9 +16,6 @@
 void Request::processResponseErrors()
 {
     std::string methodStr = getStrMethod();
-
-    // const ServerConf &server = globalServer[0];
-
     std::map<std::string, LocationConf> locations = server.getLocations();
     std::map<std::string, LocationConf>::iterator locIt = locations.find(this->location);
 
@@ -56,7 +53,6 @@ void Request::processResponseErrors()
 
 void Request::processRequest()
 {
-    // const ServerConf &server = globalServer[0];
     std::map<std::string, LocationConf> locations = server.getLocations();
     std::string document_root;
     std::string full_path;
@@ -68,6 +64,7 @@ void Request::processRequest()
     document_root = locations[location_path].getRoot();
     if (document_root.empty())
         document_root = server.getRoot();
+    this->uriIndexe = this->uri;
     std::string file_name = this->uri.substr(std::min(location_path.length(), this->uri.length()));
     if (file_name.length() > 0 && file_name[0] == '/')
         file_name = file_name.substr(1);
@@ -89,13 +86,12 @@ void Request::processRequest()
             if (stat(index_path.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode))
             {
                 full_path = index_path;
+                this->uriIndexe += *it;
                 break;
             }
         }
     }
-
     this->fullPath = full_path;
-
     if (this->fullPath.length() >= 4 && this->fullPath.substr(this->fullPath.length() - 4) == ".php")
     {
         this->cgiType = ".php";

@@ -12,8 +12,8 @@
 
 #pragma once
 
+#include "ServerConf.hpp"
 #include "Request.hpp"
-// #include <signal.h>
 #include <iostream>
 #include <sstream>
 #include <sys/wait.h> // pipe - fork - dup2 - close - execve - write - read - waitpid - STDOUT_FILENO
@@ -22,10 +22,9 @@
 #include <cstdlib> // exit
 #include <fcntl.h>  // fcntl, O_NONBLOCK
 #include <sys/time.h> // gettimeofday
+#include <sys/stat.h> // stat
 #include <vector>
 #include <map>
-#include "ServerConf.hpp"
-#include <sys/stat.h> // stat
 // #include <unistd.h> // for close, read, write
 // #include <cerrno>   // for errno
 
@@ -72,14 +71,15 @@ class CGI{ // should class name be camel-case??
         // CGI();
         void importData(Request&); // remove const
         // void setQueryString();
-        std::string setPath(); // remove const
+        // std::string setPath(); // remove const
         void setContentLenght();
         void set_HTTP_Header();
         void printEnvironment(); // to remove later
         // std::string parseOutput(std::string &);
-        std::string runCGI();
+        // std::string runCGI();
         bool setToNonBlocking();
         bool validPath();
+        bool validExec();
         
     public:
         CGI();

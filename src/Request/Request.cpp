@@ -136,8 +136,14 @@ std::string Request::getRoot() const
     return (this->root);
 }
 
-std::string Request::getFullPath() const{
+std::string Request::getFullPath() const
+{
     return (this->fullPath);
+}
+
+std::string Request::getFullUri() const
+{
+    return (this->uriIndexe);
 }
 
 bool Request::isDone() const

@@ -30,7 +30,7 @@
 #define M "\033[1;35m"
 #define B "\033[0m"
 #define MOHAMED 0
-#define CHOROUK 0
+#define CHOROUK 1
 
 #define CHUNKED true
 
@@ -71,6 +71,7 @@ class Request
         std::string uri;
         std::string uriQueries;
         std::string uriFileName;
+        std::string uriIndexe;
         std::string location;
         std::string cgiType;
         std::string host;
@@ -130,6 +131,7 @@ class Request
         std::map<std::string, std::string> getHeaders() const;
         std::string getBody() const;
         std::string getFullPath() const;
+        std::string getFullUri() const;
         std::string getHeader(const std::string &key) const;
         std::string getHost() const; // return server name
         std::string getCgiType() const; // return php or py as string if there is a cgi otherwise return empty string
