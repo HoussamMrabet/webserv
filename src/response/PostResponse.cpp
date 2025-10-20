@@ -19,5 +19,18 @@ void Connection::sendPostResponse(Request &request, int status_code, ServerConf 
     _isChunkedResponse = false;
 }
 
-
+std::string Connection::getConnectionHeader(Request &request) {
+    std::string connection_header = request.getHeader("Connection");
+    
+    // Convert to lowercase for case-insensitive comparison
+    std::transform(connection_header.begin(), connection_header.end(), connection_header.begin(), ::tolower);
+    
+    // If the request explicitly asks for close, return close
+    if (connection_header == "close") {
+        return "close";
+    }
+    
+    // Default to keep-alive for HTTP/1.1
+    return "keep-alive";
+}
 

@@ -78,6 +78,11 @@ int Request::getStatusCode() const
     return (this->statusCode);
 }
 
+void Request::setStatusCode(int n)
+{
+    this->statusCode = n;
+}
+
 std::string Request::getUri() const
 {
     return (this->uri);
@@ -154,6 +159,11 @@ bool Request::isDone() const
 bool Request::isCGI() const
 {
     return !this->cgiType.empty();
+}
+
+void Request::CGIError()
+{
+    this->cgiType = "";
 }
 
 void Request::printRequest()

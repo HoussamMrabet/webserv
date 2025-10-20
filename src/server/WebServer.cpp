@@ -71,15 +71,19 @@ void WebServ::pollLoop(){
             if (errno == EINTR) {
                 // Poll interrupted by signal
                 if (!_runServer) {
-                    std::cout << "Server shutting down due to signal...\n";
+                    std::cout << "Server shutting down...\n";
                     break;  // Exit the loop gracefully
                 }
                 else {
                     std::cout << "Server still runing...\n";
                     continue;  // Otherwise just continue polling
                 }
-            } else {
-                perror("Poll failed");
+            }
+            else {
+                std::cerr << R"Error: Poll failed" << B"\n";
+                cleanUp();
+                // clean all before exit
+            //     perror("Poll failed");
                 break; // Fatal error, exit loop
             }
         }
@@ -142,7 +146,7 @@ void WebServ::pollLoop(){
                                 addPollFd(cgifd, POLLIN, "CGI");
                                 _cgifds[cgifd] = fd;
                                 CHOROUK && std::cout << "*-*-*-*-*-*-*-*->> Request is CGI!! \n" << std::endl;
-                                CHOROUK && std::cout << "cgi fd is " << cgifd << " connection fd is " << _cgifds[cgifd] << std::endl;
+                                // std::cout << "cgi fd is " << cgifd << " connection fd is " << _cgifds[cgifd] << std::endl;
                             }
                         
                         //     //execute cgi and get cgi fd
@@ -176,7 +180,7 @@ void WebServ::pollLoop(){
                 CHOROUK && std::cout << "----------- AFTER WRITE ---------------\n";
                 if (it->second.isResponseDone()) {
                     CHOROUK && std::cout << "----------- WRITE DONE ---------------\n";
-                    // _pollfds[i].events = 0;
+                    // _pollfds[i].events = POLLIN;
                     // _pollfds[i].revents = 0;
                         close(fd);
                         // delete it->second;
@@ -234,27 +238,31 @@ void WebServ::pollLoop(){
         // After processing all events, continue to next poll cycle
         // The server NEVER stops listening for new connections
     }
-    // cleanUp();
+    cleanUp();
     sleep(1);
     std::cout << M"Server closed.\n";
 }
 
 bool WebServ::acceptConnection(int fd){
-    CHOROUK && std::cout << "new connection fd " << fd << " " << _server.getRoot() << std::endl; 
-    // Connection connection = new Connection(fd, _server);
-    Connection connection = Connection(fd, _server, _listenFds[fd].first, _listenFds[fd].second);
-    // Connection connection = new Connection(fd, _server, _listenFds[fd].first, _listenFds[fd].second);
-    int connection_fd = connection.getFd();
-    _connections.insert(std::make_pair(connection_fd, connection));
-    CHOROUK && std::cout << "------- accept fd = " << connection_fd << std::endl;
-    // struct pollfd client_pfd;
-    // client_pfd.fd = connection_fd;
-    // client_pfd.events = POLLIN;
-    // client_pfd.revents = 0;
-    // _pollfds.push_back(client_pfd);
-    _cleanRead = false;
-    addPollFd(connection_fd, POLLIN|POLLOUT, "connection"); // to change later by macro
-
+    try{
+        CHOROUK && std::cout << "new connection fd " << fd << " " << _server.getRoot() << std::endl; 
+        // Connection connection = new Connection(fd, _server);
+        Connection connection = Connection(fd, _server, _listenFds[fd].first, _listenFds[fd].second);
+        // Connection connection = new Connection(fd, _server, _listenFds[fd].first, _listenFds[fd].second);
+        int connection_fd = connection.getFd();
+        _connections.insert(std::make_pair(connection_fd, connection));
+        CHOROUK && std::cout << "------- accept fd = " << connection_fd << std::endl;
+        // struct pollfd client_pfd;
+        // client_pfd.fd = connection_fd;
+        // client_pfd.events = POLLIN;
+        // client_pfd.revents = 0;
+        // _pollfds.push_back(client_pfd);
+        _cleanRead = false;
+        addPollFd(connection_fd, POLLIN|POLLOUT, "connection"); // to change later by macro
+    }
+    catch (const std::exception& e){
+        std::cerr << R"Error: " << e.what() << B"\n";
+    }
     return (true);
 }
 
@@ -267,9 +275,11 @@ void WebServ::cleanUp(){
 }
 
 void WebServ::checkTimeout(){
+    // std::cout << "-*-*-* > timeout check!!\n";
     time_t now = time(NULL);
     for (int i = 0; i < (int)_pollfds.size(); i++){
         int fd = _pollfds[i].fd;
+        // std::cout << "-*-*-* > fd = " << fd << "\n";
         if (_fdType[fd] == "listen") continue;
         std::map<int, Connection>::iterator it = _connections.find(fd);
         if (it != _connections.end() && now - it->second.getTime() > 60){

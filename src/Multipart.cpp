@@ -26,7 +26,6 @@ Multipart::~Multipart()
 void Multipart::setFileName(const std::string &fileName)
 {
     this->fileName = fileName;
-
     this->file = open(fileName.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
     if (this->file == -1)
     {

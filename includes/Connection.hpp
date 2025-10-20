@@ -54,13 +54,14 @@ public:
     void readCGIOutput();
     bool isResponseDone();
     bool writeResponse();
+    bool setNonBlocking();
     void printRequest(); // to remove
-    void setNonBlocking();
     std::string setCGIHeaders();
     void updateTimout();
     std::string to_str(int);
     // std::string getRequestMethod();
     void requestInfo(const std::string&, const std::string&, int, const std::string&, const std::string&, const std::string&);
+    void getRquestType();
     void sendGetResponse(Request    &request, ServerConf &server);
     void sendPostResponse(Request   &request, int status_code, ServerConf &server);
     void sendDeleteResponse(Request &request, ServerConf &server);

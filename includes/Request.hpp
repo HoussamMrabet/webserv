@@ -26,11 +26,12 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #define G "\033[1;32m"
+#define R "\033[1;31m"
 #define C "\033[1;36m"
 #define M "\033[1;35m"
 #define B "\033[0m"
 #define MOHAMED 0
-#define CHOROUK 1
+#define CHOROUK 0
 
 #define CHUNKED true
 
@@ -136,11 +137,13 @@ class Request
         std::string getHost() const; // return server name
         std::string getCgiType() const; // return php or py as string if there is a cgi otherwise return empty string
         int getStatusCode() const;
+        void setStatusCode(int);
         int getCgiFdRead() const; // return read end of cgi pipe
         std::string getRoot() const;
 
         bool isDone() const;
         bool isCGI() const; // check if the request is a cgi or not
+        void CGIError(); // check if the request is a cgi or not
         void parseRequest(const std::string& rawRequest = "");
         void printRequest();
         std::string getMessage() const;

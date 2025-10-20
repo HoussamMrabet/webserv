@@ -50,6 +50,7 @@ class CGI{ // should class name be camel-case??
         std::string _contentType;       // from the headers map (should be!!)
         std::string _remoteAddr;        // remote client IP
         std::string _output;
+        // std::string _errormsg;
         int _fd_in, _fd_out;
         bool _execDone;
         bool _readDone;

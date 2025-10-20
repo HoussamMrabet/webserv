@@ -15,6 +15,7 @@ std::string CGI::executeCGI(Request& request, ServerConf& server){
         return (_output);
 
     _server = server;
+    importData(request);
     int stdout_pipe[2];
     if (pipe(stdout_pipe) < 0)
         throw std::runtime_error("Pipe failed");
@@ -24,9 +25,7 @@ std::string CGI::executeCGI(Request& request, ServerConf& server){
 
     if (pid < 0)
         throw std::runtime_error("Fork failed");
-
     if (pid == 0){
-        importData(request);
         if (_fd_in != -1){
             lseek(_fd_in, 0, SEEK_SET);
             dup2(_fd_in, STDIN_FILENO);
@@ -47,11 +46,13 @@ std::string CGI::executeCGI(Request& request, ServerConf& server){
         exit(1);
     }
     close(stdout_pipe[1]); // close write end
-    setToNonBlocking();    
+    if (!setToNonBlocking())
+        throw std::runtime_error("fcntl failed");
+
     int status;
     waitpid(pid, &status, 0);
     
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)/////////// check for all error types!!
         throw std::runtime_error("CGI script failed");
 
     _execDone = true;
@@ -102,10 +103,16 @@ void CGI::importData(Request& request){
     _remoteAddr = request.getHost();
     _headers = request.getHeaders();
 
-    if (!validExec())
+    if (!validExec()){
+        // close(_fd_in);
+        // close(_fd_out);
         throw std::runtime_error("CGI interpreter not found");
-    if (!validPath())
+    }
+    if (!validPath()){
+        // close(_fd_in);
+        // close(_fd_out);
         throw std::runtime_error("Invalid CGI script path");
+    }
 
     setContentLenght(); // check output and throw error
     set_HTTP_Header();
@@ -126,127 +133,21 @@ void CGI::importData(Request& request){
     _envc.push_back(NULL);
 }
 
-// std::string CGI::runCGI(){
-//     if (_readDone || _execDone)
-//         return (_output);
-
-//     int stdout_pipe[2];
-//     if (pipe(stdout_pipe) < 0)
-//         throw std::runtime_error("Pipe failed");
-
-//     _fd_out = stdout_pipe[0];
-//     pid_t pid = fork();
-
-//     if (pid < 0)
-//         throw std::runtime_error("Fork failed");
-
-//     if (pid == 0){
-//         if (_fd_in != -1){
-//             lseek(_fd_in, 0, SEEK_SET);
-//             dup2(_fd_in, STDIN_FILENO);
-//             close(_fd_in);
-//         }
-//         close(stdout_pipe[0]); // close read end
-//         dup2(stdout_pipe[1], STDOUT_FILENO);
-//         dup2(stdout_pipe[1], STDERR_FILENO);
-//         close(stdout_pipe[1]);
-
-//         char* argv[3];
-//         argv[0] = const_cast<char*>(_execPath.c_str());
-//         argv[1] = const_cast<char*>(_scriptFileName.c_str());
-//         argv[2] = NULL;
-
-//         execve(_execPath.c_str(), argv, &_envc[0]);
-//         perror("execve");
-//         exit(1);
-//     }
-//     close(stdout_pipe[1]); // close write end
-//     setToNonBlocking();    
-//     int status;
-//     waitpid(pid, &status, 0);
-    
-//     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
-//         throw std::runtime_error("CGI script failed");
-
-//     _execDone = true;
-//     return (readOutput());
-// }
-
 std::string CGI::readOutput(){
-    // std::string _output;
     char buffer[4096];
-    ssize_t n;
+    int n;
 
     if (!_execDone || _readDone) 
         return (_output);
-    // add _fd and fd_out to poll and manage all without while loop!! 
-    
-    int read_counter = 0;
-    // while ((n = read(_fd, buffer, sizeof(buffer))) > 0){
-    //     std::cout << "read counter = " << ++read_counter << std::endl;
-    //     _output.append(buffer, n);
-    // }
-    // std::cout << _output << std::endl;
-    if ((n = read(_fd_out, buffer, sizeof(buffer))) > 0){
-        std::cout << "read counter = " << ++read_counter << std::endl;
-    // std::cout << "-*-*-*-*-* bytes read = " << n << std::endl; 
-    // std::cout << _output << std::endl;
+    // int read_counter = 0;
+    if ((n = read(_fd_out, buffer, sizeof(buffer))) > 0)
         _output.append(buffer, n);
-    }
-    if (n <= 0){
+    if (n <= 0){ // change to = 0 and check for -1 
         _readDone = true;
-        // std::cout << "cgi read done !!! n = " << n << std::endl; 
         close(_fd_out);
     }
-    // close(_fd_out); // remove later!!
-
-    // cgi_output = parseOutput(cgi_output);
-    // std::cout << " ########## CGI ###########\n";
-    // std::cout << cgi_output << std::endl;
-    // std::cout << " ##########################\n";
-
-
-    // _execDone = true;
     return (_output);
 }
-
-// std::string CGI::parseOutput(std::string& cgi_output){
-//     std::ostringstream response;
-    
-//     size_t header_end = cgi_output.find("\r\n\r\n");
-//     if (header_end == std::string::npos){
-//         header_end = cgi_output.find("\n\n");
-//         if (header_end != std::string::npos){
-//             header_end += 2;
-//         }
-//     } else {
-//         header_end += 4;
-//     }
-    
-//     if (header_end != std::string::npos){
-//         std::string headers_part = cgi_output.substr(0, header_end);
-//         std::string body_part = cgi_output.substr(header_end);
-        
-//         if (headers_part.find("HTTP/") == 0){
-//             return (cgi_output);
-//         } else {
-//             response << "HTTP/1.1 200 OK\r\n";
-//             response << headers_part;
-//             if (headers_part[headers_part.size() - 1] != '\n'){
-//                 response << "\r\n";
-//             }
-//             response << body_part;
-//         }
-//     } else {
-//         response << "HTTP/1.1 200 OK\r\n";
-//         response << "Content-Type: text/html\r\n";
-//         response << "Content-Length: " << cgi_output.size() << "\r\n";
-//         response << "\r\n";
-//         response << cgi_output;
-//     }
-    
-//     return (response.str());
-// }
 
 void CGI::printEnvironment(){
     std::cout << "...........Environment...............\n"; 
@@ -259,46 +160,20 @@ void CGI::printEnvironment(){
 }
 
 bool CGI::setToNonBlocking(){
-    int flags = fcntl(_fd_out, F_GETFL);
-    if (flags == -1) return (false);
-    return ((fcntl(_fd_out, F_SETFL, flags | O_NONBLOCK) != -1));
+    return ((fcntl(_fd_out, F_SETFL, O_NONBLOCK) != -1));
 }
 
 bool CGI::validPath(){
-    // std::cout << G"path is " << _scriptFileName;
-    // std::cout << B"\n";
-    if (access(_scriptFileName.c_str(), F_OK) != 0){
-
-        // std::cout << G"I fail!!!! 1" << _scriptFileName;
-        // std::cout << B"\n";
+    if (access(_scriptFileName.c_str(), F_OK) != 0) // change file permission and test 
         return (false);
-    } 
-    if (access(_scriptFileName.c_str(), R_OK) != 0){
-        // std::cout << G"I fail!!!! 2" << _scriptFileName;
-        // std::cout << B"\n";
+    if (access(_scriptFileName.c_str(), R_OK) != 0)
         return (false);
-    } 
-    // if (access(_execPath.c_str(), X_OK) != 0){
-    //     // std::cout << G"I fail!!!! 3" << _execPath;
-    //     // std::cout << G"I fail!!!! 3" << _scriptFileName;
-    //     // std::cout << B"\n";
-    //     return (false);
-    // } 
-    if (_scriptFileName.find("../") != std::string::npos){
-        // std::cout << G"I fail!!!! 4" << _scriptFileName;
-        // std::cout << B"\n";
-        return (false);
-    } 
     return (true);
 }
 
 bool CGI::validExec(){
-    if (access(_execPath.c_str(), X_OK) != 0){
-        // std::cout << G"I fail!!!! 3" << _execPath;
-        // std::cout << G"I fail!!!! 3" << _scriptFileName;
-        // std::cout << B"\n";
+    if (access(_execPath.c_str(), X_OK) != 0)
         return (false);
-    }
     return (true);
 }
 
