@@ -2,31 +2,15 @@
 
 bool WebServ::_runServer = true;
 
-// void WebServ::signalHandler(int n) {
-//     std::cout << C"Server closing...\n";
-//     _runServer = false;
-//     signal(n, SIG_IGN); // ignore
-//     // clean up
-//     // exit(0); // then close
-// }
-
 WebServ::WebServ(){/*init default data*/}
 
 WebServ::~WebServ(){
-    // loop on pollfds and close all
-    // delete connection pointers  
-    for (int i = 0; i < (int)_pollfds.size(); i++){
-        // int fd = _pollfds[i].fd;
-
-        // std::map<int, Connection>::iterator it = _connections.find(fd);
-        // if (it != _connections.end() && now - it->second.getTime() > 60){
-        //     std::cout << "Closing connection fd " << fd << " due to timeout." << std::endl;
-            // delete it->second;
-            close(_pollfds[i].fd);
-            // _connections.erase(it);
-            // _fdType.erase(fd);
-            _pollfds.erase(_pollfds.begin() + i);
-            i--;
+    for (int i = (int)_pollfds.size() - 1; i >= 0; i--){
+        close(_pollfds[i].fd);
+        // _connections.erase(it);
+        // _fdType.erase(fd);
+        // _pollfds.erase(_pollfds.begin() + i);
+        // i--;
             
         // }
     }
@@ -40,11 +24,21 @@ bool WebServ::startServer(ServerConf& server){
     std::vector<std::pair<std::string, std::string> > listens = server.getListen();
     std::vector<std::pair<std::string, std::string> >::iterator it;
     for (it = listens.begin(); it != listens.end(); it++) {
-        int server_fd = Socket::StartSocket(it->first, it->second);
-        webserv.addPollFd(server_fd, POLLIN, "listen");
-        std::cout << "Listening on http" << M" " << it->first << ":" << it->second << B"" << std::endl;
-        CHOROUK &&  std::cout << "Server socket  (fd "<< server_fd << ")" << std::endl;
-        webserv._listenFds[server_fd] = *it;
+        try{
+            int server_fd = Socket::StartSocket(it->first, it->second); // check socket return value!!!
+            webserv.addPollFd(server_fd, POLLIN, "listen");
+            std::cout << "Listening on http" << M" " << it->first << ":" << it->second << B"" << std::endl;
+            // CHOROUK &&  std::cout << "Server socket  (fd "<< server_fd << ")" << std::endl;
+            webserv._listenFds[server_fd] = *it;
+        }
+        catch (const std::exception& e){
+            std::cerr << R"Error: " << e.what() << B"\n";
+        }
+    }
+    if (webserv._pollfds.size() == 0){
+        std::cerr << R"All listens failed. Server closed.\n";
+        // sleep(10);
+        exit(1);
     }
     std::cout << B"Document root is " << M" " << server.getRoot() << std::endl;
     std::cout << B"Press Ctrl-C to quit." << B"\n";
@@ -81,6 +75,20 @@ void WebServ::pollLoop(){
             }
             else {
                 std::cerr << R"Error: Poll failed" << B"\n";
+
+/*********************************************************************/
+/*********************************************************************/
+/*********************************************************************/
+/*********************************************************************/
+/*********************************************************************/
+/******************    check this (below)    *************************/
+/*********************************************************************/
+/*********************************************************************/
+/*********************************************************************/
+/*********************************************************************/
+/*********************************************************************/
+//Houssam ========= >// poll fails cause of reaching the limits of fds
+                std::cerr << "ERROR NUM: " << errno << " pollfds: " << _pollfds.data() << " pollfds size: " << _pollfds.size() << std::endl; 
                 cleanUp();
                 // clean all before exit
             //     perror("Poll failed");
