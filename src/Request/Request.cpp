@@ -11,7 +11,13 @@
 /* ************************************************************************** */
 
 #include "Request.hpp"
-#include "WebServer.hpp"
+#include "WebServ.hpp"
+
+std::string Request::theme = "light";
+std::vector<t_user> Request::users;
+t_user Request::loggedInUser;
+bool Request::loggedIn = false;
+
 
 Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE),
                         method(UNDEFINED), reqLine(""), uri(""), uriQueries(""), uriFileName(""),
@@ -19,14 +25,20 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
                         isChunked(false), isMultipart(false), isContentLength(false), boundaryKey(""),
                         contentLength(0), requestData(""), headersData(""), currentContentLength(0),
                         fileName(""), createdFile(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false),
-                        cgiFdRead(-1), cgiFdWrite(-1)
+                        cgiFdRead(-1), cgiFdWrite(-1), server(ConfigBuilder::getServer())
 {
+    CHOROUK && std::cout << G"-------- Request destructor called!! ----";
+    CHOROUK && std::cout << B"\n";
     this->headers["connection"] = "keep-alive";
-    const ServerConf &server = globalServer[0];
-    this->uploadDir = server.getUploadDir();
+    // const ServerConf &server = globalServer[0];
+    // const ServerConf &server = ConfigBuilder::getServer();
+    this->uploadDir = server.getRoot() + server.getUploadDir();
 }
+
 Request::~Request()
 {
+    CHOROUK && std::cout << G"-------- Request destructor called!! ----";
+    CHOROUK && std::cout << B"\n";
     for (size_t i = 0; i < multipartData.size(); ++i)
         delete multipartData[i];
     if (this->file != -1)
@@ -34,6 +46,11 @@ Request::~Request()
         close(this->file);
         this->file = -1;
     }
+}
+
+std::string Request::getMessage() const
+{
+    return (this->message);
 }
 
 t_method Request::getMethod() const
@@ -59,6 +76,11 @@ std::string Request::getStrMethod() const
 int Request::getStatusCode() const
 {
     return (this->statusCode);
+}
+
+void Request::setStatusCode(int n)
+{
+    this->statusCode = n;
 }
 
 std::string Request::getUri() const
@@ -114,6 +136,21 @@ int Request::getCgiFdRead() const
     return cgiFdRead;
 }
 
+std::string Request::getRoot() const
+{
+    return (this->root);
+}
+
+std::string Request::getFullPath() const
+{
+    return (this->fullPath);
+}
+
+std::string Request::getFullUri() const
+{
+    return (this->uriIndexe);
+}
+
 bool Request::isDone() const
 {
     return (this->currentStep == DONE);
@@ -122,6 +159,11 @@ bool Request::isDone() const
 bool Request::isCGI() const
 {
     return !this->cgiType.empty();
+}
+
+void Request::CGIError()
+{
+    this->cgiType = "";
 }
 
 void Request::printRequest()
@@ -133,6 +175,11 @@ void Request::printRequest()
     for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); it++)
         std::cout << it->first << ": " << it->second << std::endl;
     std::cout << std::endl;
-    if (!this->fullBody.empty())
-        std::cout << this->fullBody << std::endl;
+    // std::cout << Request::loggedInUser.username << std::endl;
+    // std::cout << Request::loggedInUser.password << std::endl;
+
+    // std::cout << "loggedin : " << Request::loggedIn << std::endl;
+    // if (!this->fullBody.empty())
+    //     std::cout << this->fullBody << std::endl;
+    //     std::cout << "----------------------------------------" << std::endl;
 }

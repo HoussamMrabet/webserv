@@ -14,22 +14,70 @@
 #include <exception>
 #include <signal.h>
 // #include "ServerConf.hpp"
-#include "WebServer.hpp"
+#include "WebServ.hpp"
+#include "Request.hpp"
 
+void signalHandler(int) {
+    // _runServer = false;
+    // if (n == SIGINT){
+		// signal(SIGINT, SIG_IGN); // ignore
+		std::cout << C"\nAre you sure? (y/n)\n"; 
+		char res; std::cin >> res;
+		WebServ::_runServer = (res == 'y' || res == 'Y')? false: true;
+	// }
 
-std::vector<ServerConf> globalServer;
+    // signal(n, SIG_IGN); // ignore
+    // clean up
+    // exit(0); // then close
+}
 
 int main(int ac, char **av)
 {
+std::vector<ServerConf> globalServer;
+	// Request::users
+
+	t_user user1;
+    user1.username = "hmrabet";
+    user1.password = "hmrabet123";
+    user1.email = "hmrabet@student.1337.ma";
+	user1.fullName = "Houssam Mrabet";
+	user1.job = "Web Developer";
+	user1.avatar = "./assets/houbet.jpeg";
+    
+    t_user user2;
+    user2.username = "mel-hamd";
+    user2.password = "mel-hamd123";
+    user2.email = "mel-hamd@student.1337.ma";
+	user2.fullName = "Mohammed El Hamdaoui";
+	user2.job = "Backend Developer";
+	user2.avatar = "./assets/mel-hamd.jpg";
+
+    t_user user3;
+    user3.username = "cmasnaou";
+    user3.password = "cmasnaou123";
+    user3.email = "cmasnaou@student.1337.ma";
+	user3.fullName = "Chorouk Masnaoui";
+	user3.job = "Frontend Developer";
+	user3.avatar = "./assets/cmasnaou.jpg";
+
+    // Assign them to the static vector
+    Request::users.push_back(user1);
+    Request::users.push_back(user2);
+    Request::users.push_back(user3);
+
+	// signal(SIGPIPE, SIG_IGN);  // Ignore the signal leads to infinit loop!!!
+	std::cout << "Webserv 14.9.25 Development Server started at Sun Sep 14 15:22:14 2025\n";
 	try{
         // signal(SIGPIPE, SIG_IGN); // sig ignore broken pipe,q to remove later!
 		std::string config_file = "config/default.conf";
 		if (ac > 1) config_file = av[1]; // parse config file name and path? 
 		globalServer = ConfigBuilder::generateServers(config_file); // import servers from config file
 		std::vector<ServerConf> servers = globalServer; // import servers from config file
-		ServerConf server = servers[0]; // vector should have only one vector
-		// std::cout << "Server data\n";
-		std::cout << server << std::endl;
+		ServerConf server = ConfigBuilder::getServer(); // vector should have only one vector
+		MOHAMED && std::cout << "Server data\n";
+		MOHAMED && std::cout << server << std::endl;
+		signal(SIGINT, signalHandler);
+
 		WebServ::startServer(server);
 
 	}
