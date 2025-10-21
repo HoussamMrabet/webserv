@@ -12,6 +12,8 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     //     _request.getHeader("httpVersion"));
 
     if (_isChunkedResponse) {
+        // std::cout << "+++ Chunked!!\n";
+
         // Continue sending chunks from existing response
         if (!_response_obj.isFinished()) {
             std::string chunk = _response_obj.getResponseChunk();
@@ -95,6 +97,7 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     //     updateTimout();
     // }
     if (!_isChunkedResponse) {
+        // std::cout << "+++ Not chunked!!\n";
         // std::cout << "----------> writing on fd = " << _fd << std::endl;
         // CHOROUK && std::cout << "writing on fd = " << _fd << std::endl;
         int b = write(_fd, _response.c_str(), _response.length());

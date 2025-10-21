@@ -140,12 +140,22 @@ std::string CGI::readOutput(){
     if (!_execDone || _readDone) 
         return (_output);
     // int read_counter = 0;
-    if ((n = read(_fd_out, buffer, sizeof(buffer))) > 0)
+    n = read(_fd_out, buffer, sizeof(buffer));
+    if (n > 0)
         _output.append(buffer, n);
-    if (n <= 0){ // change to = 0 and check for -1 
+    // std::cout << "n = " << n << std::endl;
+    else if (n == 0){ // change to = 0 and check for -1 
         _readDone = true;
-        close(_fd_out);
+        close(_fd_in);
+        // close(_fd_out);
     }
+    else{
+        // _readDone = true;
+        close(_fd_in);
+        // close(_fd_out);
+        throw std::runtime_error("Read failed");
+    } 
+    // throw exception!!
     return (_output);
 }
 

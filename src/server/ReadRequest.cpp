@@ -2,19 +2,22 @@
 
 bool Connection::readRequest(){
     char buffer[1024] = {0};
-    ssize_t bytesRead = 0;
+    int n = 0;
 
     if (_request.isDone()) return (true);
     else {
-        bytesRead = read(_fd, buffer, sizeof(buffer));
-        if (bytesRead > 0){
-            _buffer.append(buffer, bytesRead);
+        n = read(_fd, buffer, sizeof(buffer));
+        if (n > 0){
+            _buffer.append(buffer, n);
             _request.parseRequest(_buffer);
             _buffer.clear();
             updateTimout();
         }
-        else
+        else if (n == 0)
             _request.parseRequest();
+        else
+            return(true);
+        // std::cout << "------> n = " << n << std::endl;
     }
     _done = _request.isDone();
     if (_request.isDone())

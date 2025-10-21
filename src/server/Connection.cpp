@@ -137,6 +137,7 @@ std::string Connection::to_str(int n){
 Connection::~Connection(){ 
     // CHOROUK && std::cout << "***********  connection destructor called!!! ***********\n";
     // delete _request;
+    // close(_cgi.getFd());
 }
 
 void Connection::requestInfo(const std::string& host, const std::string& port, int status, const std::string& method, const std::string& path, const std::string& version) {

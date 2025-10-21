@@ -2,22 +2,15 @@
 
 bool WebServ::_runServer = true;
 
-WebServ::WebServ(){/*init default data*/}
+WebServ::WebServ(){}
 
 WebServ::~WebServ(){
-    for (int i = (int)_pollfds.size() - 1; i >= 0; i--){
+    for (int i = (int)_pollfds.size() - 1; i >= 0; i--)
         close(_pollfds[i].fd);
-        // _connections.erase(it);
-        // _fdType.erase(fd);
-        // _pollfds.erase(_pollfds.begin() + i);
-        // i--;
-            
-        // }
-    }
     _pollfds.clear();
 }
 
-WebServ::WebServ(ServerConf& server): _server(server) {/*init data*/}
+WebServ::WebServ(ServerConf& server): _server(server) {}
 
 bool WebServ::startServer(ServerConf& server){
     WebServ webserv(server);
@@ -25,10 +18,9 @@ bool WebServ::startServer(ServerConf& server){
     std::vector<std::pair<std::string, std::string> >::iterator it;
     for (it = listens.begin(); it != listens.end(); it++) {
         try{
-            int server_fd = Socket::StartSocket(it->first, it->second); // check socket return value!!!
+            int server_fd = Socket::StartSocket(it->first, it->second);
             webserv.addPollFd(server_fd, POLLIN, "listen");
             std::cout << "Listening on http" << M" " << it->first << ":" << it->second << B"" << std::endl;
-            // CHOROUK &&  std::cout << "Server socket  (fd "<< server_fd << ")" << std::endl;
             webserv._listenFds[server_fd] = *it;
         }
         catch (const std::exception& e){
@@ -37,13 +29,12 @@ bool WebServ::startServer(ServerConf& server){
     }
     if (webserv._pollfds.size() == 0){
         std::cerr << R"All listens failed. Server closed.\n";
-        // sleep(10);
         exit(1);
     }
     std::cout << B"Document root is " << M" " << server.getRoot() << std::endl;
     std::cout << B"Press Ctrl-C to quit." << B"\n";
     webserv.pollLoop();
-    return (true); // check return value value for all functions or remove and use exception!!
+    return (true);
 }
 
 void WebServ::addPollFd(int fd, short event, const std::string& type){
@@ -53,90 +44,49 @@ void WebServ::addPollFd(int fd, short event, const std::string& type){
     pfd.revents = 0;
     _pollfds.push_back(pfd);
     _fdType[fd] = type;
+
 }
 
 void WebServ::pollLoop(){
     _cleanRead = false;
     while (_runServer){
-        CHOROUK && std::cout << "----------- IN POLLOOP ---------------\n";
-        int n = poll(_pollfds.data(), _pollfds.size(), 1000);  // 1-second poll timeout to check timeouts regularly
+        int n = poll(_pollfds.data(), _pollfds.size(), 1000);
         CHOROUK && std::cout << "pollfs size = " << _pollfds.size() << std::endl;
         if (n == -1) {
             if (errno == EINTR) {
-                // Poll interrupted by signal
                 if (!_runServer) {
                     std::cout << "Server shutting down...\n";
-                    break;  // Exit the loop gracefully
+                    break;
                 }
                 else {
                     std::cout << "Server still runing...\n";
-                    continue;  // Otherwise just continue polling
+                    continue;
                 }
             }
             else {
                 std::cerr << R"Error: Poll failed" << B"\n";
-
-/*********************************************************************/
-/*********************************************************************/
-/*********************************************************************/
-/*********************************************************************/
-/*********************************************************************/
-/******************    check this (below)    *************************/
-/*********************************************************************/
-/*********************************************************************/
-/*********************************************************************/
-/*********************************************************************/
-/*********************************************************************/
-//Houssam ========= >// poll fails cause of reaching the limits of fds
                 std::cerr << "ERROR NUM: " << errno << " pollfds: " << _pollfds.data() << " pollfds size: " << _pollfds.size() << std::endl; 
-                cleanUp();
-                // clean all before exit
-            //     perror("Poll failed");
-                break; // Fatal error, exit loop
+                // cleanUp();
+                break;
             }
         }
-        // if (n == -1){
-        //     perror("Poll failed");
-        //     break; // Only break on fatal poll error
-        // }
+
         checkTimeout();
-        // if (n == 0) continue;  // no events, continue loop
-        
-        // Process events - iterate backwards to handle erasing safely
         for (int i = (int)_pollfds.size() - 1; i >= 0; i--){
-            // sleep (1);
-            CHOROUK && std::cout << "----------- INSIDE POLLOOP ---------------\n";
-            CHOROUK && std::cout << "------- pollfd_size = " << (int)_pollfds.size() << std::endl;
-            CHOROUK && std::cout << "i = " << i << "\n";
             int fd = _pollfds[i].fd;
-            CHOROUK && std::cout << "fd = " << fd << std::endl;
-            CHOROUK && std::cout << "fdType = " << _fdType[fd] << std::endl;
-            
-                // CHOROUK && std::cout << "----------- INSIDE POLLIN ---------------\n";
-            if (_pollfds[i].revents & POLLIN && _fdType[fd] == "listen"){
-                    CHOROUK && std::cout << "----------- INSIDE LISTEN ---------------\n";
-                    acceptConnection(fd); // Always try to accept new connections
-            }
+            // std::cout << "-*-*-*-*-* > plllfd size = " << _pollfds.size() << " fd = " << fd << " fd_type = " << _fdType[fd] << std::endl;
+            if (_pollfds[i].revents & POLLIN && _fdType[fd] == "listen")
+                    acceptConnection(fd);
             if (_pollfds[i].revents & POLLIN && _fdType[fd] == "CGI"){
-                    CHOROUK && std::cout << "----------- INSIDE CGI read ---------------\n";
-                    // keep reading from cgi fd and write to corresponding connection
                     std::map<int, Connection>::iterator it = _connections.find(_cgifds[fd]);
-                    // it->second.writeResponse();
                     it->second.readCGIOutput();
-                    // continue;
-                    // it->second. 
             }
             else if ((_pollfds[i].revents & POLLIN) || !_cleanRead){
                 if (_fdType[fd] == "connection"){
-                    CHOROUK && std::cout << "----------- INSIDE CONNECTION ---------------\n";
                     std::map<int, Connection>::iterator it = _connections.find(fd);
-                    if (it == _connections.end()) continue; // Safety check - connection not found
-                    CHOROUK && std::cout << "----------- INSIDE READ ---------------\n";
-                    if (!it->second.readRequest()){
-                        CHOROUK && std::cout << "----------- READ FAIL ---------------\n";
-                        // Connection error - clean up and continue
+                    if (it == _connections.end()) continue;
+                    if (!it->second.readRequest()){ // remove this check!! read never returns false
                         close(fd);
-                        // delete it->second;
                         _connections.erase(it);
                         _fdType.erase(fd);
                         _pollfds.erase(_pollfds.begin() + i);
@@ -144,22 +94,26 @@ void WebServ::pollLoop(){
                     }
                     
                     if (it->second.isDone()){
-                        CHOROUK && std::cout << "----------- READ DONE ---------------\n";
-                        _cleanRead = true;
-                        if (it->second.isCGI()/* && it->second.execDone()*/){
-                            std::map<int, int>::iterator itt = _cgifds.begin();
-                            while ((itt != _cgifds.end()) && (itt->first != fd)) itt++;
-                            if (itt == _cgifds.end()){
-                                int cgifd = it->second.getCgiFd();
+                        // std::cout << "-*-*-*-*-* > I m In !!!!" << std::endl;
+                        if (it->second.isCGI() && !it->second.cgiDone() && !_cleanRead){
+                        // if (it->second.isCGI()){
+                            int cgifd = it->second.getCgiFd();
+                            // std::map<int, int>::iterator itt = _cgifds.find(cgifd);
+                            // if (itt != _cgifds.end()) continue;
+                            // // while ((itt != _cgifds.end()) && (itt->first != cgifd)) itt++;
+                            // if (itt != _cgifds.end()) std::cout << R"already exist!!\n";
+                                // std::cout << "-*-*-*-*-* > new cgi = " << cgifd << " connection fd = " << fd << std::endl;
+                                // std::cout << "-*-*-*-*-* > plllfd size = " << _pollfds.size() << " cgifd = " << cgifd << std::endl;
                                 addPollFd(cgifd, POLLIN, "CGI");
                                 _cgifds[cgifd] = fd;
                                 CHOROUK && std::cout << "*-*-*-*-*-*-*-*->> Request is CGI!! \n" << std::endl;
                                 // std::cout << "cgi fd is " << cgifd << " connection fd is " << _cgifds[cgifd] << std::endl;
-                            }
+                            // }
                         
                         //     //execute cgi and get cgi fd
                         //     // add cgi fd to pollfds if not exist!!!
                         }
+                        _cleanRead = true;
                         // if (it->second.getCgiFd() != -1){
                         //     // add cgi fd to pollfds if not exist!!!
                         //     // execute cgi and get cgi fd
@@ -247,7 +201,7 @@ void WebServ::pollLoop(){
         // The server NEVER stops listening for new connections
     }
     cleanUp();
-    sleep(1);
+    sleep(3);
     std::cout << M"Server closed.\n";
 }
 
@@ -289,9 +243,28 @@ void WebServ::checkTimeout(){
         int fd = _pollfds[i].fd;
         // std::cout << "-*-*-* > fd = " << fd << "\n";
         if (_fdType[fd] == "listen") continue;
+        // if (_fdType[fd] == "CGI"){
+        //     fd = _cgiFds[fd];
+        //     // std::map<int, int>::iterator it = _cgiFd.find(fd);
+        //     // fd = it->
+        // }
         std::map<int, Connection>::iterator it = _connections.find(fd);
         if (it != _connections.end() && now - it->second.getTime() > 60){
             std::cout << "Closing connection fd " << fd << " due to timeout." << std::endl;
+            if (it->second.isCGI()){
+                int cgifd = it->second.getCgiFd();
+                close(cgifd);
+                for (int k = 0; k < (int)_pollfds.size(); k++){
+                    int fd_cgi = _pollfds[k].fd;
+                    if (fd_cgi == cgifd){
+                        _pollfds.erase(_pollfds.begin() + k);
+                        break;
+                    }
+                }
+                _fdType.erase(cgifd);
+            //     std::vector<struct pollfd>::iterator it = _pollfds.find(cgifd);
+            //     _pollfds.erase(it);
+            }
             // delete it->second;
             close(fd);
             _connections.erase(it);
@@ -301,33 +274,4 @@ void WebServ::checkTimeout(){
             
         }
     }
-    
-    // if (_pid != -1) {// Check if the CGI process is finished
-    //     int status;
-    //     pid_t result = waitpid(_pid, &status, WNOHANG);
-    
-    //     if (result == -1) {
-    //         perror("waitpid failed");
-    //     } else if (result == 0) {
-    //         // Process is still running
-    //     } else {
-    //         // Process has finished
-    //         if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-    //             std::cout << "CGI process completed successfully." << std::endl;
-    //             // Mark the CGI process as done or ready to read
-    //             addPollFd(_fd, POLLIN, "cgi_output");  // Ready to read CGI output
-    //         } else {
-    //             std::cerr << "CGI process failed with status: " << WEXITSTATUS(status) << std::endl;
-    //             // Handle the failure (e.g., cleaning up, reporting errors)
-    //         }
-    //         _pid = -1;  // Clear the PID once the process is handled
-    //     }
-    // }
 }
-
-// void WebServ::closeConnection(int fd){
-
-
-// }
-
-// void Connection::readCGIOutput() {_cgi}
