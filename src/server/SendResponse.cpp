@@ -96,20 +96,54 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     //     _response = DEFAULT_RESPONSE;
     //     updateTimout();
     // }
+
+
+
+    // if (!_isChunkedResponse) {
+    //     std::cout << "+++ Not chunked!!\n";
+    //     // std::cout << "----------> writing on fd = " << _fd << std::endl;
+    //     // CHOROUK && std::cout << "writing on fd = " << _fd << std::endl;
+    //     int b = write(_fd, _response.c_str(), _response.length());
+    //     if (b == -1){
+    //         // perror("Write failed"); // throw
+    //         return (false);
+    //     }
+    //     CHOROUK && std::cout << "----------- STILL HERE ---------------\n";
+    //     updateTimout();
+    //     // Response is complete
+    //     _responseDone = true;
+    // }
+    
+
+    size_t _responseBytesSent = 0;
+
     if (!_isChunkedResponse) {
         // std::cout << "+++ Not chunked!!\n";
-        // std::cout << "----------> writing on fd = " << _fd << std::endl;
-        // CHOROUK && std::cout << "writing on fd = " << _fd << std::endl;
-        int b = write(_fd, _response.c_str(), _response.length());
-        if (b == -1){
-            // perror("Write failed"); // throw
-            return (false);
-        }
-        CHOROUK && std::cout << "----------- STILL HERE ---------------\n";
+
+        size_t totalLen = _response.length();
+
+        // Write remaining part of the response
+        ssize_t bytesWritten = write(_fd, _response.c_str() + _responseBytesSent, totalLen - _responseBytesSent);
         updateTimout();
-        // Response is complete
-        _responseDone = true;
+        if (bytesWritten == -1) {
+            // perror("Write failed");
+            return true;
+        }
+
+        _responseBytesSent += bytesWritten;
+
+        if (_responseBytesSent == totalLen) {
+            // Finished sending entire response
+            _responseDone = true;
+            _responseBytesSent = 0;  // reset for next response
+            updateTimout();
+        } else {
+            // Partial write, wait to write remaining later
+            std::cout << "Partial write: " << _responseBytesSent << "/" << totalLen << std::endl;
+            // do not mark response done, wait for next call
+        }
     }
-    
+
+
     return (true);
 }

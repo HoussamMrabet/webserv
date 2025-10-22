@@ -14,18 +14,19 @@ Connection::Connection(int fd, ServerConf& server, const std::string& host, cons
     socklen_t len = sizeof(addr);
     _fd = accept(fd, (struct sockaddr*)&addr, &len);
     if (_fd == -1){
-        // if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        //     // No incoming connections right now - just return false or ignore
-        //     return ;
-        // } else{
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            // No incoming connections right now - just return false or ignore
+            return ;
+        } else{
             throw std::runtime_error("Accept failed");
-        //     // return ; // or handle fatal error
-        // }
+            // return ; // or handle fatal error
+        }
     }
     _server = server;
     _cgiFd = -1;
     if (!setNonBlocking())
         throw std::runtime_error("fcntl failed");
+    updateTimout();////
 }
 
 Connection::Connection(const Connection& connection){

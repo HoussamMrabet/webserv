@@ -3,6 +3,7 @@
 bool Connection::readRequest(){
     char buffer[1024] = {0};
     int n = 0;
+    // int totale = 0;
 
     if (_request.isDone()) return (true);
     else {
@@ -13,16 +14,27 @@ bool Connection::readRequest(){
             _buffer.clear();
             updateTimout();
         }
-        else if (n == 0)
-        {
-            while (!_request.isDone())
-                _request.parseRequest();
+        else if (n == 0){
+
+            std::cout <<"-------------\n";
+            _request.parseRequest();
+            updateTimout();///////
+
+            // exit(0);
         }
-        else
-            return(true);
-        // std::cout << "------> n = " << n << std::endl;
+        else {
+            updateTimout();///////
+
+            // return(true);
+        }
+        // std::cout << "------> lenght = " << _request.getHeader("content-length") << std::endl;
+        // totale += n;
+        // if (totale == n) {
+        //     exit(0);
+        // }
     }
     _done = _request.isDone();
+    updateTimout();///////
     if (_request.isDone())
         getRquestType();
     return (true);
@@ -35,6 +47,7 @@ void Connection::getRquestType(){
         try{
             _cgi.executeCGI(_request, _server);
             _cgiFd = _cgi.getFd();
+            updateTimout();/////
         }
         catch (const std::exception& e){
             _request.setStatusCode(500);
