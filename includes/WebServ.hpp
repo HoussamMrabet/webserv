@@ -9,6 +9,7 @@
 // #include "Listen.hpp"
 #include "Connection.hpp"
 // #include "ServerConf.hpp"
+#define TIMEOUT 30
 
 
 // extern std::vector<ServerConf> globalServer;
@@ -16,7 +17,7 @@
 class WebServ{ // Factory design
     private:
         // std::vector<int> _serverfds; // can be removed?
-        ServerConf _server;
+        ServerConf& _server;
         // std::vector<std::pair<std::string, std::string> > _listens;
         std::map<int, std::pair<std::string, std::string> > _listenFds;
         std::vector<struct pollfd> _pollfds;
@@ -32,9 +33,11 @@ class WebServ{ // Factory design
     //     bool isConnection(int);
     //     bool isListening(int);
         bool acceptConnection(int);
+        void closeConnection(int);
         void checkTimeout();
         void cleanUp();
         void addPollFd(int, short, const std::string&);
+        void removePollFd(int);
     //     void removePollFd(int);
 
     public:

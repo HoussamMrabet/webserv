@@ -14,7 +14,10 @@ bool Connection::readRequest(){
             updateTimout();
         }
         else if (n == 0)
-            _request.parseRequest();
+        {
+            while (!_request.isDone())
+                _request.parseRequest();
+        }
         else
             return(true);
         // std::cout << "------> n = " << n << std::endl;

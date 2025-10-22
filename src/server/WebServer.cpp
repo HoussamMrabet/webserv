@@ -2,7 +2,7 @@
 
 bool WebServ::_runServer = true;
 
-WebServ::WebServ(){}
+// WebServ::WebServ(){}
 
 WebServ::~WebServ(){
     for (int i = (int)_pollfds.size() - 1; i >= 0; i--)
@@ -48,9 +48,10 @@ void WebServ::addPollFd(int fd, short event, const std::string& type){
 }
 
 void WebServ::pollLoop(){
-    _cleanRead = false;
+    // _cleanRead = false;
     while (_runServer){
         int n = poll(_pollfds.data(), _pollfds.size(), 1000);
+        // if (n == 0) continue;
         CHOROUK && std::cout << "pollfs size = " << _pollfds.size() << std::endl;
         if (n == -1) {
             if (errno == EINTR) {
@@ -74,28 +75,38 @@ void WebServ::pollLoop(){
         checkTimeout();
         for (int i = (int)_pollfds.size() - 1; i >= 0; i--){
             int fd = _pollfds[i].fd;
+            short revents = _pollfds[i].revents;
+            std::string type = _fdType[fd];
+
+        if (revents & (POLLERR | POLLNVAL)) {
+            if (type != "listen") {
+                closeConnection(fd);
+            }
+            continue;
+        }
             // std::cout << "-*-*-*-*-* > plllfd size = " << _pollfds.size() << " fd = " << fd << " fd_type = " << _fdType[fd] << std::endl;
-            if (_pollfds[i].revents & POLLIN && _fdType[fd] == "listen")
+            if (revents & POLLIN && type == "listen")
                     acceptConnection(fd);
-            if (_pollfds[i].revents & POLLIN && _fdType[fd] == "CGI"){
+            else if (revents & POLLIN && type == "CGI"){
                     std::map<int, Connection>::iterator it = _connections.find(_cgifds[fd]);
                     it->second.readCGIOutput();
             }
-            else if ((_pollfds[i].revents & POLLIN) || !_cleanRead){
-                if (_fdType[fd] == "connection"){
+            else if ((revents & POLLIN)/* || !_cleanRead*/){
+                if (type == "connection"){
                     std::map<int, Connection>::iterator it = _connections.find(fd);
                     if (it == _connections.end()) continue;
                     if (!it->second.readRequest()){ // remove this check!! read never returns false
-                        close(fd);
-                        _connections.erase(it);
-                        _fdType.erase(fd);
-                        _pollfds.erase(_pollfds.begin() + i);
+                        // close(fd);
+                        // _connections.erase(it);
+                        // _fdType.erase(fd);
+                        // _pollfds.erase(_pollfds.begin() + i);
+                        closeConnection(fd);
                         continue;
                     }
                     
                     if (it->second.isDone()){
                         // std::cout << "-*-*-*-*-* > I m In !!!!" << std::endl;
-                        if (it->second.isCGI() && !it->second.cgiDone() && !_cleanRead){
+                        if (it->second.isCGI() && !it->second.cgiDone()/* && !_cleanRead*/){
                         // if (it->second.isCGI()){
                             int cgifd = it->second.getCgiFd();
                             // std::map<int, int>::iterator itt = _cgifds.find(cgifd);
@@ -113,26 +124,33 @@ void WebServ::pollLoop(){
                         //     //execute cgi and get cgi fd
                         //     // add cgi fd to pollfds if not exist!!!
                         }
-                        _cleanRead = true;
+                        else if (it->second.isCGI() && it->second.cgiDone()){
+                            int cgi_fd = it->second.getCgiFd();
+                            removePollFd(cgi_fd);
+                            _cgifds.erase(cgi_fd);
+                            _fdType.erase(cgi_fd);
+                            _connections.erase(cgi_fd);
+                        }
+                        // _cleanRead = true;
                         // if (it->second.getCgiFd() != -1){
                         //     // add cgi fd to pollfds if not exist!!!
                         //     // execute cgi and get cgi fd
                         // }
                         // // Request complete, switch to write mode
                         // // _pollfds[i].events = POLLOUT;
-                        // // _pollfds[i].revents = 0;
+                        // // revents = 0;
                         // // it->second.printRequest(); // to remove!
                     }
                     else {
                         CHOROUK && std::cout << "----------- READ NOT DONE ---------------\n";
                         // Request complete, switch to write mode
                         // _pollfds[i].events = POLLIN;
-                        // _pollfds[i].revents = 0;
+                        // revents = 0;
                         // it->second.printRequest(); // to remove!
                     }
                 }
             }
-            else if (_pollfds[i].revents & POLLOUT){
+            else if (revents & POLLOUT){
                 CHOROUK && std::cout << "----------- INSIDE POLLOUT ---------------\n";
                 std::map<int, Connection>::iterator it = _connections.find(fd);
                 if (it == _connections.end()) continue; // Safety check
@@ -142,28 +160,29 @@ void WebServ::pollLoop(){
                 CHOROUK && std::cout << "----------- AFTER WRITE ---------------\n";
                 if (it->second.isResponseDone()) {
                     CHOROUK && std::cout << "----------- WRITE DONE ---------------\n";
-                    // _pollfds[i].events = POLLIN;
-                    // _pollfds[i].revents = 0;
-                        close(fd);
-                        // delete it->second;
-                        if (it->second.isCGI()){
-                            int n = it->second.getCgiFd();
-                            close(n);
-                            _fdType.erase(n);
-                            int k = 0;
-                            while (k < (int)_pollfds.size()){
-                                if (_pollfds[k].fd == n){
-                                    _pollfds.erase(_pollfds.begin() + k);
-                                    break;
-                                }
-                                k++;
-                            }
-                        }
-                        _connections.erase(it);
+                    closeConnection(fd);
+                    // // _pollfds[i].events = POLLIN;
+                    // // revents = 0;
+                    //     close(fd);
+                    //     // delete it->second;
+                    //     if (it->second.isCGI()){
+                    //         int n = it->second.getCgiFd();
+                    //         close(n);
+                    //         _fdType.erase(n);
+                    //         int k = 0;
+                    //         while (k < (int)_pollfds.size()){
+                    //             if (_pollfds[k].fd == n){
+                    //                 _pollfds.erase(_pollfds.begin() + k);
+                    //                 break;
+                    //             }
+                    //             k++;
+                    //         }
+                    //     }
+                    //     _connections.erase(it);
 
-                        // _cgiFd[]
-                        _fdType.erase(fd);
-                        _pollfds.erase(_pollfds.begin() + i);
+                    //     // _cgiFd[]
+                    //     _fdType.erase(fd);
+                    //     _pollfds.erase(_pollfds.begin() + i);
                         // continue;
                     // if (it->second.getConnectionHeader() == "close"){ // check if "close" close connection
                     //     // closeConnection();
@@ -184,11 +203,11 @@ void WebServ::pollLoop(){
                     CHOROUK && std::cout << "----------- WRITE NOT DONE ---------------\n";
                     // Response not done (chunked response in progress)
                     // _pollfds[i].events = POLLOUT;
-                    // _pollfds[i].revents = 0;
+                    // revents = 0;
                 }
 
             }
-            // else if (_pollfds[i].revents & POLLIN && _fdType[fd] == "cgi_output") {
+            // else if (revents & POLLIN && type == "cgi_output") {
             //     // Handle CGI output read
             //     std::string cgi_output = readCGIOutput();
             //     if (!cgi_output.empty()) {
@@ -234,6 +253,8 @@ void WebServ::cleanUp(){
         _pollfds.erase(_pollfds.begin() + i);
     }
     _pollfds.clear();
+    _connections.clear();
+
 }
 
 void WebServ::checkTimeout(){
@@ -243,13 +264,14 @@ void WebServ::checkTimeout(){
         int fd = _pollfds[i].fd;
         // std::cout << "-*-*-* > fd = " << fd << "\n";
         if (_fdType[fd] == "listen") continue;
+        // if (_fdType[fd] == "CGI") continue;
         // if (_fdType[fd] == "CGI"){
         //     fd = _cgiFds[fd];
         //     // std::map<int, int>::iterator it = _cgiFd.find(fd);
         //     // fd = it->
         // }
         std::map<int, Connection>::iterator it = _connections.find(fd);
-        if (it != _connections.end() && now - it->second.getTime() > 60){
+        if (it != _connections.end() && now - it->second.getTime() > TIMEOUT){
             std::cout << "Closing connection fd " << fd << " due to timeout." << std::endl;
             if (it->second.isCGI()){
                 int cgifd = it->second.getCgiFd();
@@ -274,4 +296,33 @@ void WebServ::checkTimeout(){
             
         }
     }
+}
+
+void WebServ::removePollFd(int fd) {
+    for (size_t i = 0; i < _pollfds.size(); ++i) {
+        if (_pollfds[i].fd == fd) {
+            _pollfds.erase(_pollfds.begin() + i);
+            break;
+        }
+    }
+}
+
+void WebServ::closeConnection(int fd) {
+    std::map<int, Connection>::iterator it = _connections.find(fd);
+    if (it == _connections.end()) return;
+    
+    if (it->second.isCGI()) {
+        int cgi_fd = it->second.getCgiFd();
+        if (cgi_fd > 0) {
+            close(cgi_fd);
+            removePollFd(cgi_fd);
+            _fdType.erase(cgi_fd);
+            _connections.erase(cgi_fd);
+        }
+    }
+    
+    close(fd);
+    removePollFd(fd);
+    _fdType.erase(fd);
+    _connections.erase(it);
 }
