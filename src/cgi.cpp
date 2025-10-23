@@ -1,4 +1,4 @@
-#include "cgi.hpp"
+#include "CGI.hpp"
 #include <sys/time.h>
 
 CGI::CGI(): _fd_in(-1), _fd_out(-1), _execDone(false), _readDone(false){}

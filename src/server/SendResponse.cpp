@@ -123,14 +123,15 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         size_t totalLen = _response.length();
 
         // Write remaining part of the response
-        ssize_t bytesWritten = write(_fd, _response.c_str() + _responseBytesSent, totalLen - _responseBytesSent);
+        ssize_t bytes_sent = write(_fd, _response.c_str() + _responseBytesSent, totalLen - _responseBytesSent);
+        // ssize_t bytes_sent = send(_fd, _response.c_str() + _responseBytesSent, totalLen - _responseBytesSent, SO_NOSIGPIPE); // no sigpipe
         updateTimout();
-        if (bytesWritten == -1) {
+        if (bytes_sent == -1) {
             // perror("Write failed");
             return true;
         }
 
-        _responseBytesSent += bytesWritten;
+        _responseBytesSent += bytes_sent;
 
         if (_responseBytesSent == totalLen) {
             // Finished sending entire response

@@ -16,7 +16,7 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "ServerConf.hpp"
-#include "cgi.hpp"
+#include "CGI.hpp"
 
 #define LARGE_FILE_THRESHOLD 1048576  // 1MB - files larger than this will use chunked transfer
 
@@ -72,7 +72,6 @@ public:
     std::string getConnectionHeader(Request &request);
     std::string checkForRedirect(Request &request, ServerConf &server);
     std::string sendRedirectResponse(Request &request, const std::string &redirect_url, ServerConf &server);
-    // bool cgiResponse(int (&fd_in)[], int (&fd_out)[]);
 };
 
 #endif

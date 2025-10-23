@@ -10,32 +10,35 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <iostream>
-#include <exception>
-#include <signal.h>
-// #include "ServerConf.hpp"
+#include "ConfigBuilder.hpp"
+#include "ServerConf.hpp"
 #include "WebServ.hpp"
 #include "Request.hpp"
+#include <iostream>
+#include <exception>
+#include <csignal>
 
-void signalHandler(int) {
-    // _runServer = false;
-    // if (n == SIGINT){
-		// signal(SIGINT, SIG_IGN); // ignore
-		std::cout << C"\nAre you sure? (y/n)\n"; 
-		char res; std::cin >> res;
-		WebServ::_runServer = (res == 'y' || res == 'Y')? false: true;
-	// }
+void signalHandler(int)
+{
+	WebServ::_runServer = false;
+}
 
-    // signal(n, SIG_IGN); // ignore
-    // clean up
-    // exit(0); // then close
+std::string getTime()
+{
+    time_t now = time(0);
+    struct tm* time = localtime(&now);
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), "%a %b %d %H:%M:%S %Y", time);
+	return (buffer);
 }
 
 int main(int ac, char **av)
 {
-std::vector<ServerConf> globalServer;
-	// Request::users
-
+	if (ac > 2)
+	{
+		std::cerr << "Usage: ./webserv [config_file]" << std::endl;
+		return (1);
+    }
 	t_user user1;
     user1.username = "hmrabet";
     user1.password = "hmrabet123";
@@ -60,29 +63,25 @@ std::vector<ServerConf> globalServer;
 	user3.job = "Frontend Developer";
 	user3.avatar = "./assets/cmasnaou.jpg";
 
-    // Assign them to the static vector
     Request::users.push_back(user1);
     Request::users.push_back(user2);
     Request::users.push_back(user3);
 
-	// signal(SIGPIPE, SIG_IGN);  // Ignore the signal leads to infinit loop!!!
-	std::cout << "Webserv 14.9.25 Development Server started at Sun Sep 14 15:22:14 2025\n";
+	signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
+    signal(SIGPIPE, SIG_IGN);
+
 	try{
-        // signal(SIGPIPE, SIG_IGN); // sig ignore broken pipe,q to remove later!
-		std::string config_file = "config/default.conf";
-		if (ac > 1) config_file = av[1]; // parse config file name and path? 
-		globalServer = ConfigBuilder::generateServers(config_file); // import servers from config file
-		std::vector<ServerConf> servers = globalServer; // import servers from config file
-		ServerConf server = ConfigBuilder::getServer(); // vector should have only one vector
-		MOHAMED && std::cout << "Server data\n";
-		MOHAMED && std::cout << server << std::endl;
-		signal(SIGINT, signalHandler);
-
+		std::string config_file = ac > 1? av[1]: "config/default.conf";
+		std::vector<ServerConf> globalServer = ConfigBuilder::generateServers(config_file);
+		std::cout << "Webserv 1.0 Development Server started at " << getTime() << std::endl;
+		ServerConf server = ConfigBuilder::getServer(); // one server
 		WebServ::startServer(server);
-
 	}
 	catch (const std::exception& ex){
 		std::cerr << ex.what() << std::endl;
+		return (1);
 	}
+	return (0);
 
 }
