@@ -1,0 +1,171 @@
+#include "WebServ.hpp"
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cstring>
+#include <cerrno>
+#include <sstream>
+
+int WebServer::createListenSocket(const std::string& host, const std::string& port) {
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        std::cerr << "Error: Failed to create socket" << std::endl;
+        return -1;
+    }
+    
+    // Set socket options
+    int opt = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        std::cerr << "Error: setsockopt SO_REUSEADDR failed" << std::endl;
+        close(sockfd);
+        return -1;
+    }
+    
+    // Set non-blocking
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    if (flags < 0 || fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        std::cerr << "Error: Failed to set non-blocking" << std::endl;
+        close(sockfd);
+        return -1;
+    }
+    
+    // Setup address structure
+    struct sockaddr_in addr;
+    std::memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    
+    // Parse host
+    if (host.empty() || host == "0.0.0.0" || host == "*") {
+        addr.sin_addr.s_addr = INADDR_ANY;
+    } else {
+        if (inet_pton(AF_INET, host.c_str(), &addr.sin_addr) <= 0) {
+            std::cerr << "Error: Invalid host address: " << host << std::endl;
+            close(sockfd);
+            return -1;
+        }
+    }
+    
+    // Parse port
+    int port_num = 0;
+    std::istringstream iss(port);
+    iss >> port_num;
+    if (iss.fail() || port_num < 0 || port_num > 65535) {
+        std::cerr << "Error: Invalid port: " << port << std::endl;
+        close(sockfd);
+        return -1;
+    }
+    addr.sin_port = htons(port_num);
+    
+    // Bind
+    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        std::cerr << "Error: bind failed on " << host << ":" << port 
+                  << " - " << strerror(errno) << std::endl;
+        close(sockfd);
+        return -1;
+    }
+    
+    // Listen
+    if (listen(sockfd, 128) < 0) {
+        std::cerr << "Error: listen failed - " << strerror(errno) << std::endl;
+        close(sockfd);
+        return -1;
+    }
+    
+    return sockfd;
+}
+
+void WebServer::execCGI(const Request& req, ServerConf& config) {
+    // Setup environment variables
+    std::map<std::string, std::string> env;
+    
+    // Required CGI variables
+    env["GATEWAY_INTERFACE"] = "CGI/1.1";
+    env["SERVER_PROTOCOL"] = "HTTP/1.1";
+    env["SERVER_SOFTWARE"] = "webserv/1.0";
+    env["REQUEST_METHOD"] = req.getMethod();
+    env["SCRIPT_NAME"] = req.getPath();
+    env["PATH_INFO"] = req.getPath();
+    env["QUERY_STRING"] = req.getQueryString();
+    env["CONTENT_TYPE"] = req.getHeader("Content-Type");
+    env["REDIRECT_STATUS"] = "200";
+    
+    // Content length
+    std::ostringstream oss;
+    oss << req.getBodySize();
+    env["CONTENT_LENGTH"] = oss.str();
+    
+    // Server info
+    oss.str("");
+    oss << config.getPort();
+    env["SERVER_PORT"] = oss.str();
+    env["SERVER_NAME"] = config.getServerName();
+    
+    // Remote info
+    env["REMOTE_ADDR"] = "127.0.0.1";
+    
+    // HTTP headers as HTTP_*
+    const std::map<std::string, std::string>& headers = req.getHeaders();
+    for (std::map<std::string, std::string>::const_iterator it = headers.begin();
+         it != headers.end(); ++it) {
+        std::string key = "HTTP_" + it->first;
+        // Convert to uppercase and replace - with _
+        for (size_t i = 5; i < key.length(); i++) {
+            if (key[i] == '-')
+                key[i] = '_';
+            else if (key[i] >= 'a' && key[i] <= 'z')
+                key[i] = key[i] - 32;
+        }
+        env[key] = it->second;
+    }
+    
+    // Get script path
+    std::string scriptPath = config.getRoot() + req.getPath();
+    env["SCRIPT_FILENAME"] = scriptPath;
+    
+    // Get CGI interpreter
+    std::string interpreter = config.getCgiInterpreter(req.getPath());
+    
+    // Convert environment to char**
+    char** envp = new char*[env.size() + 1];
+    size_t i = 0;
+    for (std::map<std::string, std::string>::const_iterator it = env.begin();
+         it != env.end(); ++it, ++i) {
+        std::string envStr = it->first + "=" + it->second;
+        envp[i] = new char[envStr.length() + 1];
+        std::strcpy(envp[i], envStr.c_str());
+    }
+    envp[i] = NULL;
+    
+    // Change directory to script directory
+    size_t lastSlash = scriptPath.rfind('/');
+    if (lastSlash != std::string::npos) {
+        std::string dir = scriptPath.substr(0, lastSlash);
+        if (chdir(dir.c_str()) < 0) {
+            std::cerr << "Error: chdir failed" << std::endl;
+        }
+    }
+    
+    // Execute CGI
+    char* argv[3];
+    if (!interpreter.empty()) {
+        argv[0] = const_cast<char*>(interpreter.c_str());
+        argv[1] = const_cast<char*>(scriptPath.c_str());
+        argv[2] = NULL;
+        execve(interpreter.c_str(), argv, envp);
+    } else {
+        argv[0] = const_cast<char*>(scriptPath.c_str());
+        argv[1] = NULL;
+        execve(scriptPath.c_str(), argv, envp);
+    }
+    
+    // If we reach here, exec failed
+    std::cerr << "Error: execve failed - " << strerror(errno) << std::endl;
+    
+    // Cleanup
+    for (size_t j = 0; j < env.size(); j++) {
+        delete[] envp[j];
+    }
+    delete[] envp;
+}
