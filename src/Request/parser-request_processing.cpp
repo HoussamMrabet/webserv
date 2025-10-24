@@ -60,7 +60,9 @@ void Request::processRequest()
     struct stat fileStat;
 
     std::string location_path = this->location;
-    std::cout << "location = " << location_path << std::endl;
+    std::cout << "processing location = " << location_path << std::endl;
+    std::cout << "......... contentType = " << this->headers["content-type"] << std::endl;
+
     document_root = locations[location_path].getRoot();
     if (document_root.empty())
         document_root = server.getRoot();

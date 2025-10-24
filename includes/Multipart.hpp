@@ -52,4 +52,8 @@ class Multipart
         void writeToFile(const std::string &content);
         void closeFile();
         void unlinkFile();
+
+        // Inside class Multipart
+        std::string getData() const;       // Returns the content of the file
+
 };

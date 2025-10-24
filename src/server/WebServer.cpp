@@ -14,7 +14,7 @@ bool WebServer::start() {
     std::vector<std::pair<std::string, std::string> > addresses = config.getListen();
     for (size_t i = 0; i < addresses.size(); ++i) {
         int fd = createListenSocket(addresses[i].first, addresses[i].second);
-        if (fd < 0) return false;
+        if (fd < 0) continue;
         
         addPoll(fd, POLLIN);
         Connection* conn = new Connection(Connection::LISTEN);
@@ -24,13 +24,17 @@ bool WebServer::start() {
         std::cout << "Listening on " << addresses[i].first 
                     << ":" << addresses[i].second << std::endl;
     }
-    return true;
+    return !fds.empty();
 }
 
 void WebServer::run() {
     while (true) {
         int n = poll(&fds[0], fds.size(), 1000);
-        if (n < 0) break;
+        if (n < 0) {
+            if (errno == EINTR) continue;
+            std::cerr << "Poll error: " << strerror(errno) << std::endl;
+            break;
+        }
         
         cleanup();
         
@@ -39,33 +43,67 @@ void WebServer::run() {
             
             int fd = fds[i].fd;
             std::map<int, Connection*>::iterator it = conns.find(fd);
-            if (it == conns.end()) continue;
+            if (it == conns.end()) {
+                std::cerr << "DEBUG: fd " << fd << " not in connections map!" << std::endl;
+                continue;
+            }
             
             Connection* c = it->second;
             c->touch();
             
-            if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
-                closeConn(fd);
-                continue;
-            }
+             // if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            //     std::cout << "DEBUG: Error event on fd " << fd << " type=" << c->type 
+            //              << " revents=" << fds[i].revents << std::endl;
+            //     if (c->type != Connection::LISTEN) {
+            //         closeConn(fd);
+            //     }
+            //     continue;
+            // }
             
+            // if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            //     std::cout << "DEBUG: Error event on fd " << fd << " type=" << c->type 
+            //              << " revents=" << fds[i].revents << std::endl;
+            //     if (c->type != Connection::LISTEN) {
+            //         closeConn(fd);
+            //     }
+            //     continue;
+            // }
+
+            // if (fds[i].revents & (POLLERR | POLLNVAL)) {
+            //     std::cout << "DEBUG: Error event on fd " << fd << " type=" << c->type 
+            //             << " revents=" << fds[i].revents << std::endl;
+            //     closeConn(fd);
+            //     continue;
+            // }
+
+            // if (fds[i].revents & POLLHUP) {
+            //     std::cout << "DEBUG: POLLHUP on fd " << fd << " type=" << c->type << std::endl;
+            //     if (c->type == Connection::CGI) {
+            //         readCGI(c);       // read remaining data
+            //         finishCGI(c);     // build and send response
+            //     } else {
+            //         closeConn(fd);
+            //     }
+            //     continue;
+            // }
+
             switch (c->type) {
             case Connection::LISTEN:
                 if (fds[i].revents & POLLIN) {
-                    // std::cout << "new connection\n";
+                    std::cout << "DEBUG: Accept event on fd " << fd << std::endl;
                     acceptClient(fd);
                 }
                 break;
                 
             case Connection::CLIENT:
                 if (fds[i].revents & POLLIN && c->state == Connection::READING) {
-                    // std::cout << "new request\n";
+                    std::cout << "DEBUG: Read event on client fd " << fd << std::endl;
                     if (!readRequest(c)) {
                         closeConn(fd);
                     }
                 }
                 if (fds[i].revents & POLLOUT && c->state == Connection::WRITING) {
-                    // std::cout << "new response\n";
+                    std::cout << "DEBUG: Write event on client fd " << fd << std::endl;
                     if (!writeResponse(c)) {
                         closeConn(fd);
                     }
@@ -74,7 +112,7 @@ void WebServer::run() {
                 
             case Connection::CGI:
                 if (fds[i].revents & POLLIN) {
-                    // std::cout << "new cgi\n";
+                    std::cout << "DEBUG: Read event on CGI fd " << fd << std::endl;
                     if (!readCGI(c)) {
                         finishCGI(c);
                     }
@@ -91,12 +129,14 @@ void WebServer::addPoll(int fd, short events) {
     pfd.events = events;
     pfd.revents = 0;
     fds.push_back(pfd);
+    std::cout << "DEBUG: Added fd " << fd << " to poll (events=" << events << ")" << std::endl;
 }
 
 void WebServer::removePoll(int fd) {
     for (std::vector<struct pollfd>::iterator it = fds.begin(); 
             it != fds.end(); ++it) {
         if (it->fd == fd) {
+            std::cout << "DEBUG: Removed fd " << fd << " from poll" << std::endl;
             fds.erase(it);
             break;
         }
@@ -106,6 +146,8 @@ void WebServer::removePoll(int fd) {
 void WebServer::modifyPoll(int fd, short events) {
     for (size_t i = 0; i < fds.size(); ++i) {
         if (fds[i].fd == fd) {
+            std::cout << "DEBUG: Modified fd " << fd << " events: " 
+                     << fds[i].events << " -> " << events << std::endl;
             fds[i].events = events;
             break;
         }
@@ -117,6 +159,7 @@ void WebServer::closeConn(int fd) {
     if (it == conns.end()) return;
     
     Connection* c = it->second;
+    std::cout << "DEBUG: Closing fd " << fd << " (type=" << c->type << ")" << std::endl;
     
     // Close related CGI if client closes
     if (c->type == Connection::CLIENT) {
@@ -124,6 +167,7 @@ void WebServer::closeConn(int fd) {
                 cgi_it != conns.end(); ++cgi_it) {
             if (cgi_it->second->type == Connection::CGI && 
                 cgi_it->second->parent_fd == fd) {
+                std::cout << "DEBUG: Closing related CGI fd " << cgi_it->first << std::endl;
                 closeConn(cgi_it->first);
                 break;
             }
@@ -145,13 +189,17 @@ void WebServer::cleanup() {
         }
     }
     for (size_t i = 0; i < expired.size(); ++i) {
+        std::cout << "DEBUG: Timeout - closing fd " << expired[i] << std::endl;
         closeConn(expired[i]);
     }
 }
 
 void WebServer::acceptClient(int listen_fd) {
     int fd = accept(listen_fd, NULL, NULL);
-    if (fd < 0) return;
+    if (fd < 0) {
+        std::cerr << "DEBUG: Accept failed: " << strerror(errno) << std::endl;
+        return;
+    }
     
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
     
@@ -161,15 +209,22 @@ void WebServer::acceptClient(int listen_fd) {
     
     conns[fd] = c;
     addPoll(fd, POLLIN);
+    
+    std::cout << "DEBUG: Accepted new client on fd " << fd << std::endl;
 }
 
 bool WebServer::readRequest(Connection* c) {
     char buf[4096];
     ssize_t n = read(c->fd, buf, sizeof(buf));
-    // std::cout << "request received:\n" << buf << std::endl;
+    
+    std::cout << "DEBUG: Read " << n << " bytes from fd " << c->fd << std::endl;
     
     if (n < 0) {
-        return (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return true;
+        }
+        std::cerr << "DEBUG: Read error: " << strerror(errno) << std::endl;
+        return false;
     }
     else if (n > 0){
         c->read_buf.append(buf, n);
@@ -177,12 +232,13 @@ bool WebServer::readRequest(Connection* c) {
         c->read_buf.clear();
     }
     else if (n == 0){
+        std::cout << "DEBUG: Client closed connection (EOF)" << std::endl;
         c->req->parseRequest();
     }
+    
     if (c->req->isDone()){
-        // std::cout << "request is done\n";
+        std::cout << "DEBUG: Request parsing complete on fd " << c->fd << std::endl;
         c->req->processRequest();
-
         c->state = Connection::PROCESSING;
         modifyPoll(c->fd, 0); // Remove POLLIN
         return processRequest(c);
@@ -193,13 +249,14 @@ bool WebServer::readRequest(Connection* c) {
 
 bool WebServer::processRequest(Connection* c) {
     if (c->req->isCGI()) {
+        std::cout << "DEBUG: Request is CGI, starting CGI process" << std::endl;
         return startCGI(c);
     }
     
+    std::cout << "DEBUG: Processing regular HTTP request" << std::endl;
     c->resp = new Response();
     c->resp->handle(*c->req, config);
     c->write_buf = c->resp->build();
-    // std::cout << "response:\n" << c->write_buf << std::endl;
     c->write_pos = 0;
     c->state = Connection::WRITING;
     modifyPoll(c->fd, POLLOUT);
@@ -207,38 +264,96 @@ bool WebServer::processRequest(Connection* c) {
 }
 
 bool WebServer::startCGI(Connection* c) {
-    int pipes[2];
-    if (pipe(pipes) < 0) return false;
+    int pipes_out[2];  // CGI stdout to parent
+    int fd_in = c->req->getCgiFdRead();   // Parent to CGI stdin
     
+    if (pipe(pipes_out) < 0) {
+        std::cerr << "DEBUG: pipe(out) failed: " << strerror(errno) << std::endl;
+        close(fd_in);
+        return false;
+    }
+    
+    // if (pipe(pipes_in) < 0) {
+    //     std::cerr << "DEBUG: pipe(in) failed: " << strerror(errno) << std::endl;
+    //     close(pipes_out[0]);
+    //     close(pipes_out[1]);
+    //     return false;
+    // }
+    
+    std::cout << "DEBUG: Created fdin: stdin=" << fd_in 
+             << "] stdout=[" << pipes_out[0] << "," << pipes_out[1] << "]" << std::endl;
+   
     pid_t pid = fork();
     if (pid < 0) {
-        close(pipes[0]); 
-        close(pipes[1]);
+        std::cerr << "DEBUG: fork() failed: " << strerror(errno) << std::endl;
+        close(pipes_out[0]); 
+        close(pipes_out[1]);
+        close(fd_in);
         return false;
     }
     
     if (pid == 0) {
-        // Child: setup and exec CGI
-        close(pipes[0]);
-        dup2(pipes[1], STDOUT_FILENO);
-        dup2(pipes[1], STDERR_FILENO);
-        close(pipes[1]);
+        // Child process
+        std::cout << "DEBUG: Child process started" << std::endl;
+        
+        close(pipes_out[0]); // Close read end of output
+        // close(fd_in);  // Close write end of input
+        
+        if (fd_in != -1){
+            lseek(fd_in, 0, SEEK_SET);
+            dup2(fd_in, STDIN_FILENO);   // CGI reads from stdin
+            close(fd_in);
+        }
+        dup2(pipes_out[1], STDOUT_FILENO); // CGI writes to stdout
+        dup2(pipes_out[1], STDERR_FILENO);
+        
+        // close(pipes_in[0]);
+        close(pipes_out[1]);
         
         execCGI(*c->req, config);
+        std::cerr << "DEBUG: execCGI failed!" << std::endl;
         exit(1);
     }
     
-    // Parent: setup CGI connection
-    close(pipes[1]);
-    fcntl(pipes[0], F_SETFL, fcntl(pipes[0], F_GETFL) | O_NONBLOCK);
+    // Parent process
+    std::cout << "DEBUG: Parent: forked child pid=" << pid << std::endl;
+    
+    close(pipes_out[1]); // Close write end of output
+    // close(pipes_in[0]);  // Close read end of input
+    
+    // Write POST body to CGI stdin if present
+    const std::string& body = c->req->getBody();
+    if (!body.empty()) {
+        std::cout << "DEBUG: Writing " << body.size() << " bytes to CGI stdin (fd=" 
+                 << fd_in << ")" << std::endl;
+        ssize_t written = write(fd_in, body.c_str(), body.size());
+        if (written < 0) {
+            std::cerr << "DEBUG: Failed to write to CGI stdin: " << strerror(errno) << std::endl;
+        } else if (written != static_cast<ssize_t>(body.size())) {
+            std::cerr << "DEBUG: Partial write: " << written << "/" << body.size() << std::endl;
+        } else {
+            std::cout << "DEBUG: Successfully wrote " << written << " bytes to CGI" << std::endl;
+        }
+    } else {
+        std::cout << "DEBUG: No body to write to CGI stdin" << std::endl;
+    }
+    
+    close(fd_in); // Close stdin - CGI will see EOF
+    std::cout << "DEBUG: Closed CGI stdin, CGI should start processing" << std::endl;
+    
+    // Set output pipe non-blocking
+    fcntl(pipes_out[0], F_SETFL, fcntl(pipes_out[0], F_GETFL) | O_NONBLOCK);
     
     Connection* cgi = new Connection(Connection::CGI);
-    cgi->fd = pipes[0];
+    cgi->fd = pipes_out[0];
     cgi->parent_fd = c->fd;
     cgi->pid = pid;
     
-    conns[pipes[0]] = cgi;
-    addPoll(pipes[0], POLLIN);
+    conns[pipes_out[0]] = cgi;
+    addPoll(pipes_out[0], POLLIN);
+    
+    std::cout << "DEBUG: CGI setup complete - monitoring fd " << pipes_out[0] 
+             << " for output from pid " << pid << std::endl;
     
     return true;
 }
@@ -247,36 +362,78 @@ bool WebServer::readCGI(Connection* cgi) {
     char buf[4096];
     ssize_t n = read(cgi->fd, buf, sizeof(buf));
     
-    if (n <= 0) {
-        return (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+    std::cout << "DEBUG: CGI read returned " << n << " bytes (fd=" << cgi->fd << ")" << std::endl;
+    
+    if (n < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            std::cout << "DEBUG: CGI read would block (normal)" << std::endl;
+            return true;
+        }
+        std::cerr << "DEBUG: CGI read error: " << strerror(errno) << std::endl;
+        return false;
+    }
+    
+    if (n == 0) {
+        std::cout << "DEBUG: CGI finished (EOF), total output: " 
+                 << cgi->read_buf.size() << " bytes" << std::endl;
+        return false; // EOF - CGI done
     }
     
     cgi->read_buf.append(buf, n);
+    std::cout << "DEBUG: CGI total accumulated: " << cgi->read_buf.size() << " bytes" << std::endl;
+    // std::cout << cgi->read_buf << std::endl;
     return true;
 }
 
 void WebServer::finishCGI(Connection* cgi) {
+    // std::cout << "DEBUG: Finishing CGI for client fd " << cgi->parent_fd << std::endl;
+    
     std::map<int, Connection*>::iterator client_it = conns.find(cgi->parent_fd);
     if (client_it == conns.end()) {
+        std::cout << "DEBUG: Client connection already closed" << std::endl;
         closeConn(cgi->fd);
         return;
     }
     
     Connection* client = client_it->second;
-    waitpid(cgi->pid, NULL, WNOHANG);
     
+    // Wait for CGI process
+    int status;
+    pid_t result = waitpid(cgi->pid, &status, WNOHANG);
+    
+    if (result == 0) {
+        std::cout << "DEBUG: CGI process " << cgi->pid << " still running, killing..." << std::endl;
+        kill(cgi->pid, SIGTERM);
+        usleep(100000); // Wait 100ms
+        waitpid(cgi->pid, &status, WNOHANG);
+    }
+    
+    if (WIFEXITED(status)) {
+        std::cout << "DEBUG: CGI exited normally with status " << WEXITSTATUS(status) << std::endl;
+    } else if (WIFSIGNALED(status)) {
+        std::cout << "DEBUG: CGI killed by signal " << WTERMSIG(status) << std::endl;
+    }
+    
+    // std::cout << "DEBUG: Building response from " << cgi->read_buf.size() 
+    //          << " bytes of CGI output" << std::endl;
+    
+    // Build response from CGI output
     client->resp = new Response();
     client->resp->fromCGI(cgi->read_buf);
     client->write_buf = client->resp->build();
     client->write_pos = 0;
     client->state = Connection::WRITING;
-    modifyPoll(client->fd, POLLOUT);
     
+    // std::cout << "DEBUG: Response ready: " << client->write_buf.size() 
+    //          << " bytes, switching client to POLLOUT" << std::endl;
+    
+    modifyPoll(client->fd, POLLOUT);
     closeConn(cgi->fd);
 }
 
 bool WebServer::writeResponse(Connection* c) {
     if (c->write_pos >= c->write_buf.size()) {
+        std::cout << "DEBUG: Response complete, closing connection" << std::endl;
         closeConn(c->fd);
         return false;
     }
@@ -285,13 +442,23 @@ bool WebServer::writeResponse(Connection* c) {
     size_t len = c->write_buf.size() - c->write_pos;
     
     ssize_t n = write(c->fd, data, len);
-    if (n <= 0) {
-        return (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+    // std::cout << data << std::endl;
+    
+    std::cout << "DEBUG: Wrote " << n << " bytes to fd " << c->fd 
+             << " (remaining: " << (len - (n > 0 ? n : 0)) << ")" << std::endl;
+    
+    if (n < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return true;
+        }
+        std::cerr << "DEBUG: Write error: " << strerror(errno) << std::endl;
+        return false;
     }
     
     c->write_pos += n;
     
     if (c->write_pos >= c->write_buf.size()) {
+        std::cout << "DEBUG: Full response sent" << std::endl;
         closeConn(c->fd);
         return false;
     }
@@ -306,7 +473,6 @@ int WebServer::createListenSocket(const std::string& host, const std::string& po
         return -1;
     }
     
-    // Set socket options
     int opt = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         std::cerr << "Error: setsockopt SO_REUSEADDR failed" << std::endl;
@@ -314,7 +480,6 @@ int WebServer::createListenSocket(const std::string& host, const std::string& po
         return -1;
     }
     
-    // Set non-blocking
     int flags = fcntl(sockfd, F_GETFL, 0);
     if (flags < 0 || fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) < 0) {
         std::cerr << "Error: Failed to set non-blocking" << std::endl;
@@ -322,12 +487,10 @@ int WebServer::createListenSocket(const std::string& host, const std::string& po
         return -1;
     }
     
-    // Setup address structure
     struct sockaddr_in addr;
     std::memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     
-    // Parse host
     if (host.empty() || host == "0.0.0.0" || host == "*") {
         addr.sin_addr.s_addr = INADDR_ANY;
     } else {
@@ -338,7 +501,6 @@ int WebServer::createListenSocket(const std::string& host, const std::string& po
         }
     }
     
-    // Parse port
     int port_num = 0;
     std::istringstream iss(port);
     iss >> port_num;
@@ -349,7 +511,6 @@ int WebServer::createListenSocket(const std::string& host, const std::string& po
     }
     addr.sin_port = htons(port_num);
     
-    // Bind
     if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
         std::cerr << "Error: bind failed on " << host << ":" << port 
                   << " - " << strerror(errno) << std::endl;
@@ -357,7 +518,6 @@ int WebServer::createListenSocket(const std::string& host, const std::string& po
         return -1;
     }
     
-    // Listen
     if (listen(sockfd, 128) < 0) {
         std::cerr << "Error: listen failed - " << strerror(errno) << std::endl;
         close(sockfd);
@@ -368,47 +528,41 @@ int WebServer::createListenSocket(const std::string& host, const std::string& po
 }
 
 void WebServer::execCGI(const Request& req, ServerConf& config) {
-    // Setup environment variables
     std::map<std::string, std::string> env;
     
-    // Required CGI variables
     env["GATEWAY_INTERFACE"] = "CGI/1.1";
     env["SERVER_PROTOCOL"] = "HTTP/1.1";
     env["SERVER_SOFTWARE"] = "webserv/1.0";
-    env["REQUEST_METHOD"] = req.getMethod();
-    env["SCRIPT_NAME"] = req.getUri();
-    env["PATH_INFO"] = req.getUri();
-    // env["SCRIPT_NAME"] = req.getPath();
-    // env["PATH_INFO"] = req.getPath();
+    env["REQUEST_METHOD"] = req.getStrMethod();
+    env["SCRIPT_NAME"] = req.getFullUri();
     env["QUERY_STRING"] = req.getUriQueries();
-    env["CONTENT_TYPE"] = req.getHeader("Content-Type");
+    env["CONTENT_TYPE"] = req.getHeader("content-type");
     env["REDIRECT_STATUS"] = "200";
     
-    // Content length
     std::ostringstream oss;
     oss << req.getBody().size();
     env["CONTENT_LENGTH"] = oss.str();
-    
+
     std::vector<std::pair<std::string, std::string> >listen = config.getListen();
     std::vector<std::pair<std::string, std::string> >::iterator itt = listen.begin();
-    // Server info
     oss.str("");
     oss << itt->second;
     env["SERVER_PORT"] = oss.str();
+    
     std::set<std::string> name = config.getServerNames();
     std::set<std::string>::iterator it = name.begin();
-    env["SERVER_NAME"] = *it;//////
-    // env["SERVER_NAME"] = config.getServerName();
+    env["SERVER_NAME"] = *it;
     
-    // Remote info
-    env["REMOTE_ADDR"] = "127.0.0.1";
+    env["REMOTE_ADDR"] = req.getHost();
     
-    // HTTP headers as HTTP_*
     const std::map<std::string, std::string>& headers = req.getHeaders();
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();
          it != headers.end(); ++it) {
+        if (it->first == "content-type" || it->first == "content-length"){
+            continue;
+        }
+
         std::string key = "HTTP_" + it->first;
-        // Convert to uppercase and replace - with _
         for (size_t i = 5; i < key.length(); i++) {
             if (key[i] == '-')
                 key[i] = '_';
@@ -418,20 +572,18 @@ void WebServer::execCGI(const Request& req, ServerConf& config) {
         env[key] = it->second;
     }
     
-    // Get script path
-    // std::string scriptPath = config.getRoot() + req.getPath();
     std::string scriptPath = req.getFullPath();
     env["SCRIPT_FILENAME"] = scriptPath;
-    
 
     std::map<std::string, LocationConf> locations = config.getLocations();
     LocationConf conf = locations[req.getLocation()];
     std::map<std::string, std::string> cgis = conf.getCgi();
-
-    // Get CGI interpreter
     std::string interpreter = cgis[req.getCgiType()];
     
-    // Convert environment to char**
+    // std::cout << "DEBUG: CGI script: " << scriptPath << std::endl;
+    // std::cout << "DEBUG: CGI interpreter: " << interpreter << std::endl;
+    // std::cout << "DEBUG: CONTENT_LENGTH: " << env["CONTENT_LENGTH"] << std::endl;
+    
     char** envp = new char*[env.size() + 1];
     size_t i = 0;
     for (std::map<std::string, std::string>::const_iterator it = env.begin();
@@ -442,16 +594,6 @@ void WebServer::execCGI(const Request& req, ServerConf& config) {
     }
     envp[i] = NULL;
     
-    // Change directory to script directory
-    size_t lastSlash = scriptPath.rfind('/');
-    if (lastSlash != std::string::npos) {
-        std::string dir = scriptPath.substr(0, lastSlash);
-        if (chdir(dir.c_str()) < 0) {
-            std::cerr << "Error: chdir failed" << std::endl;
-        }
-    }
-    
-    // Execute CGI
     char* argv[3];
     if (!interpreter.empty()) {
         argv[0] = const_cast<char*>(interpreter.c_str());
@@ -464,10 +606,8 @@ void WebServer::execCGI(const Request& req, ServerConf& config) {
         execve(scriptPath.c_str(), argv, envp);
     }
     
-    // If we reach here, exec failed
-    std::cerr << "Error: execve failed - " << strerror(errno) << std::endl;
+    // std::cerr << "DEBUG: execve failed - " << strerror(errno) << std::endl;
     
-    // Cleanup
     for (size_t j = 0; j < env.size(); j++) {
         delete[] envp[j];
     }

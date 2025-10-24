@@ -148,6 +148,9 @@ class Request
         void printRequest();
         std::string getMessage() const;
         void processRequest();
+
+        std::vector<Multipart *> getMultipartData() const;
+        size_t getBodySizeLimit() const;
 };
 
 void handleUriSpecialCharacters(std::string &uri);

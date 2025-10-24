@@ -205,3 +205,21 @@ void Request::parseMultipart(bool isChunked)
         throw 500;
     }
 }
+
+std::vector<Multipart *> Request::getMultipartData() const 
+{
+    return multipartData;
+}
+
+std::string Multipart::getData() const {
+    if (fileName.empty())
+        return "";
+
+    std::ifstream inFile(fileName.c_str(), std::ios::binary);
+    if (!inFile)
+        return "";
+
+    std::ostringstream ss;
+    ss << inFile.rdbuf();
+    return ss.str();
+}

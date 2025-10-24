@@ -183,3 +183,8 @@ void Request::printRequest()
     //     std::cout << this->fullBody << std::endl;
     //     std::cout << "----------------------------------------" << std::endl;
 }
+
+size_t Request::getBodySizeLimit() const
+{
+    return (this->bodySizeLimit);
+}

@@ -57,8 +57,8 @@ std::string Response::getStatusMessage(int code) const {
 
 void Response::handle(const Request& req, const ServerConf& config) {
     std::string method = req.getStrMethod();
-    
-    if (method == "GET" || method == "HEAD") {
+    std::cout << "Request method = " << method << std::endl;
+    if (method == "GET"/* || method == "HEAD"*/) {
         handleGET(req, config);
     } else if (method == "POST") {
         handlePOST(req, config);
@@ -90,64 +90,206 @@ void Response::handleGET(const Request& req, const ServerConf& config) {
     
     // Check if it's a directory
     if (S_ISDIR(st.st_mode)) {
-        // Try index files
-        const std::vector<std::string>& indexes = config.getIndex();
-        bool found = false;
+        std::cout << "---> directory listing\n";
+        // // Try index files
+        // const std::vector<std::string>& indexes = config.getIndex();
+        // bool found = false;
         
-        for (size_t i = 0; i < indexes.size(); i++) {
-            std::string indexPath = path;
-            if (indexPath[indexPath.length() - 1] != '/')
-                indexPath += "/";
-            indexPath += indexes[i];
+        // for (size_t i = 0; i < indexes.size(); i++) {
+        //     std::string indexPath = path;
+        //     if (indexPath[indexPath.length() - 1] != '/')
+        //         indexPath += "/";
+        //     indexPath += indexes[i];
             
-            if (stat(indexPath.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
-                sendFile(indexPath);
-                found = true;
-                break;
-            }
-        }
+        //     if (stat(indexPath.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
+        //         sendFile(indexPath);
+        //         found = true;
+        //         break;
+        //     }
+        // }
         
-        if (!found) {
+        // if (!found) {
             // sendDirectory(path, req.getPath(), config.getAutoIndex());
-            sendDirectory(path, req.getUri(), config.getAutoIndex());
-        }
+
+        std::map<std::string, LocationConf> locations = config.getLocations();
+
+            bool auto_index = false;
+            std::string location = req.getLocation();
+            // std::cout << "location = " << req.getLocation() << std::endl;
+            if (locations.find(location) != locations.end())
+                auto_index = locations.at(location).getAutoIndex();
+            //     index_files = locations.at(location).getIndex();
+
+            sendDirectory(path, req.getUri(), auto_index);
+        // }
     } else if (S_ISREG(st.st_mode)) {
+        std::cout << "---> regular file\n";
         sendFile(path);
     } else {
+        std::cout << "---> wrong file\n";
         sendError(403);
     }
 }
 
-void Response::handlePOST(const Request& req, const ServerConf& config) {
-    // std::string path = config.getRoot() + req.getPath();
-    std::string path = req.getFullPath();
+// void Response::handlePOST(const Request& req, const ServerConf& config) {
+//     // std::string path = config.getRoot() + req.getPath();
+//     std::string path = req.getFullPath();
     
-    // Check body size limit
-    // if (req.getBodySize() > config.getClientMaxBodySize()) {
+//     // Check body size limit
+//     // if (req.getBodySize() > config.getClientMaxBodySize()) {
 
-    std::string tmp = req.getBody();
-    std::cout << "body size = " << tmp.size() << " max = " << config.getBodySizeLimit() << std::endl;
-    if (tmp.size() > config.getBodySizeLimit()) {
-        sendError(413);
+//     std::string tmp = req.getBody();
+//     std::cout << "body size = " << tmp.size() << " max = " << config.getBodySizeLimit() << std::endl;
+//     if (tmp.size() > config.getBodySizeLimit()) {
+//         sendError(413);
+//         return;
+//     }
+    
+//     // Write body to file (simple upload)
+//     std::ofstream file(path.c_str(), std::ios::binary);
+//     if (!file) {
+//         sendError(403);
+//         return;
+//     }
+    
+//     file << req.getBody();
+//     file.close();
+    
+//     setStatus(201, "Created");
+//     // setHeader("Location", req.getPath());
+//     setHeader("Location", req.getUri()); // 
+//     setBody("<html><body><h1>201 Created</h1></body></html>");
+//     setHeader("Content-Type", "text/html");
+// }
+
+// void Response::handlePOST(const Request& req, const ServerConf& config) {
+//     std::string path = req.getFullPath();
+//     std::string contentType = req.getHeader("Content-Type");
+//     std::string body = req.getBody();
+
+//     // Check body size limit
+//     std::cout << "body size = " << body.size() 
+//               << " max = " << config.getBodySizeLimit() << std::endl;
+//     if (body.size() > config.getBodySizeLimit()) {
+//         sendError(413);  // Payload Too Large
+//         return;
+//     }
+
+//     if (contentType.find("multipart/form-data") != std::string::npos) {
+//         // Extract boundary manually
+//         std::string boundaryKey = "boundary=";
+//         size_t bpos = contentType.find(boundaryKey);
+//         if (bpos == std::string::npos) {
+//             sendError(400); // Bad Request
+//             return;
+//         }
+//         std::string boundary = "--" + contentType.substr(bpos + boundaryKey.size());
+
+//         size_t pos = 0;
+//         while (true) {
+//             size_t boundaryStart = body.find(boundary, pos);
+//             if (boundaryStart == std::string::npos) break;
+
+//             size_t headerEnd = body.find("\r\n\r\n", boundaryStart);
+//             if (headerEnd == std::string::npos) break;
+//             headerEnd += 4; // skip \r\n\r\n
+
+//             size_t boundaryNext = body.find(boundary, headerEnd);
+//             if (boundaryNext == std::string::npos) break;
+//             size_t contentEnd = boundaryNext - 2; // skip \r\n before boundary
+
+//             std::string partHeader = body.substr(boundaryStart, headerEnd - boundaryStart);
+//             std::string partData = body.substr(headerEnd, contentEnd - headerEnd);
+
+//             // Extract filename from Content-Disposition
+//             std::string filenameKey = "filename=\"";
+//             size_t fnameStart = partHeader.find(filenameKey);
+//             if (fnameStart != std::string::npos) {
+//                 fnameStart += filenameKey.size();
+//                 size_t fnameEnd = partHeader.find("\"", fnameStart);
+//                 if (fnameEnd != std::string::npos) {
+//                     std::string filename = partHeader.substr(fnameStart, fnameEnd - fnameStart);
+//                     std::ofstream file(config.getRoot() + "/" + filename.c_str(), std::ios::binary);
+//                     if (!file) {
+//                         sendError(403);
+//                         return;
+//                     }
+//                     file << partData;
+//                     file.close();
+//                 }
+//             }
+
+//             pos = boundaryNext + boundary.size();
+//         }
+//     } else {
+//         // Simple body upload
+//         std::ofstream file(path.c_str(), std::ios::binary);
+//         if (!file) {
+//             sendError(403);
+//             return;
+//         }
+//         file << body;
+//         file.close();
+//     }
+
+//     // Set response
+//     setStatus(201, "Created");
+//     setHeader("Location", req.getUri());
+//     setBody("<html><body><h1>201 Created</h1></body></html>");
+//     setHeader("Content-Type", "text/html");
+// }
+
+void Response::handlePOST(const Request& req, const ServerConf& config) {
+    (void)config;
+    std::string path = req.getFullPath();
+    std::cout << "------ fullPath = " << path << std::endl;
+    std::string body = req.getBody();
+
+    // Check body size limit
+    std::cout << "body size = " << body.size() 
+              << " max = " << req.getBodySizeLimit() << std::endl;
+    if (body.size() > req.getBodySizeLimit()) {
+        sendError(413);  // Payload Too Large
         return;
     }
-    
-    // Write body to file (simple upload)
-    std::ofstream file(path.c_str(), std::ios::binary);
-    if (!file) {
-        sendError(403);
-        return;
+
+    std::string contentType = req.getHeader("content-type");
+
+    if (contentType.find("multipart/form-data") != std::string::npos) {
+        std::vector<Multipart *> parts = req.getMultipartData();
+        for (size_t i = 0; i < parts.size(); ++i) {
+            Multipart *part = parts[i];
+            std::string filename = part->getFileName();
+            std::string partData = part->getData();
+
+            if (!filename.empty()) {
+                std::ofstream file((req.getRoot() + "/" + filename).c_str(), std::ios::binary);
+                if (!file) {
+                    sendError(403); // Forbidden
+                    return;
+                }
+                file << partData;
+                file.close();
+            }
+        }
+    } else {
+        // Simple body upload
+        std::ofstream file(path.c_str(), std::ios::binary);
+        if (!file) {
+            sendError(403);
+            return;
+        }
+        file << body;
+        file.close();
     }
-    
-    file << req.getBody();
-    file.close();
-    
+
+    // Set response
     setStatus(201, "Created");
-    // setHeader("Location", req.getPath());
-    setHeader("Location", req.getUri()); // 
+    setHeader("Location", req.getUri());
     setBody("<html><body><h1>201 Created</h1></body></html>");
     setHeader("Content-Type", "text/html");
 }
+
 
 void Response::handleDELETE(const Request& req, const ServerConf& ) {
     // std::string path = config.getRoot() + req.getPath();
@@ -186,6 +328,7 @@ void Response::sendFile(const std::string& path) {
 }
 
 void Response::sendDirectory(const std::string& path, const std::string& uri, bool autoindex) {
+    std::cout << "autoindex = " << autoindex << std::endl;
     if (!autoindex) {
         sendError(403);
         return;
@@ -288,14 +431,46 @@ void Response::fromCGI(const std::string& cgiOutput) {
     size_t headerEnd = cgiOutput.find("\r\n\r\n");
     if (headerEnd == std::string::npos) {
         headerEnd = cgiOutput.find("\n\n");
+/*********************************************************************************/
+/* if we want to be restrict about having py output header in the file keep this part*/
+        // if (headerEnd == std::string::npos) {
+        //     sendError(502);
+        //     return;
+        // }
+/* if we want to accept file even without py header and just add it keep this part*/
+// this is a non stardard behaviour!!
         if (headerEnd == std::string::npos) {
-            sendError(502);
+            // No header section found — assume pure body content
+            setStatus(200, "OK");
+            setHeader("Content-Type", "text/html");
+            setBody(cgiOutput);
             return;
         }
+/*********************************************************************************/
     }
     
+//------------------------------------------------------------------------------//
+// separator can be either \n\n (py) or  \r\n\r\n
+
+// this par take into account just \r\n\r\n
+    // std::string headerSection = cgiOutput.substr(0, headerEnd);
+    // std::string bodySection = cgiOutput.substr(headerEnd + 4);
+
+// and this part handles both cases
     std::string headerSection = cgiOutput.substr(0, headerEnd);
-    std::string bodySection = cgiOutput.substr(headerEnd + 4);
+    std::string bodySection;
+
+    // Detect which separator we actually found
+    if (cgiOutput.compare(headerEnd, 4, "\r\n\r\n") == 0)
+        bodySection = cgiOutput.substr(headerEnd + 4);
+    else
+        bodySection = cgiOutput.substr(headerEnd + 2);
+
+//------------------------------------------------------------------------------//
+
+// std::cerr << "[CGI OUTPUT START]\n" << cgiOutput << "\n[CGI OUTPUT END]\n";
+// std::cerr << "HeaderEnd=" << headerEnd << " BodySize=" << bodySection.size() << "\n";
+
     
     // Parse headers
     std::istringstream iss(headerSection);
