@@ -56,6 +56,40 @@ std::string Response::getStatusMessage(int code) const {
 }
 
 void Response::handle(const Request& req, const ServerConf& config) {
+// /***************************** session *************************************/
+// // std::cout << "**************************** handle get\n";
+//     std::string link = req.getUri();
+//     std::string new_uri = "";
+//     if (link == "/profile/login.html" || link == "/profile" || link == "/profile/profile.html") {
+// std::cout << "**************************** handle session\n";
+//         setHeader("Set-Cookie", req.getHeader("Set-Cookie"));
+//         if (Request::loggedIn) {
+//             setHeader("X-User-Username", Request::loggedInUser.username);
+//             setHeader("X-User-Email", Request::loggedInUser.email);
+//             setHeader("X-User-FullName", Request::loggedInUser.fullName);
+//             setHeader("X-User-Avatar", Request::loggedInUser.avatar);
+//             setHeader("X-User-Job", Request::loggedInUser.job);
+//         }
+//     }
+//     if ((link == "/profile/profile.html" ) && Request::loggedIn == false)
+//         new_uri = "/profile/login.html";
+//     if ((link == "/profile" || link == "/profile/"||link == "/profile/login.html") && Request::loggedIn == true)
+//         new_uri = "/profile/profile.html";
+//     if (link == "/logout")
+//         new_uri = "/profile";
+//     if (!new_uri.empty())
+//     {
+//         // // response_obj.setStatus(301);
+//         // setHeader("Location", redirect_url);
+//         // setHeader("Connection", connection_header);
+//         // setHeader("Content-Type", "text/html");
+
+//         setStatus(301, "Redirected");
+//         setHeader("Location", link);
+//         setBody("<html><body><h1>301 redirected</h1></body></html>");
+//         setHeader("Content-Type", "text/html");
+//     }
+// /***************************************************************************/
     std::string method = req.getStrMethod();
     std::cout << "Request method = " << method << std::endl;
     if (method == "GET"/* || method == "HEAD"*/) {
@@ -130,114 +164,6 @@ void Response::handleGET(const Request& req, const ServerConf& config) {
         sendError(403);
     }
 }
-
-// void Response::handlePOST(const Request& req, const ServerConf& config) {
-//     // std::string path = config.getRoot() + req.getPath();
-//     std::string path = req.getFullPath();
-    
-//     // Check body size limit
-//     // if (req.getBodySize() > config.getClientMaxBodySize()) {
-
-//     std::string tmp = req.getBody();
-//     std::cout << "body size = " << tmp.size() << " max = " << config.getBodySizeLimit() << std::endl;
-//     if (tmp.size() > config.getBodySizeLimit()) {
-//         sendError(413);
-//         return;
-//     }
-    
-//     // Write body to file (simple upload)
-//     std::ofstream file(path.c_str(), std::ios::binary);
-//     if (!file) {
-//         sendError(403);
-//         return;
-//     }
-    
-//     file << req.getBody();
-//     file.close();
-    
-//     setStatus(201, "Created");
-//     // setHeader("Location", req.getPath());
-//     setHeader("Location", req.getUri()); // 
-//     setBody("<html><body><h1>201 Created</h1></body></html>");
-//     setHeader("Content-Type", "text/html");
-// }
-
-// void Response::handlePOST(const Request& req, const ServerConf& config) {
-//     std::string path = req.getFullPath();
-//     std::string contentType = req.getHeader("Content-Type");
-//     std::string body = req.getBody();
-
-//     // Check body size limit
-//     std::cout << "body size = " << body.size() 
-//               << " max = " << config.getBodySizeLimit() << std::endl;
-//     if (body.size() > config.getBodySizeLimit()) {
-//         sendError(413);  // Payload Too Large
-//         return;
-//     }
-
-//     if (contentType.find("multipart/form-data") != std::string::npos) {
-//         // Extract boundary manually
-//         std::string boundaryKey = "boundary=";
-//         size_t bpos = contentType.find(boundaryKey);
-//         if (bpos == std::string::npos) {
-//             sendError(400); // Bad Request
-//             return;
-//         }
-//         std::string boundary = "--" + contentType.substr(bpos + boundaryKey.size());
-
-//         size_t pos = 0;
-//         while (true) {
-//             size_t boundaryStart = body.find(boundary, pos);
-//             if (boundaryStart == std::string::npos) break;
-
-//             size_t headerEnd = body.find("\r\n\r\n", boundaryStart);
-//             if (headerEnd == std::string::npos) break;
-//             headerEnd += 4; // skip \r\n\r\n
-
-//             size_t boundaryNext = body.find(boundary, headerEnd);
-//             if (boundaryNext == std::string::npos) break;
-//             size_t contentEnd = boundaryNext - 2; // skip \r\n before boundary
-
-//             std::string partHeader = body.substr(boundaryStart, headerEnd - boundaryStart);
-//             std::string partData = body.substr(headerEnd, contentEnd - headerEnd);
-
-//             // Extract filename from Content-Disposition
-//             std::string filenameKey = "filename=\"";
-//             size_t fnameStart = partHeader.find(filenameKey);
-//             if (fnameStart != std::string::npos) {
-//                 fnameStart += filenameKey.size();
-//                 size_t fnameEnd = partHeader.find("\"", fnameStart);
-//                 if (fnameEnd != std::string::npos) {
-//                     std::string filename = partHeader.substr(fnameStart, fnameEnd - fnameStart);
-//                     std::ofstream file(config.getRoot() + "/" + filename.c_str(), std::ios::binary);
-//                     if (!file) {
-//                         sendError(403);
-//                         return;
-//                     }
-//                     file << partData;
-//                     file.close();
-//                 }
-//             }
-
-//             pos = boundaryNext + boundary.size();
-//         }
-//     } else {
-//         // Simple body upload
-//         std::ofstream file(path.c_str(), std::ios::binary);
-//         if (!file) {
-//             sendError(403);
-//             return;
-//         }
-//         file << body;
-//         file.close();
-//     }
-
-//     // Set response
-//     setStatus(201, "Created");
-//     setHeader("Location", req.getUri());
-//     setBody("<html><body><h1>201 Created</h1></body></html>");
-//     setHeader("Content-Type", "text/html");
-// }
 
 void Response::handlePOST(const Request& req, const ServerConf& config) {
     (void)config;
@@ -325,6 +251,7 @@ void Response::sendFile(const std::string& path) {
     setStatus(200, "OK");
     setBody(content);
     setHeader("Content-Type", getContentType(path));
+    // std::cout << "########## contentType = " << getContentType(path) << std::endl;
 }
 
 void Response::sendDirectory(const std::string& path, const std::string& uri, bool autoindex) {

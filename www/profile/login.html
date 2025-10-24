@@ -1,301 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Theme Toggle</title>
-    <style>
-        :root {
-            --bg-color: #ffffff;
-            --text-color: #333333;
-            --container-bg: #f5f5f5;
-            --button-bg: #007bff;
-            --button-hover: #0056b3;
-        }
-
-        [data-theme="dark"] {
-            --bg-color: #121212;
-            --text-color: #ffffff;
-            --container-bg: #1e1e1e;
-            --button-bg: #bb86fc;
-            --button-hover: #9c64a6;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        .container {
-            background-color: var(--container-bg);
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .theme-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: var(--button-bg);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .theme-toggle:hover {
-            background: var(--button-hover);
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-        }
-
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
-
-        .login-btn {
-            width: 100%;
-            background: var(--button-bg);
-            color: white;
-            padding: 0.75rem;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .login-btn:hover {
-            background: var(--button-hover);
-        }
-
-        .links {
-            text-align: center;
-            margin-top: 1rem;
-        }
-
-        .links a {
-            color: var(--button-bg);
-            text-decoration: none;
-        }
-
-        .links a:hover {
-            text-decoration: underline;
-        }
-
-        .theme-status {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background-color: var(--container-bg);
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            font-size: 0.9rem;
-            border: 1px solid var(--button-bg);
-        }
-
-        .status-indicator {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            text-align: center;
-            transition: all 0.3s ease;
-            max-width: 300px;
-            font-size: 0.9rem;
-        }
-
-        .status-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .status-sending {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-        }
-
-        .back-link {
-            color: var(--button-bg);
-            text-decoration: none;
-            font-size: 14px;
-            padding: 8px 12px;
-            border: 1px solid var(--button-bg);
-            border-radius: 5px;
-            transition: all 0.3s ease;
-        }
-
-        .back-link:hover {
-            background-color: var(--button-bg);
-            color: white;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Theme Toggle</title>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #333333;
+      --container-bg: #f5f5f5;
+      --button-bg: #007bff;
+      --button-hover: #0056b3;
+    }
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --text-color: #ffffff;
+      --container-bg: #1e1e1e;
+      --button-bg: #bb86fc;
+      --button-hover: #9c64a6;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+    .container {
+      background-color: var(--container-bg);
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--button-bg);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .theme-toggle:hover {
+      background: var(--button-hover);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    .login-btn {
+      width: 100%;
+      background: var(--button-bg);
+      color: white;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .login-btn:hover {
+      background: var(--button-hover);
+    }
+    .status-indicator {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      text-align: center;
+      transition: all 0.3s ease;
+      max-width: 300px;
+      font-size: 0.9rem;
+    }
+    .status-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status-sending {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+  </style>
 </head>
-
 <body>
+  <button class="theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 
-    <button class="theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+  <div class="container">
+    <h1>Login</h1>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit" class="login-btn">Login</button>
+    </form>
+  </div>
 
-    <div class="container">
-        <h1>Login</h1>
-        <form id="loginForm" method="GET">
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit" class="login-btn">Login</button>
-        </form>
-    </div>
+  <div id="statusIndicator" class="status-indicator" style="display:none;"></div>
 
-    <footer class="footer">
-        <a href="../index.html" class="back-link">← Back to Home</a>
-    </footer>
+  <script>
+    function setCookie(name, value, hours) {
+      const maxAge = hours * 60 * 60;
+      document.cookie = `${name}=${value};max-age=${maxAge};path=/`;
+    }
 
-    <div id="statusIndicator" class="status-indicator" style="display: none;"></div>
+    function getCookie(name) {
+      const nameEQ = name + "=";
+      const ca = document.cookie.split(';');
+      for (let c of ca) {
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0)
+          return c.substring(nameEQ.length, c.length);
+      }
+      return null;
+    }
 
-    <script>
-        // Load theme from cookie on page load
-        function loadTheme() {
-            const theme = getCookie('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', theme);
-            updateThemeButton(theme);
-            updateThemeStatus(theme);
-        }
+    function showStatus(message, type) {
+      const indicator = document.getElementById('statusIndicator');
+      indicator.textContent = message;
+      indicator.className = `status-indicator status-${type}`;
+      indicator.style.display = 'block';
+      setTimeout(() => indicator.style.display = 'none', 3000);
+    }
 
-        async function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            // Show sending status
-            showStatus('Sending theme change to server...', 'sending');
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      setCookie('theme', next, 24);
+      document.documentElement.setAttribute('data-theme', next);
+    }
 
-            // Set the new theme cookie
-            setCookie('theme', newTheme, 1); // Set cookie for 30 days
+    function loadTheme() {
+      const theme = getCookie('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+    }
 
-            // Update UI immediately
-            document.documentElement.setAttribute('data-theme', newTheme);
-            updateThemeButton(newTheme);
-            updateThemeStatus(newTheme);
+    // document.getElementById('loginForm').addEventListener('submit', function (e) {
+    //   e.preventDefault();
+    //   const username = document.getElementById('username').value.trim();
+    //   const password = document.getElementById('password').value.trim();
 
-            try {
-                // Send request to server with new theme
-                const response = await fetch('/profile', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        cookie: document.cookie,
-                    },
-                });
+    //   if (username === 'user' && password === 'pass') {
+    //     showStatus('Login successful!', 'success');
+    //     setCookie('loggedIn', 'true', 1);
+    //     setTimeout(() => window.location.href = 'profile.html', 1000);
+    //   } else {
+    //     showStatus('Invalid credentials', 'error');
+    //   }
+    // });
 
-                if (response.ok) {
-                    showStatus(`Theme changed to ${newTheme} successfully!`, 'success');
-                } else {
-                    showStatus(`Theme changed locally, but server returned: ${response.status}`, 'error');
-                }
-                console.log('Response status:', response.status);
-            } catch (error) {
-                showStatus(`Theme changed locally, but failed to send to server: ${error.message}`, 'error');
-            }
-        }
 
-        function showStatus(message, type) {
-            const indicator = document.getElementById('statusIndicator');
-            indicator.textContent = message;
-            indicator.className = `status-indicator status-${type}`;
-            indicator.style.display = 'block';
-
-            // Hide after 3 seconds
-            setTimeout(() => {
-                indicator.style.display = 'none';
-            }, 3000);
-        }
-
-        function updateThemeButton(theme) {
-            const button = document.querySelector('.theme-toggle');
-            button.textContent = theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
-        }
-
-        function updateThemeStatus(theme) {
-            const status = document.getElementById('currentTheme');
-            status.textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
-        }
-
-        function setCookie(name, value, hours) {
-            const maxAge = hours * 60 * 60; // Convert hours to seconds
-            console.log('Setting cookie:', `${name}=${value};max-age=${maxAge};path=/`);
-            document.cookie = `${name}=${value};max-age=${maxAge};path=/`;
-        }
-
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
-
-        // Handle form submission
-        document.getElementById('loginForm').addEventListener('submit', function (e) {
+     // Handle form submission
+     document.getElementById('loginForm').addEventListener('submit', function (e) {
             // e.preventDefault(); // Prevent default form submission
 
             const formData = new FormData(this);
@@ -329,10 +228,8 @@
                     console.error('Error:', error);
                 });
         });
-
-        // Load theme on page load
-        loadTheme();
-    </script>
+        
+    loadTheme();
+  </script>
 </body>
-
 </html>
