@@ -12,17 +12,12 @@
 #define TIMEOUT 60
 
 class WebServer {
+
 private:
     ServerConf& config;
     std::vector<struct pollfd> fds;
     std::map<int, Connection*> conns;
     
-public:
-    WebServer(ServerConf& cfg);
-    ~WebServer();
-    bool start();
-    void run();
-private:
     void addPoll(int fd, short events);
     void removePoll(int fd);
     void modifyPoll(int fd, short events);
@@ -35,8 +30,15 @@ private:
     bool readCGI(Connection* cgi);
     void finishCGI(Connection* cgi);
     bool writeResponse(Connection* c);
-    int createListenSocket(const std::string& host, const std::string& port);
+    int startSocket(const std::string& host, const std::string& port);
     void execCGI(const Request& req, ServerConf& config);
+
+public:
+    WebServer(ServerConf& cfg);
+    ~WebServer();
+    static bool running;
+    bool start();
+    void run();
 };
 
 #endif

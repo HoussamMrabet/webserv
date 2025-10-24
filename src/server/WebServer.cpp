@@ -1,6 +1,8 @@
 #include "WebServ.hpp"
 
-WebServer::WebServer(ServerConf& cfg) : config(cfg) {}
+bool WebServer::running = true;
+
+WebServer::WebServer(ServerConf& conf) : config(conf) {}
 
 WebServer::~WebServer() {
     for (std::map<int, Connection*>::iterator it = conns.begin(); 
@@ -11,24 +13,26 @@ WebServer::~WebServer() {
 }
 
 bool WebServer::start() {
-    std::vector<std::pair<std::string, std::string> > addresses = config.getListen();
-    for (size_t i = 0; i < addresses.size(); ++i) {
-        int fd = createListenSocket(addresses[i].first, addresses[i].second);
+    std::vector<std::pair<std::string, std::string> > listens = config.getListen();
+    for (size_t i = 0; i < listens.size(); ++i) {
+        int fd = startSocket(listens[i].first, listens[i].second);
         if (fd < 0) continue;
         
         addPoll(fd, POLLIN);
         Connection* conn = new Connection(Connection::LISTEN);
+        conn->host = listens[i].first;
+        conn->port = listens[i].second;
         conn->fd = fd;
         conns[fd] = conn;
         
-        std::cout << "Listening on " << addresses[i].first 
-                    << ":" << addresses[i].second << std::endl;
+        std::cout << "Listening on " << listens[i].first 
+                    << ":" << listens[i].second << std::endl;
     }
     return !fds.empty();
 }
 
 void WebServer::run() {
-    while (true) {
+    while (running) {
         int n = poll(&fds[0], fds.size(), 1000);
         if (n < 0) {
             if (errno == EINTR) continue;
@@ -205,6 +209,8 @@ void WebServer::acceptClient(int listen_fd) {
     
     Connection* c = new Connection(Connection::CLIENT);
     c->fd = fd;
+    c->host = conns[listen_fd]->host;
+    c->port = conns[listen_fd]->port;
     c->req = new Request();
     
     conns[fd] = c;
@@ -466,7 +472,7 @@ bool WebServer::writeResponse(Connection* c) {
     return true;
 }
 
-int WebServer::createListenSocket(const std::string& host, const std::string& port) {
+int WebServer::startSocket(const std::string& host, const std::string& port) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         std::cerr << "Error: Failed to create socket" << std::endl;

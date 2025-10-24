@@ -18,10 +18,10 @@
 #include <exception>
 #include <csignal>
 
-// void signalHandler(int)
-// {
-// 	WebServ::_runServer = false;
-// }
+void signalHandler(int)
+{
+	WebServer::running = false;
+}
 
 std::string getTime()
 {
@@ -36,7 +36,7 @@ int main(int ac, char **av)
 {
 	if (ac > 2)
 	{
-		std::cerr << "Usage: ./webserv [config_file]" << std::endl;
+		std::cerr << "use ./webserv config/config.conf" << std::endl;
 		return (1);
     }
 	t_user user1;
@@ -67,19 +67,19 @@ int main(int ac, char **av)
     Request::users.push_back(user2);
     Request::users.push_back(user3);
 
-	// signal(SIGINT, signalHandler);
-    // signal(SIGTERM, signalHandler);
-    // signal(SIGPIPE, SIG_IGN);
+	signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
+    signal(SIGPIPE, SIG_IGN);
 
 	try{
 		std::string config_file = ac > 1? av[1]: "config/default.conf";
 		std::vector<ServerConf> globalServer = ConfigBuilder::generateServers(config_file);
-		std::cout << "Webserv 1.0 Development Server started at " << getTime() << std::endl;
-		ServerConf server = ConfigBuilder::getServer(); // one server
+		std::cout << "Webserv/1.0 HTTP/1.1 webserver started at " << getTime() << std::endl;
+		ServerConf conf = ConfigBuilder::getServer(); // one server
 
-		WebServer w(server);
-		w.start();
-		w.run();
+		WebServer server(conf);
+		server.start();
+		server.run();
 		// WebServ::startServer(server);
 	}
 	catch (const std::exception& ex){

@@ -56,11 +56,7 @@
 //             std::cerr << R"Error: " << e.what() << B"\n";
 //         }
 //     }
-//     requestInfo(_host, _port,
-//         _request.getStatusCode(), \
-//         _request.getStrMethod(), \
-//         _request.getUri(), \
-//         _request.getHeader("httpVersion"));
+
 // }
 
 // void Connection::readCGIOutput(){ _response = _cgi.readOutput();}

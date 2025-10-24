@@ -42,6 +42,8 @@ struct Connection
     State state;
     int fd;
     time_t activity;
+    std::string host;
+    std::string port;
     
     // Client data
     std::string read_buf;
