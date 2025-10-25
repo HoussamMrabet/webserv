@@ -134,7 +134,6 @@ std::string Connection::to_str(int n){
     std::stringstream ss; ss << n;
     return (ss.str());
 }
-
 Connection::~Connection(){ 
     // CHOROUK && std::cout << "***********  connection destructor called!!! ***********\n";
     // delete _request;
