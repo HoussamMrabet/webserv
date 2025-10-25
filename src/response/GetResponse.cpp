@@ -16,35 +16,38 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
             response_obj.setHeader("X-User-Job", Request::loggedInUser.job);
         }
     }
-    std::string requested_path = request.getUri();
-    std::string document_root;
+    // std::string requested_path = request.getUri();
+    // std::string document_root;
     std::string full_path;
+    // std::co
     
-    // Find the matching location configuration
+    // // Find the matching location configuration
     std::string location_path = "/";
     std::map<std::string, LocationConf> locations = server.getLocations();
     
-    // Find the best matching location (longest prefix match)
+    // // Find the best matching location (longest prefix match)
     for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); 
          it != locations.end(); ++it) {
-        if (requested_path.find(it->first) == 0 && it->first.length() > location_path.length()) {
+        if (full_path.find(it->first) == 0 && it->first.length() > location_path.length()) {
             location_path = it->first;
         }
     }
     
-    // Always use ./www as the document root
-    document_root = this->_server.getRoot();
-    
-    // Construct full path - handle the case where requested_path starts with '/'
-    if (requested_path[0] == '/') {
-        full_path = document_root + requested_path;
-    } else {
-        full_path = document_root + "/" + requested_path;
-    }
-    
-    MOHAMED && std::cout << "Requested path: " << requested_path << std::endl;
-    MOHAMED && std::cout << "Document root: " << document_root << std::endl;
-    MOHAMED && std::cout << "Full path: " << full_path << std::endl;
+    // // Always use ./www as the document root
+    // document_root = this->_request.getRoot();
+    //  std::string file_name = this->_request.getUri();
+    // std::cout << document_root << "<------------------------->" << std::endl;
+    // // Construct full path - handle the case where requested_path starts with '/'
+    // if (file_name[0] == '/') {
+    //     full_path = document_root + file_name;
+    // } else {
+    //     full_path = document_root + "/" + file_name;
+    // }
+    full_path = _request.getFullPath();
+
+    // std::cout << "Requested path: " << file_name << std::endl;
+    // std::cout << "Document root: " << document_root << std::endl;
+    std::cout << "Full path: " << full_path << std::endl;
     
     if (stat(full_path.c_str(), &fileStat) == 0) {
         // File exists
@@ -121,7 +124,7 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
             if (!index_found) {
                 if (auto_index) {
                     // Generate directory listing
-                    std::string directory_listing = generateDirectoryListing(full_path, requested_path);
+                    std::string directory_listing = generateDirectoryListing(full_path, full_path);
                     response_obj.setStatus(200);
                     response_obj.setHeader("Content-Type", "text/html");
                     response_obj.setHeader("Connection", connection_header);

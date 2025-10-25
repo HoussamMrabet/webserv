@@ -62,15 +62,23 @@ void Request::processRequest()
     std::string location_path = this->location;
 
     document_root = locations[location_path].getRoot();
-    if (document_root.empty())
-        document_root = server.getRoot();
+    
     this->uriIndexe = this->uri;
     std::string file_name = this->uri.substr(std::min(location_path.length(), this->uri.length()));
+    
+    if (document_root.empty()){
+        std::cout << "EMPTY!!!\n";
+        document_root = server.getRoot();
+        file_name = this->uri;
+    }
+
+
     if (file_name.length() > 0 && file_name[0] == '/')
         file_name = file_name.substr(1);
     if (document_root[0] != '.')
         document_root = "." + document_root;
     full_path = document_root + "/" + file_name;
+    std::cout << "--------------------------> fullpath = " << full_path << std::endl;
     if (file_name.empty())
     {
         std::vector<std::string> indexes = locations[location_path].getIndex();

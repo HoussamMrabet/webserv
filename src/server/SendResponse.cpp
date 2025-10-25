@@ -4,12 +4,7 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     // First, check if we're in the middle of sending a chunked response
 
     CHOROUK && std::cout << "------- write fd = " << _fd << std::endl;
-    // std::cout << M"" << _request.getUri() << B"\n";
-    // requestInfo(_host, _port,
-    //     _request.getStatusCode(), \
-    //     _request.getStrMethod(), \
-    //     _request.getUri(), \
-    //     _request.getHeader("httpVersion"));
+
 
     if (_isChunkedResponse) {
         // std::cout << "+++ Chunked!!\n";
