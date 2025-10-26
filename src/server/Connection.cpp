@@ -8,7 +8,9 @@ Connection::Connection(int fd, ServerConf& server, const std::string& host, cons
                                                     _time(time(NULL)),
                                                     _done(false),
                                                     _responseDone(false),
-                                                    _isChunkedResponse(false)/*....*/ {
+                                                    _isChunkedResponse(false), /*....*/ 
+                                                    _pendingChunkOffset(0),     
+                                                    _responseBytesSent(0)   {
     // _fd = accept(fd, NULL, NULL);
     struct sockaddr_in addr;
     socklen_t len = sizeof(addr);

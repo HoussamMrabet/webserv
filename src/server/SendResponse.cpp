@@ -11,26 +11,43 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         std::cout << "+++ Chunked response processing\n";
         // Continue sending chunks from existing response
         if (!_response_obj.isFinished()) {
-            std::string chunk = _response_obj.getResponseChunk();
-            std::cout << "+++ Obtained chunk of size: " << chunk.length() << std::endl;
-            if (!chunk.empty()) {
-                ssize_t bytes_sent = write(_fd, chunk.c_str(), chunk.length());
-                std::cout << "+++ Wrote chunk of size: " << bytes_sent << std::endl;
-                std::cerr << "Chunk Content:\n" << chunk << std::endl;
-                if (bytes_sent == -1) {
-                    perror("Chunked write failed");
-                    std::cerr << "Error details: " << strerror(errno) << std::endl;
-                    return (false);
-                } else if (bytes_sent == 0) {
-                    MOHAMED && std::cout << "Connection closed by peer during chunked transfer" << std::endl;
-                    return (false);
-                } else if (bytes_sent < (ssize_t)chunk.length()) {
-                    // Partial write - handle this case
-                    MOHAMED && std::cout << "Partial write: " << bytes_sent << "/" << chunk.length() << " bytes" << std::endl;
+            if (_pendingChunk.empty()) {
+                _pendingChunk = _response_obj.getResponseChunk();
+                _pendingChunkOffset = 0;
+                std::cout << "+++ Obtained new chunk of size: " << _pendingChunk.length() << std::endl;
+            }
+
+            if (!_pendingChunk.empty()) {
+                 size_t remaining = _pendingChunk.length() - _pendingChunkOffset;
+            
+            // Use send() with MSG_NOSIGNAL to prevent SIGPIPE
+            // NO errno checking - just check return value
+                ssize_t bytes_sent = send(_fd, 
+                                     _pendingChunk.c_str() + _pendingChunkOffset, 
+                                     remaining,
+                                     0);
+            
+                std::cout << "+++ Sent: " << bytes_sent << " bytes\n";
+            
+                if (bytes_sent <= 0) {
+                // Connection error or closed (we don't check errno!)
+                    MOHAMED && std::cout << "Write failed or connection closed\n";
                     return (false);
                 }
-                MOHAMED && std::cout << "Sent chunk of size: " << bytes_sent << std::endl;
-                return (true); // Successfully sent a chunk, return
+            
+            // Track progress - handle partial writes
+                _pendingChunkOffset += bytes_sent;
+            
+            // Check if entire chunk was sent
+                if (_pendingChunkOffset >= _pendingChunk.length()) {
+                // Chunk complete, clear buffer for next chunk
+                    _pendingChunk.clear();
+                    _pendingChunkOffset = 0;
+                    MOHAMED && std::cout << "Chunk complete\n";
+                }
+            
+                 updateTimout();
+                return (true);
             }
         } else {
             // All chunks sent, mark response as done
@@ -113,34 +130,38 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
     //     _responseDone = true;
     // }
     
-
-    size_t _responseBytesSent = 0;
-
     if (!_isChunkedResponse) {
         // std::cout << "+++ Not chunked!!\n";
-
+        if (_response.empty()) {
+            _responseDone = true;
+            return (true);
+        }
         size_t totalLen = _response.length();
+        size_t remaining = totalLen - _responseBytesSent;
 
         // Write remaining part of the response
-        ssize_t bytes_sent = write(_fd, _response.c_str() + _responseBytesSent, totalLen - _responseBytesSent);
-        // ssize_t bytes_sent = send(_fd, _response.c_str() + _responseBytesSent, totalLen - _responseBytesSent, SO_NOSIGPIPE); // no sigpipe
-        updateTimout();
-        if (bytes_sent == -1) {
-            // perror("Write failed");
-            return true;
-        }
-
-        _responseBytesSent += bytes_sent;
-
-        if (_responseBytesSent == totalLen) {
-            // Finished sending entire response
-            _responseDone = true;
-            _responseBytesSent = 0;  // reset for next response
+        if (remaining > 0) {
+            // Entire response already sent
+            ssize_t bytes_sent = send(_fd, 
+                                 _response.c_str() + _responseBytesSent, 
+                                 remaining,
+                                 0);
+        
+            if (bytes_sent <= 0) {
+                // Error or closed (no errno check!)
+                MOHAMED && std::cout << "Write failed or connection closed\n";
+                return (false);
+            }
+            _responseBytesSent += bytes_sent;
             updateTimout();
-        } else {
-            // Partial write, wait to write remaining later
-            std::cout << "Partial write: " << _responseBytesSent << "/" << totalLen << std::endl;
-            // do not mark response done, wait for next call
+        
+            MOHAMED && std::cout << "Wrote " << bytes_sent << " bytes, progress: " 
+                            << _responseBytesSent << "/" << totalLen << std::endl;
+        }
+        if (_responseBytesSent >= totalLen) {
+            MOHAMED && std::cout << "Response complete\n";
+            _responseDone = true;
+            _responseBytesSent = 0;  // Reset for next response
         }
     }
 

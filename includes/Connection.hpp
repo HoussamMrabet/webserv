@@ -38,6 +38,10 @@ private:
     // bool _isCGI;
     bool _responseDone;
     bool _isChunkedResponse; // Flag to track if we're doing chunked response
+    
+    std::string _pendingChunk;       // Buffer for partially sent chunk
+    size_t _pendingChunkOffset;      // Track how much of chunk was sent
+    size_t _responseBytesSent;       // Track total bytes sent (move from local)
 
 public:
     ~Connection();
