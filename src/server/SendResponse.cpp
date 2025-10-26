@@ -17,17 +17,15 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
                 std::cout << "+++ Obtained new chunk of size: " << _pendingChunk.length() << std::endl;
             }
 
-            if (!_pendingChunk.empty()) {
-                 size_t remaining = _pendingChunk.length() - _pendingChunkOffset;
-            
+        if (!_pendingChunk.empty()) {
+            size_t remaining = _pendingChunk.length() - _pendingChunkOffset;
+        
             // Use send() with MSG_NOSIGNAL to prevent SIGPIPE
             // NO errno checking - just check return value
-                ssize_t bytes_sent = send(_fd, 
+            ssize_t bytes_sent = send(_fd, 
                                      _pendingChunk.c_str() + _pendingChunkOffset, 
                                      remaining,
-                                     0);
-            
-                std::cout << "+++ Sent: " << bytes_sent << " bytes\n";
+                                     MSG_NOSIGNAL);                std::cout << "+++ Sent: " << bytes_sent << " bytes\n";
             
                 if (bytes_sent <= 0) {
                 // Connection error or closed (we don't check errno!)
@@ -141,11 +139,11 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
 
         // Write remaining part of the response
         if (remaining > 0) {
-            // Entire response already sent
+            // Write remaining bytes
             ssize_t bytes_sent = send(_fd, 
-                                 _response.c_str() + _responseBytesSent, 
-                                 remaining,
-                                 0);
+                                     _response.c_str() + _responseBytesSent, 
+                                     remaining,
+                                     MSG_NOSIGNAL);
         
             if (bytes_sent <= 0) {
                 // Error or closed (no errno check!)
