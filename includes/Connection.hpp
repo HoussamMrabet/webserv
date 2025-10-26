@@ -38,6 +38,7 @@ private:
     // bool _isCGI;
     bool _responseDone;
     bool _isChunkedResponse; // Flag to track if we're doing chunked response
+    std::string _currentChunk;
 
 public:
     ~Connection();

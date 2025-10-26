@@ -77,6 +77,7 @@ void WebServ::pollLoop()
                     if (it == _connections.end()) continue;
                     // it->second.readRequest();
                     if (!it->second.readRequest()){
+                        std::cout << R" ---------- READ DONE ---------------\n" << B"\n";
                         _pollfds[i].events = POLLOUT;
                         continue;
                     }
@@ -87,6 +88,8 @@ void WebServ::pollLoop()
                             addPollFd(cgifd, POLLIN, "CGI");
                             _cgifds[cgifd] = fd;
                         }
+                        _pollfds[i].events = POLLOUT;
+                        continue;
                     }
                     else {
                         CHOROUK && std::cout << "----------- READ NOT DONE ---------------\n";
@@ -118,6 +121,17 @@ void WebServ::pollLoop()
                 }
 
             }
+            else if (type == "connection")
+            {
+                std::cout << R"--------------------------------------------\n";
+                std::map<int, Connection>::iterator it = _connections.find(fd);
+                if (it != _connections.end()){
+                    if (!it->second.isDone())
+                        it->second.readRequest();
+                }
+                if (it->second.isDone())
+                    _pollfds[i].events = POLLOUT;
+            }
         }
         for (unsigned int j = 0; j < to_remove.size(); j++) {
             int fd = to_remove[j];
@@ -143,7 +157,7 @@ bool WebServ::acceptConnection(int fd){
         _connections.insert(std::make_pair(connection_fd, connection));
         CHOROUK && std::cout << "------- accept fd = " << connection_fd << std::endl;
         // _cleanRead = false;
-        addPollFd(connection_fd, POLLIN|POLLOUT, "connection");
+        addPollFd(connection_fd, POLLIN, "connection");
     }
     catch (const std::exception& e){
         std::cerr << R"Error: " << e.what() << B"\n";

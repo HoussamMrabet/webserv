@@ -60,7 +60,8 @@ void Request::setBodyInformations()
             }
             catch (const char *error)
             {
-                return;
+                this->message = error;
+                throw 415;
             }
 
             if (contentType.find("application/x-www-form-urlencoded") != std::string::npos ||
@@ -169,6 +170,7 @@ void Request::parseRequest(const std::string &rawRequest)
     }
     catch (const int &e)
     {
+        // this->printRequest();
         this->statusCode = e;
         this->currentStep = DONE;
         if (this->statusCode != 200)

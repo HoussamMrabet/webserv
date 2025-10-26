@@ -18,7 +18,8 @@ bool Connection::readRequest(){
             _buffer.clear();
         } else {
             // Allow parser to finalize when no more data is coming
-            _request.parseRequest();
+            // while (!(_request.isDone()))
+                _request.parseRequest();
         }
         updateTimout();
     }
@@ -31,7 +32,9 @@ bool Connection::readRequest(){
             updateTimout();
             return false;
         }
-        return true;
+        _request.parseRequest();
+
+        // return true;
     }
 
     _done = _request.isDone();

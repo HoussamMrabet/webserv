@@ -55,7 +55,8 @@ void Request::parseBody()
                             }
                             catch (const char *error)
                             {
-                                return;
+                                this->message = error;
+                                throw 415;
                             }
                             ssize_t written = write(this->file, chunk.c_str(), this->chunkSize);
                             if (written == -1)
@@ -93,6 +94,11 @@ void Request::parseBody()
     else if (this->isMultipart && !this->isCGI())
     {
         parseMultipart();
+        // if (currentContentLength >= contentLength)
+        // {
+        //     while (true)
+        //         parseMultipart();
+        // }
     }
     else if (this->isContentLength || this->isCGI())
     {
@@ -120,7 +126,8 @@ void Request::parseBody()
                     }
                     catch (const char *error)
                     {
-                        return;
+                        this->message = error;
+                        throw 415;
                     }
                     ssize_t written = write(this->file, this->body.c_str(), this->body.size());
                     if (written == -1)

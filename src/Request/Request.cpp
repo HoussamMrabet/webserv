@@ -168,8 +168,8 @@ void Request::CGIError()
 
 void Request::printRequest()
 {
-    if (!isDone())
-        return ;
+    // if (!isDone())
+    //     return ;
     std::cout << this->reqLine << std::endl
               << std::endl;
     for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); it++)
@@ -179,7 +179,7 @@ void Request::printRequest()
     // std::cout << Request::loggedInUser.password << std::endl;
 
     // std::cout << "loggedin : " << Request::loggedIn << std::endl;
-    // if (!this->fullBody.empty())
-    //     std::cout << this->fullBody << std::endl;
-    //     std::cout << "----------------------------------------" << std::endl;
+    if (!this->fullBody.empty())
+        std::cout << this->fullBody << std::endl;
+        std::cout << "----------------------------------------" << std::endl;
 }

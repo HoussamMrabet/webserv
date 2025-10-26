@@ -5,41 +5,78 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
 
     CHOROUK && std::cout << "------- write fd = " << _fd << std::endl;
 
-
     if (_isChunkedResponse) {
-        // std::cout << "+++ Chunked!!\n";
-        std::cout << "+++ Chunked response processing\n";
-        // Continue sending chunks from existing response
         if (!_response_obj.isFinished()) {
-            std::string chunk = _response_obj.getResponseChunk();
-            std::cout << "+++ Obtained chunk of size: " << chunk.length() << std::endl;
-            if (!chunk.empty()) {
-                ssize_t bytes_sent = write(_fd, chunk.c_str(), chunk.length());
-                std::cout << "+++ Wrote chunk of size: " << bytes_sent << std::endl;
-                std::cerr << "Chunk Content:\n" << chunk << std::endl;
-                if (bytes_sent == -1) {
-                    perror("Chunked write failed");
-                    std::cerr << "Error details: " << strerror(errno) << std::endl;
-                    return (false);
-                } else if (bytes_sent == 0) {
-                    MOHAMED && std::cout << "Connection closed by peer during chunked transfer" << std::endl;
-                    return (false);
-                } else if (bytes_sent < (ssize_t)chunk.length()) {
-                    // Partial write - handle this case
-                    MOHAMED && std::cout << "Partial write: " << bytes_sent << "/" << chunk.length() << " bytes" << std::endl;
-                    return (false);
+            // Get new chunk only if current one is empty
+            if (_currentChunk.empty()) {
+                _currentChunk = _response_obj.getResponseChunk();
+                if (_currentChunk.empty()) {
+                    return true;  // No chunk available yet
                 }
-                MOHAMED && std::cout << "Sent chunk of size: " << bytes_sent << std::endl;
-                return (true); // Successfully sent a chunk, return
+                // std::cout << "chunk: \n" << _currentChunk << std::endl << std::endl;
             }
+            
+            // Send (rest of) current chunk
+            ssize_t bytes_sent = send(_fd, _currentChunk.c_str(), _currentChunk.length(), SO_NOSIGPIPE);
+            std::cout << "bytes sent  = " << bytes_sent << " on fd = " << _fd << std::endl;
+
+            if (bytes_sent == -1) {
+                perror("Chunked write failed");
+                return false;
+            } else if (bytes_sent == 0) {
+                return false;
+            } else if (bytes_sent < (ssize_t)_currentChunk.length()) {
+                // Partial write - keep unsent part
+                std::cout << "Partial write: " << bytes_sent << "/" << _currentChunk.length() << std::endl;
+                _currentChunk = _currentChunk.substr(bytes_sent);  // Keep rest for next time
+                return true;
+            }
+            
+            // Full chunk sent, clear it
+            _currentChunk.clear();
+            return true;
         } else {
             // All chunks sent, mark response as done
-            MOHAMED && std::cout << "Chunked response complete" << std::endl;
+            std::cout << "Chunked response complete" << std::endl;
             _responseDone = true;
             _isChunkedResponse = false;
-            return (true);
+            _currentChunk.clear();
+            return true;
         }
     }
+    // if (_isChunkedResponse) {
+    //     // std::cout << "+++ Chunked!!\n";
+    //     std::cout << "+++ Chunked response processing\n";
+    //     // Continue sending chunks from existing response
+    //     if (!_response_obj.isFinished()) {
+    //         std::string chunk = _response_obj.getResponseChunk();
+    //         std::cout << "+++ Obtained chunk of size: " << chunk.length() << std::endl;
+    //         if (!chunk.empty()) {
+    //             ssize_t bytes_sent = write(_fd, chunk.c_str(), chunk.length());
+    //             std::cout << "+++ Wrote chunk of size: " << bytes_sent << std::endl;
+    //             if (bytes_sent == -1) {
+    //                 perror("Chunked write failed");
+    //                 std::cerr << "Error details: " << strerror(errno) << std::endl;
+    //                 return (false);
+    //             } else if (bytes_sent == 0) {
+    //                 MOHAMED && std::cout << "Connection closed by peer during chunked transfer" << std::endl;
+    //                 return (false);
+    //             } else if (bytes_sent < (ssize_t)chunk.length()) {
+    //                 // Partial write - handle this case
+    //                 MOHAMED && std::cout << "Partial write: " << bytes_sent << "/" << chunk.length() << " bytes" << std::endl;
+    //                 return (false);
+    //             }
+    //             MOHAMED && std::cout << "Sent chunk of size: " << bytes_sent << std::endl;
+    //             return (true); // Successfully sent a chunk, return
+    //         }
+    //     } else {
+    //         // All chunks sent, mark response as done
+    //         MOHAMED && std::cout << "Chunked response complete" << std::endl;
+    //         _responseDone = true;
+    //         _isChunkedResponse = false;
+    //         return (true);
+    //     }
+    // }
     
     // Regular response processing - only if not in chunked mode
     // Check for redirects first
