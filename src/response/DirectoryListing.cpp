@@ -84,14 +84,11 @@ std::string Connection::generateDirectoryListing(const std::string& directory_pa
         bool is_directory = it->second;
         
         html << "<tr>";
-        
-        // Name column with link
-        std::string href = request_uri;
+        std::string href = "";
         if (href[href.length() - 1] != '/') {
             href += "/";
         }
-        href += entry_name;
-        
+        href += entry_name;        
         html << "<td><a href=\"" << href << "\"";
         if (is_directory) {
             html << " class=\"dir\"";

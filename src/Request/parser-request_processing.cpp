@@ -71,12 +71,15 @@ void Request::processRequest()
         document_root = server.getRoot();
         file_name = this->uri;
     }
+    std::cout << "--------------------------> file_name = " << file_name << std::endl;
 
 
     if (file_name.length() > 0 && file_name[0] == '/')
         file_name = file_name.substr(1);
-    if (document_root[0] != '.')
-        document_root = "." + document_root;
+    // if (document_root[0] != '.')
+    //     document_root = "." + document_root;
+    std::cout << "--------------------------> document_root = " << document_root << std::endl;
+    std::cout << "--------------------------> file_name = " << file_name << std::endl;
     full_path = document_root + "/" + file_name;
     std::cout << "--------------------------> fullpath = " << full_path << std::endl;
     if (file_name.empty())
@@ -100,6 +103,7 @@ void Request::processRequest()
         }
     }
     this->fullPath = full_path;
+    std::cout << "--------------------------> fullpath = " << full_path << std::endl;
     if (this->fullPath.length() >= 4 && this->fullPath.substr(this->fullPath.length() - 4) == ".php")
     {
         this->cgiType = ".php";

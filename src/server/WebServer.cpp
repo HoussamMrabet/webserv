@@ -75,7 +75,11 @@ void WebServ::pollLoop()
                 if (type == "connection"){
                     std::map<int, Connection>::iterator it = _connections.find(fd);
                     if (it == _connections.end()) continue;
-                    it->second.readRequest();
+                    // it->second.readRequest();
+                    if (!it->second.readRequest()){
+                        _pollfds[i].events = POLLOUT;
+                        continue;
+                    }
                     
                     if (it->second.isDone()){
                         if (it->second.isCGI()){

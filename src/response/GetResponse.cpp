@@ -95,7 +95,6 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
                     index_path += "/";
                 }
                 index_path += *it;
-                
                 if (stat(index_path.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode)) {
                     // Check file size to decide between regular and chunked response
                     size_t file_size = static_cast<size_t>(fileStat.st_size);
