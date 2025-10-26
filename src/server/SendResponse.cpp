@@ -8,14 +8,18 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
 
     if (_isChunkedResponse) {
         // std::cout << "+++ Chunked!!\n";
-
+        std::cout << "+++ Chunked response processing\n";
         // Continue sending chunks from existing response
         if (!_response_obj.isFinished()) {
             std::string chunk = _response_obj.getResponseChunk();
+            std::cout << "+++ Obtained chunk of size: " << chunk.length() << std::endl;
             if (!chunk.empty()) {
                 ssize_t bytes_sent = write(_fd, chunk.c_str(), chunk.length());
+                std::cout << "+++ Wrote chunk of size: " << bytes_sent << std::endl;
+                std::cerr << "Chunk Content:\n" << chunk << std::endl;
                 if (bytes_sent == -1) {
                     perror("Chunked write failed");
+                    std::cerr << "Error details: " << strerror(errno) << std::endl;
                     return (false);
                 } else if (bytes_sent == 0) {
                     MOHAMED && std::cout << "Connection closed by peer during chunked transfer" << std::endl;

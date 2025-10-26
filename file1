@@ -334,6 +334,7 @@ public:
     
     ~Connection() {
         if (_fd > 0) close(_fd);
+        std:cout << "Connection closed for fd " << _fd << std::endl;
     }
     
     int getFd() const { return _fd; }

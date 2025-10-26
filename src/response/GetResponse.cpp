@@ -54,9 +54,9 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
         if (S_ISREG(fileStat.st_mode)) {
             // Check file size to decide between regular and chunked response
             size_t file_size = static_cast<size_t>(fileStat.st_size);
-            MOHAMED && std::cout << "File size: " << file_size << " bytes" << std::endl;
+            std::cout << "File size: " << file_size << " bytes" << std::endl;
             
-            if (file_size > LARGE_FILE_THRESHOLD) {
+            if (file_size >= LARGE_FILE_THRESHOLD) {
                 // Use chunked transfer for large files
                 MOHAMED && std::cout << "Using chunked transfer for large file" << std::endl;
                 _response_obj.prepareResponse(full_path);

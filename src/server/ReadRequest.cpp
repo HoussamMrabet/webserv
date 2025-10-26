@@ -25,8 +25,12 @@ bool Connection::readRequest(){
     else { // n < 0
             // No data right now — non-blocking: return and wait for next POLLIN
         std::cout << "***************************\n";
-        if (_request.getStatusCode() != 200)
+        if (_request.getStatusCode() != 200 || _request.isDone())
+        {
+            getRquestType();
+            updateTimout();
             return false;
+        }
         return true;
     }
 
