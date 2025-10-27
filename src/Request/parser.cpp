@@ -135,6 +135,7 @@ void Request::parseRequest(const std::string &rawRequest)
 
         if (this->currentStep == BODY)
         {
+            std::cout << "In BODY state: requestData.size=" << requestData.size() << ", fullBody.size=" << fullBody.size() << "\n";
             if (this->getMethod() != POST)
                 throw 200;
 
@@ -165,6 +166,7 @@ void Request::parseRequest(const std::string &rawRequest)
             this->body += this->requestData;
             this->currentContentLength += requestData.size();
             this->requestData.clear();
+            std::cout << "About to call parseBody(), isChunked=" << isChunked << ", isMultipart=" << isMultipart << "\n";
             this->parseBody();
         }
     }

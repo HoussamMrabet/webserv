@@ -112,10 +112,15 @@ void Request::parseMultipart(bool isChunked)
     static bool newFile = false;
     std::string &data = isChunked ? this->chunkData : this->body;
 
+    std::cout << "parseMultipart(" << (isChunked ? "CHUNKED" : "NORMAL") << ") - data.size=" << data.size() << "\n";
+    if (data.size() > 0 && data.size() < 200)
+        std::cout << "  First 200 bytes: [" << data.substr(0, std::min(data.size(), (size_t)200)) << "]\n";
+
     try
     {
         if (data.find(this->boundaryKey + "--\r\n") == 0)
         {
+            std::cout << "  Found closing boundary! Throwing 200\n";
             data.clear();
             if (this->multipartData.size())
                 this->multipartData.back()->closeFile();

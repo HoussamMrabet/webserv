@@ -86,6 +86,12 @@ void Request::parseBody()
             }
             if (this->chunkSize == 0)
             {
+                // For chunked+multipart, process the accumulated chunkData before completing
+                if (this->isMultipart && !this->isCGI())
+                {
+                    std::cout << "Final chunk received, processing accumulated chunkData...\n";
+                    parseMultipart(CHUNKED);
+                }
                 this->body.clear();
                 throw 200;
             }
@@ -94,11 +100,14 @@ void Request::parseBody()
     else if (this->isMultipart && !this->isCGI())
     {
         parseMultipart();
-        // if (currentContentLength >= contentLength)
-        // {
-        //     while (true)
-        //         parseMultipart();
-        // }
+        
+        // Check if all multipart data has been received
+        if (this->contentLength == this->currentContentLength)
+        {
+            std::cout << "Multipart upload complete! Marking as DONE\n";
+            this->body.clear();
+            throw 200;
+        }
     }
     else if (this->isContentLength || this->isCGI())
     {

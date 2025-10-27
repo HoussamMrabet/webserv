@@ -121,17 +121,10 @@ void WebServ::pollLoop()
                 }
 
             }
-            else if (type == "connection")
-            {
-                std::cout << R"--------------------------------------------\n";
-                std::map<int, Connection>::iterator it = _connections.find(fd);
-                if (it != _connections.end()){
-                    if (!it->second.isDone())
-                        it->second.readRequest();
-                }
-                if (it->second.isDone())
-                    _pollfds[i].events = POLLOUT;
-            }
+            // Removed fallback block - purely event-driven now
+            // POLLIN events trigger reading, parser buffers data internally
+            // Chunked/multipart data accumulates across multiple POLLIN events
+            // Timeout mechanism in checkStatus() handles idle connections
         }
         for (unsigned int j = 0; j < to_remove.size(); j++) {
             int fd = to_remove[j];
