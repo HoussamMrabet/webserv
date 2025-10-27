@@ -167,9 +167,12 @@ void Request::parseRequest(const std::string &rawRequest)
             this->requestData.clear();
             this->parseBody();
         }
-        if (this->lastChunk)
-            while (true)
+        if (this->lastChunk){
+            while (true){
                 parseRequest();
+                std::cout << R"PB HERE!!!!!!!!!!!!!!" << B" \n";
+            }
+        }
     }
     catch (const int &e)
     {
