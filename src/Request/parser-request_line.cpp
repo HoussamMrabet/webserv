@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #include "Request.hpp"
-#include "WebServer.hpp"
+#include "WebServ.hpp"
 
 void Request::parseRequestLine()
 {
@@ -39,9 +39,8 @@ void Request::parseRequestLine()
     else
     {
         this->message = "Invalid Method";
-        throw 400;
+        throw 405;
     }
-
     size_t pos = this->uri.find('?');
 
     if (pos != std::string::npos)
@@ -70,7 +69,8 @@ void Request::parseRequestLine()
 
     handleUriSpecialCharacters(this->uri);
 
-    const ServerConf &server = globalServer[0];
+    // const ServerConf &server = ConfigBuilder::getServer();
+    // const ServerConf &server = globalServer[0];
 
     std::map<std::string, LocationConf> locations = server.getLocations();
 
@@ -102,6 +102,7 @@ void Request::parseRequestLine()
         this->message = "Invalid URI";
         throw 400;
     }
+    // processRequest();
 
     if (this->uri.length() >= 4 && this->uri.substr(this->uri.length() - 4) == ".php")
         this->cgiType = ".php";
@@ -119,10 +120,10 @@ void Request::parseRequestLine()
             throw 500;
         }
 
-        if (unlink(filename.c_str()) == -1)
+        if (remove(filename.c_str()) != 0)
         {
             close(fd);
-            this->message = "Failed to unlink temporary file";
+            this->message = "Failed to remove temporary file";
             throw 500;
         }
 

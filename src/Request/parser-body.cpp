@@ -16,6 +16,17 @@ void Request::parseBody()
 {
     if (this->isChunked)
     {
+        // Check if body ends with "0\r\n\r\n" (final chunk marker)
+        if (!this->lastChunk && this->body.size() >= 5)
+        {
+            std::string ending = this->body.substr(this->body.size() - 5);
+            if (ending == "0\r\n\r\n")
+            {
+                this->lastChunk = true;
+                std::cout << "LAST CHUNK DETECTED IN BODY\n";
+            }
+        }
+        
         if (this->body.empty())
             parseMultipart(CHUNKED);
         if (inChunk)
@@ -45,11 +56,25 @@ void Request::parseBody()
                     {
                         std::string chunk = this->body.substr(0, this->chunkSize);
 
-                        ssize_t written = write(this->file, chunk.c_str(), this->chunkSize);
-                        if (written == -1)
+                        if (this->headers.find("content-type") != this->headers.end())
                         {
-                            this->message = "Failed to write to file";
-                            throw 500;
+                            std::string contentType = this->headers["content-type"];
+
+                            try
+                            {
+                                checkMediaType(contentType);
+                            }
+                            catch (const char *error)
+                            {
+                                this->message = error;
+                                throw 415;
+                            }
+                            ssize_t written = write(this->file, chunk.c_str(), this->chunkSize);
+                            if (written == -1)
+                            {
+                                this->message = "Failed to write to file";
+                                throw 500;
+                            }
                         }
                     }
                     this->body.erase(0, this->chunkSize + 2);
@@ -60,6 +85,7 @@ void Request::parseBody()
         size_t pos = this->body.find("\r\n");
         if (pos != std::string::npos)
         {
+            // std::cout << this->body;
             std::string chunkSizeStr = this->body.substr(0, pos);
             this->body.erase(0, pos + 2);
             char *end;
@@ -72,6 +98,7 @@ void Request::parseBody()
             }
             if (this->chunkSize == 0)
             {
+                std::cout << "LAST CHUNK RECEIVED\n";
                 this->body.clear();
                 throw 200;
             }
@@ -80,6 +107,11 @@ void Request::parseBody()
     else if (this->isMultipart && !this->isCGI())
     {
         parseMultipart();
+        if (currentContentLength >= contentLength)
+        {
+            while (true)
+                parseMultipart();
+        }
     }
     else if (this->isContentLength || this->isCGI())
     {
@@ -97,17 +129,31 @@ void Request::parseBody()
             }
             else
             {
-                ssize_t written = write(this->file, this->body.c_str(), this->body.size());
-                if (written == -1)
+                if (this->headers.find("content-type") != this->headers.end())
                 {
-                    this->message = "Failed to write to file";
-                    throw 500;
-                }
+                    std::string contentType = this->headers["content-type"];
 
-                if (close(this->file) == -1)
-                {
-                    this->message = "Failed to close file";
-                    throw 500;
+                    try
+                    {
+                        checkMediaType(contentType);
+                    }
+                    catch (const char *error)
+                    {
+                        this->message = error;
+                        throw 415;
+                    }
+                    ssize_t written = write(this->file, this->body.c_str(), this->body.size());
+                    if (written == -1)
+                    {
+                        this->message = "Failed to write to file";
+                        throw 500;
+                    }
+
+                    if (close(this->file) == -1)
+                    {
+                        this->message = "Failed to close file";
+                        throw 500;
+                    }
                 }
             }
             this->body.clear();

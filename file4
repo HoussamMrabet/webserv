@@ -1,0 +1,155 @@
+#include "Client.hpp"
+#include "CGI.hpp"
+#include <unistd.h>
+#include <sys/socket.h>
+#include <cstring>
+#include <cerrno>
+#include <iostream>
+
+#define BUFFER_SIZE 8192
+#define MAX_REQUEST_SIZE 10485760 // 10MB
+
+Client::Client(int fd, std::vector<ServerConf>& config) 
+    : _fd(fd), _config(config), _request(NULL), _response(NULL), 
+      _bytesSent(0), _state(STATE_READING_REQUEST) {}
+
+Client::~Client() {
+    if (_request)
+        delete _request;
+    if (_response)
+        delete _response;
+}
+
+int Client::receiveRequest() {
+    if (_state != STATE_READING_REQUEST)
+        return 0;
+    
+    char buf[BUFFER_SIZE];
+    ssize_t n = recv(_fd, buf, sizeof(buf), 0);
+    
+    if (n < 0) {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+            return 0; // Would block, need more data later
+        return -1; // Error
+    }
+    
+    if (n == 0) {
+        return -1; // Connection closed by client
+    }
+    
+    _buffer.append(buf, n);
+    
+    // Check for request size limit
+    if (_buffer.size() > MAX_REQUEST_SIZE) {
+        std::cerr << "Request too large" << std::endl;
+        return -1;
+    }
+    
+    // Check if we have complete headers (at minimum)
+    size_t headerEnd = _buffer.find("\r\n\r\n");
+    if (headerEnd == std::string::npos)
+        return 0; // Headers not complete yet
+    
+    // Parse request if not already done
+    if (!_request) {
+        _request = new Request(_buffer);
+        if (!_request->parse()) {
+            std::cerr << "Failed to parse request" << std::endl;
+            return -1;
+        }
+    }
+    
+    // Check if request is complete (including body if any)
+    if (_request->isComplete(_buffer)) {
+        _state = STATE_PROCESSING;
+        return 1; // Request complete
+    }
+    
+    return 0; // Need more data
+}
+
+void Client::processRequest() {
+    if (_state != STATE_PROCESSING || !_request)
+        return;
+    
+    // // Find matching server
+    // const ServerConfig *serverCfg = _config.findServer(
+    //     _request->getHost(), 
+    //     _request->getPort()
+    // );
+    ServerConf *serverCfg = _config[0];
+    
+    if (!serverCfg) {
+        _response = new Response(404, "Not Found");
+        _responseData = _response->toString();
+        _state = STATE_SENDING_RESPONSE;
+        return;
+    }
+    
+    // Find matching location
+    const LocationConfig *locCfg = serverCfg->findLocation(_request->getPath());
+    if (!locCfg) {
+        _response = new Response(404, "Not Found");
+        _responseData = _response->toString();
+        _state = STATE_SENDING_RESPONSE;
+        return;
+    }
+    
+    // Check if method is allowed
+    if (!locCfg->isMethodAllowed(_request->getMethod())) {
+        _response = new Response(405, "Method Not Allowed");
+        _responseData = _response->toString();
+        _state = STATE_SENDING_RESPONSE;
+        return;
+    }
+    
+    // Check client body size limit
+    size_t bodySize = _request->getBodySize();
+    if (bodySize > serverCfg->clientMaxBodySize) {
+        _response = new Response(413, "Payload Too Large");
+        _responseData = _response->toString();
+        _state = STATE_SENDING_RESPONSE;
+        return;
+    }
+    
+    // Handle CGI or static file
+    if (locCfg->isCGI(_request->getPath())) {
+        CGI cgi(*_request, *serverCfg, *locCfg);
+        _response = cgi.execute();
+    } else {
+        _response = Response::handleRequest(*_request, *serverCfg, *locCfg);
+    }
+    
+    _responseData = _response->toString();
+    _state = STATE_SENDING_RESPONSE;
+}
+
+int Client::sendResponse() {
+    if (_state != STATE_SENDING_RESPONSE)
+        return 0;
+    
+    if (_responseData.empty())
+        return 1; // Nothing to send, done
+    
+    size_t remaining = _responseData.size() - _bytesSent;
+    if (remaining == 0)
+        return 1; // All sent
+    
+    ssize_t n = send(_fd, 
+                     _responseData.c_str() + _bytesSent, 
+                     remaining, 
+                     0);
+    
+    if (n < 0) {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+            return 0; // Would block, try again later
+        return -1; // Error
+    }
+    
+    _bytesSent += n;
+    
+    if (_bytesSent >= _responseData.size())
+        return 1; // Complete
+    
+    return 0; // More to send
+}

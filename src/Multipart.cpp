@@ -26,7 +26,6 @@ Multipart::~Multipart()
 void Multipart::setFileName(const std::string &fileName)
 {
     this->fileName = fileName;
-
     this->file = open(fileName.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
     if (this->file == -1)
     {
@@ -94,7 +93,7 @@ void Multipart::unlinkFile()
     }
     if (!this->fileName.empty())
     {
-        unlink(this->fileName.c_str());
+        remove(this->fileName.c_str());
         this->fileName.clear();
     }
 }

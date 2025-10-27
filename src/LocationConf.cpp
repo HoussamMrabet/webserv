@@ -18,7 +18,7 @@ LocationConf::LocationConf() {
 }
 
 LocationConf::LocationConf(const ServerConf server, std::string name) : name(name) {
-	this->root = server.getRoot();
+	this->root = "";
 	this->index = server.getIndex();
 	this->autoIndex = server.getAutoIndex();
 	this->bodySizeLimit = server.getBodySizeLimit();

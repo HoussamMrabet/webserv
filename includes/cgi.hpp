@@ -12,8 +12,8 @@
 
 #pragma once
 
+#include "ServerConf.hpp"
 #include "Request.hpp"
-// #include <signal.h>
 #include <iostream>
 #include <sstream>
 #include <sys/wait.h> // pipe - fork - dup2 - close - execve - write - read - waitpid - STDOUT_FILENO
@@ -22,9 +22,9 @@
 #include <cstdlib> // exit
 #include <fcntl.h>  // fcntl, O_NONBLOCK
 #include <sys/time.h> // gettimeofday
+#include <sys/stat.h> // stat
 #include <vector>
 #include <map>
-#include "ServerConf.hpp"
 // #include <unistd.h> // for close, read, write
 // #include <cerrno>   // for errno
 
@@ -37,7 +37,7 @@ class CGI{ // should class name be camel-case??
     
     private:
         // env variables:
-        static ServerConf _server;
+        ServerConf _server;
         std::string _scriptName;        // filesystem path to script
         std::string _scriptFileName;        // full path to script
         std::string _location;
@@ -49,7 +49,11 @@ class CGI{ // should class name be camel-case??
         std::string _contentLenght;     // _body.size()
         std::string _contentType;       // from the headers map (should be!!)
         std::string _remoteAddr;        // remote client IP
+        std::string _output;
+        // std::string _errormsg;
         int _fd_in, _fd_out;
+        bool _execDone;
+        bool _readDone;
         /* To fix the path to file, join with root
         // if there was no root add a default path!
         std::string _location;
@@ -59,24 +63,31 @@ class CGI{ // should class name be camel-case??
         std::vector<std::string> _envs; // environment variables (string)
         std::vector<char*> _envc;       // environment for execve (should be char*)
         std::string _cgiFileName;
-        std::string cgiExecPath;
+        std::string _cgiExecPath;
 
-        CGI();
-        ~CGI();
         // int generateCgiFile();
         // std::string getCGIPath();
         // void getRoot();
-        void generateCgiFile();
-        void importData(const Request&);
+        // void generateCgiFile();
+        // CGI();
+        void importData(Request&); // remove const
         // void setQueryString();
+        // std::string setPath(); // remove const
         void setContentLenght();
         void set_HTTP_Header();
         void printEnvironment(); // to remove later
-        std::string parseOutput(std::string &);
-        std::string runCGI();
-        bool setToNonBlocking(int);
+        // std::string parseOutput(std::string &);
+        // std::string runCGI();
+        bool setToNonBlocking();
         bool validPath();
+        bool validExec();
         
     public:
-        static std::string executeCGI(const Request&, ServerConf&);
+        CGI();
+        ~CGI();
+        std::string executeCGI(Request&, ServerConf&); // remove const in order to be able to change status code of request 
+        std::string readOutput();
+        int getFd();
+        bool readDone();
+        bool execDone();
 };
