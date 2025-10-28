@@ -55,7 +55,7 @@ echo '<head>' . "\n";
 echo '    <meta charset="UTF-8">' . "\n";
 echo '    <meta name="viewport" content="width=device-width, initial-scale=1.0">' . "\n";
 echo '    <title>PHP CGI Example - Webserv</title>' . "\n";
-echo '    <link rel="stylesheet" href="../assets/main.css">' . "\n";
+echo '    <link rel="stylesheet" href="./../assets/main.css">' . "\n";
 echo '</head>' . "\n";
 echo '<body>' . "\n";
 echo '    <div class="container">' . "\n";

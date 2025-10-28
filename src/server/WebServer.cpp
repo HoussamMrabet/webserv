@@ -22,7 +22,7 @@ bool WebServ::startServer(ServerConf& server)
         {
             int fd = Socket::StartSocket(it->first, it->second);
             webserv.addPollFd(fd, POLLIN, "listen");
-            std::cout << "Listening on http" << M" " << it->first << ":" << it->second << B"" << std::endl;
+            std::cout << "Listening on " << M << "http://" << it->first << ":" << it->second << B << std::endl;
             webserv._sockets[fd] = *it;
         }
         catch (const std::exception& e)
