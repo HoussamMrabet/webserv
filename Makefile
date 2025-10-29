@@ -1,15 +1,19 @@
-# This makefile uses wildcards to facilitate testing the code
-# the old one is still present and called Makefile_old
-# you can remove this one and use the old Makefile
-
 NAME      =		webserv
 CPP       =		c++
 CPPFLAGS  =		-std=c++98 -Iincludes -Wall -Wextra -Werror
 SRC_DIR   =		src
 OBJ_DIR   =		obj
 INC_DIR   =		includes
-SRCS      =		$(shell find $(SRC_DIR) -name "*.cpp") # src/ and subdirs
-OBJS      =		$(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS)) # replace src/*.cpp with obj/*.o
+SRCS      =		src/cgi.cpp src/ConfigBuilder.cpp src/LocationConf.cpp src/main.cpp src/Multipart.cpp \
+				src/Request/parser-body.cpp src/Request/parser-headers.cpp src/Request/parser-multipart.cpp \
+				src/Request/parser-request_line.cpp src/Request/parser-request_processing.cpp \
+				src/Request/parser.cpp src/Request/Request.cpp src/Request/utils.cpp src/response/DeleteResponse.cpp \
+				src/response/DirectoryListing.cpp src/response/ErrorResponse.cpp src/response/GetResponse.cpp \
+				src/response/MimeTypes.cpp src/response/PostResponse.cpp src/response/RedirectResponse.cpp \
+				src/response/response.cpp src/server/Connection.cpp src/server/ReadRequest.cpp src/server/SendResponse.cpp \
+				src/server/Socket.cpp src/server/WebServer.cpp src/ServerConf.cpp src/TokenizeFile.cpp
+
+OBJS      =		$(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
 RM        =		rm -rf
 
