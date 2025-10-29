@@ -20,7 +20,7 @@
 #include <fstream>
 #include "MimeTypes.hpp"
 #define CRLF "\r\n"
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 1024000
 
 
 class Response {
