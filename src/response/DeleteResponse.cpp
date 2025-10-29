@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   DeleteResponse.cpp                                 :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/29 17:58:54 by mel-hamd          #+#    #+#             */
+/*   Updated: 2025/10/29 18:02:31 by mel-hamd         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+
 #include "Connection.hpp"
 
 void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
@@ -6,20 +19,14 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
     std::string requested_path = request.getUri();
     std::string document_root;
     std::string full_path;
-    
-    // Find the matching location configuration
     std::string location_path = "/";
-    std::map<std::string, LocationConf> locations = server.getLocations();
-    
-    // Find the best matching location (longest prefix match)
+    std::map<std::string, LocationConf> locations = server.getLocations();    
     for (std::map<std::string, LocationConf>::const_iterator it = locations.begin(); 
          it != locations.end(); ++it) {
         if (requested_path.find(it->first) == 0 && it->first.length() > location_path.length()) {
             location_path = it->first;
         }
     }
-    
-    // Check if DELETE method is allowed for this location
     if (locations.find(location_path) != locations.end()) {
         std::vector<std::string> allowed_methods = locations.at(location_path).getAllowedMethods();
         bool delete_allowed = false;
@@ -31,7 +38,7 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
             }
         }
         if (!delete_allowed) {
-            response_obj.setStatus(405); // Method Not Allowed
+            response_obj.setStatus(405);
             response_obj.setHeader("Content-Type", "text/html");
             response_obj.setHeader("Connection", connection_header);
             response_obj.setBody("<html><body><h1>405 Method Not Allowed</h1>"
@@ -41,7 +48,6 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
             return;
         }
         
-        // Use the location's root if available, otherwise use server root
         std::string location_root = locations.at(location_path).getRoot();
         if (!location_root.empty()) {
             document_root = location_root;
@@ -52,7 +58,6 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
         document_root = "./www";
     }
     
-    // Protected locations - prevent deletion from sensitive directories
     std::vector<std::string> protected_paths;
     protected_paths.push_back("/cgi-bin");
     protected_paths.push_back("/errors");
@@ -61,7 +66,7 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
     for (std::vector<std::string>::const_iterator it = protected_paths.begin(); 
          it != protected_paths.end(); ++it) {
         if (requested_path.find(*it) == 0) {
-            response_obj.setStatus(403); // Forbidden
+            response_obj.setStatus(403);
             response_obj.setHeader("Content-Type", "text/html");
             response_obj.setHeader("Connection", connection_header);
             response_obj.setBody("<html><body><h1>403 Forbidden</h1>"
@@ -72,14 +77,12 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
         }
     }
     
-    // Construct full path
     if (requested_path[0] == '/') {
         full_path = document_root + requested_path;
     } else {
         full_path = document_root + "/" + requested_path;
     }
-        
-    // Check if file exists
+
     struct stat file_stat;
     if (stat(full_path.c_str(), &file_stat) != 0) {
         response_obj.setStatus(404);
@@ -92,7 +95,6 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
         return;
     }
     
-    // Only allow deletion of regular files (not directories)
     if (S_ISDIR(file_stat.st_mode)) {
         response_obj.setStatus(403);
         response_obj.setHeader("Content-Type", "text/html");
@@ -104,7 +106,6 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
         return;
     }
     
-    // Check if it's a regular file
     if (!S_ISREG(file_stat.st_mode)) {
         response_obj.setStatus(403);
         response_obj.setHeader("Content-Type", "text/html");
@@ -116,7 +117,6 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
         return;
     }
     
-    // Security check: prevent path traversal
     if (requested_path.find("..") != std::string::npos) {
         response_obj.setStatus(403);
         response_obj.setHeader("Content-Type", "text/html");
@@ -128,8 +128,7 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
         return;
     }
     
-    // Attempt to delete the file using unlink()
-    if (unlink(full_path.c_str()) == 0) {
+    if (remove(full_path.c_str()) == 0) {
         response_obj.setStatus(200);
         response_obj.setHeader("Content-Type", "text/html");
         response_obj.setHeader("Connection", connection_header);
@@ -139,7 +138,6 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
         _response = response_obj.buildResponse();
         _isChunkedResponse = false;
     } else {        
-        // Determine error based on errno
         int status_code = 500;
         std::string error_msg = "Failed to delete file";
         

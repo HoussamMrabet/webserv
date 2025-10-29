@@ -69,7 +69,6 @@ void Response::setHeader(const std::string& key, const std::string& value) {
 void Response::setHttpVersion(const std::string& version) {
     this->http_version = version;
     
-    // Connection behavior can be flexible - server decides when to close
     if (version == "HTTP/1.0") {
         this->connection_close = true;  
     } else if (version == "HTTP/1.1") {
@@ -127,13 +126,13 @@ std::string Response::buildGetResponse(const std::string& file_path) {
         setStatus(404);
         setBody("File not found");
         setHeader("Content-Type", "text/html");
-        setHeader("Connection", "close"); // HTTP/1.0 default
+        setHeader("Connection", "close");
         return buildResponse();
     }
     
     setStatus(200);
     setBodyFromFile(file_path);
-    setHeader("Connection", "close"); // HTTP/1.0 default connection behavior
+    setHeader("Connection", "close");
     return buildResponse();
 }
 
@@ -142,29 +141,28 @@ std::string Response::buildPostResponse() {
     setStatus(201);
     setBody("Resource created successfully");
     setHeader("Content-Type", "text/plain");
-    setHeader("Connection", "close"); // HTTP/1.0 default
+    setHeader("Connection", "close");
     return buildResponse();
 }
 
-// Build DELETE response
 std::string Response::buildDeleteResponse(const std::string& file_path) {
     if (!fileExists(file_path)) {
         setStatus(404);
         setBody("File not found");
         setHeader("Content-Type", "text/plain");
-        setHeader("Connection", "close"); // HTTP/1.0 default
+        setHeader("Connection", "close");
         return buildResponse();
     }
     
   
     if (std::remove(file_path.c_str()) == 0) {
-        setStatus(204); // No Content - successful deletion
-        setHeader("Connection", "close"); // HTTP/1.0 default
+        setStatus(204);
+        setHeader("Connection", "close");
     } else {
         setStatus(500);
         setBody("Failed to delete file");
         setHeader("Content-Type", "text/plain");
-        setHeader("Connection", "close"); // HTTP/1.0 default
+        setHeader("Connection", "close");
     }
     
     return buildResponse();
@@ -240,9 +238,7 @@ std::string Response::getResponse(int code){
     return (response);
 }
 
-// ============== CHUNKED RESPONSE METHODS ==============
 
-// Prepare file response for chunked sending
 void Response::prepareFileResponse(const std::string& file_path) {
     this->file_path = file_path;
     this->bytes_sent = 0;
@@ -300,29 +296,24 @@ void Response::prepareFileResponse(const std::string& file_path) {
 std::string Response::getNextChunk(size_t chunk_size) {
     std::string chunk;
     
-    // First call: send headers
     if (!headers_sent) {
         headers_sent = true;
         
-        // If it's an error response or small file, return complete response
         if (!body.empty()) {
             chunk = cached_headers + body;
             is_ready = true;
             return chunk;
         }
         
-        // For file streaming, return just headers first
         chunk = cached_headers;
         return chunk;
     }
     
-    // Subsequent calls: send file content
     if (!file_stream.is_open() || file_stream.eof()) {
         is_ready = true;
         return "";
     }
     
-    // Read next chunk from file
     char buffer[BUFFER_SIZE];
     size_t actual_chunk_size = (chunk_size > BUFFER_SIZE) ? BUFFER_SIZE : chunk_size;
     file_stream.read(buffer, actual_chunk_size);
@@ -333,7 +324,6 @@ std::string Response::getNextChunk(size_t chunk_size) {
         bytes_sent += bytes_read;
     }
     
-    // Check if we've sent everything
     if (file_stream.eof() || bytes_sent >= content_length) {
         is_ready = true;
         file_stream.close();
@@ -342,12 +332,10 @@ std::string Response::getNextChunk(size_t chunk_size) {
     return chunk;
 }
 
-// Check if response is complete
 bool Response::isResponseComplete() const {
     return is_ready;
 }
 
-// Reset for reuse
 void Response::reset() {
     if (file_stream.is_open()) {
         file_stream.close();
@@ -392,35 +380,28 @@ void Response::prepareResponse(const std::string& file_path) {
         setBody("File not found");
         setHeader("Content-Type", "text/html");
         return;
-    }
-    
-    // File exists - set up for streaming
+    }    
     if (file_stream.is_open()) {
         file_stream.close();
     }
     
     file_stream.open(file_path.c_str(), std::ios::binary);
     if (!file_stream.is_open()) {
-        // Cannot open file - prepare error response
         setStatus(500);
         setBody("Cannot open file");
         setHeader("Content-Type", "text/html");
         return;
     }
     
-    // Success - prepare file response
     setStatus(200);
     this->content_length = getFileSize(file_path);
     setHeader("Content-Type", getContentType(file_path));
     
-    // Build headers for any HTTP version
     std::ostringstream response;
     response << http_version << " " << status << " " << status_message << CRLF;
     
-    // For chunked transfer, use Transfer-Encoding instead of Content-Length
     setHeader("Transfer-Encoding", "chunked");
     
-    // Add connection header based on HTTP version
     if (http_version == "HTTP/1.0") {
         setHeader("Connection", "close");
     } else {
@@ -436,40 +417,32 @@ void Response::prepareResponse(const std::string& file_path) {
     this->cached_headers = response.str();
 }
 
-// Get next chunk of response - call repeatedly until isFinished() returns true
 std::string Response::getResponseChunk(size_t chunk_size) {
     std::string chunk;
     
-    // First call: send headers
     if (!headers_sent) {
         headers_sent = true;
         
-        // If it's an error response (has body but no file stream), return complete response
         if (!body.empty() && !file_stream.is_open()) {
             chunk = cached_headers + body;
-            is_ready = true; // Response is complete
+            is_ready = true;
             return chunk;
         }
-        
-        // For file streaming, return just headers first
         chunk = cached_headers;
         return chunk;
     }
     
-    // Subsequent calls: send file content
     if (!file_stream.is_open() || file_stream.eof()) {
-        is_ready = true; // Response is complete
+        is_ready = true; 
         return "";
     }
     
-    // Read next chunk from file
     char buffer[BUFFER_SIZE];
     size_t actual_chunk_size = (chunk_size > BUFFER_SIZE) ? BUFFER_SIZE : chunk_size;
     file_stream.read(buffer, actual_chunk_size);
     std::streamsize bytes_read = file_stream.gcount();
     
     if (bytes_read > 0) {
-        // Format as proper HTTP chunk: [hex_size]\r\n[data]\r\n
         std::ostringstream hex_size;
         hex_size << std::hex << bytes_read;
         chunk = hex_size.str() + "\r\n";
@@ -477,24 +450,20 @@ std::string Response::getResponseChunk(size_t chunk_size) {
         chunk += "\r\n";
         bytes_sent += bytes_read;
         
-        // Check if this was the last chunk
         if (file_stream.eof() || bytes_sent >= content_length) {
-            // Append final chunk (0\r\n\r\n) to signal end
             chunk += "0\r\n\r\n";
-            is_ready = true; // Response is complete
+            is_ready = true;
             file_stream.close();
         }
     } else {
-        // No more data to read, send terminating chunk
         chunk = "0\r\n\r\n";
-        is_ready = true; // Response is complete
+        is_ready = true;
         file_stream.close();
     }
     
     return chunk;
 }
 
-// Check if response is finished - server uses this to know when to close connection
 bool Response::isFinished() const {
     return is_ready;
 }

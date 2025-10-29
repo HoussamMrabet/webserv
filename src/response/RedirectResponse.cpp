@@ -1,10 +1,22 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   RedirectResponse.cpp                               :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/29 18:07:45 by mel-hamd          #+#    #+#             */
+/*   Updated: 2025/10/29 18:07:46 by mel-hamd         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+
 #include "Connection.hpp"
 
 std::string Connection::checkForRedirect(Request &request, ServerConf &server) {
     std::string requested_path = request.getUri();
     std::map<std::string, LocationConf> locations = server.getLocations();
     
-    // Find the best matching location (longest prefix match)
     std::string best_match = "";
     const LocationConf* best_location = NULL;
     if ((requested_path == "/profile/profile.html" ) && Request::loggedIn == false)
@@ -21,7 +33,6 @@ std::string Connection::checkForRedirect(Request &request, ServerConf &server) {
         }
     }
     
-    // If we found a matching location and it has a redirect URL, return it
     if (best_location != NULL) {
         std::string redirect_url = best_location->getRedirectUrl();
         if (!redirect_url.empty()) {
@@ -29,15 +40,15 @@ std::string Connection::checkForRedirect(Request &request, ServerConf &server) {
         }
     }
     
-    return ""; // No redirect found
+    return ""; 
 }
 
 std::string Connection::sendRedirectResponse(Request &request, const std::string &redirect_url, ServerConf &server) {
     Response response_obj;
     std::string connection_header = getConnectionHeader(request);
-    (void)server; // Suppress unused parameter warning
+    (void)server; 
     
-    // Set 301 status code (permanent redirect) 
+
     response_obj.setStatus(301);
     response_obj.setHeader("Location", redirect_url);
     response_obj.setHeader("Connection", connection_header);
@@ -49,6 +60,6 @@ std::string Connection::sendRedirectResponse(Request &request, const std::string
     
     response_obj.setBody(redirect_body);
     std::string response = response_obj.buildResponse();
-    _isChunkedResponse = false; // Redirects are always small responses
+    _isChunkedResponse = false;
     return response;
 }

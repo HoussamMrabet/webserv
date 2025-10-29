@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ErrorResponse.cpp                                  :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/29 18:05:05 by mel-hamd          #+#    #+#             */
+/*   Updated: 2025/10/29 18:05:20 by mel-hamd         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+
 #include "Connection.hpp"
 
 void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
@@ -6,10 +19,8 @@ void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
     std::map<std::string, std::string> error_pages = server.getErrorPages();
     std::string connection_header = getConnectionHeader(request);
     
-    // Check if there's a custom error page defined in config
     if (error_pages.find(to_str(code)) != error_pages.end()) {
         error_page = error_pages[to_str(code)];
-        // Attach ./www/errors/ to the error page path
         std::string full_error_path = error_page;
         if (response_obj.fileExists(full_error_path)) {
             response_obj.setStatus(code);
@@ -22,7 +33,6 @@ void Connection::sendErrorPage(Request &request, int code, ServerConf &server){
         }
     }
     
-    // Fallback: check for standard error pages in ./www/errors/
     std::string standard_error_page = request.getRoot() + "/errors/" + to_str(code) + ".html";
     if (response_obj.fileExists(standard_error_page)) {
         response_obj.setStatus(code);

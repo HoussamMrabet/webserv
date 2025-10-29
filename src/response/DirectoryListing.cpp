@@ -1,9 +1,21 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   DirectoryListing.cpp                               :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mel-hamd <mel-hamd@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/29 18:04:25 by mel-hamd          #+#    #+#             */
+/*   Updated: 2025/10/29 18:04:59 by mel-hamd         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+
 #include "Connection.hpp"
 
 std::string Connection::generateDirectoryListing(const std::string& directory_path, const std::string& request_uri) {
     std::stringstream html;
     
-    // HTML header
     html << "<!DOCTYPE html>\n<html>\n<head>\n";
     html << "<title>Index of " << request_uri << "</title>\n";
     html << "<style>\n";
@@ -19,7 +31,6 @@ std::string Connection::generateDirectoryListing(const std::string& directory_pa
     html << "</style>\n</head>\n<body>\n";
     html << "<h1>Index of " << request_uri << "</h1>\n";
     
-    // Open directory
     DIR* dir = opendir(directory_path.c_str());
     if (dir == NULL) {
         html << "<p>Error: Cannot read directory</p>\n";
@@ -27,20 +38,17 @@ std::string Connection::generateDirectoryListing(const std::string& directory_pa
         return html.str();
     }
     
-    // Create vector to store directory entries for sorting
-    std::vector<std::pair<std::string, bool> > entries; // name, is_directory
+    std::vector<std::pair<std::string, bool> > entries; 
     struct dirent* entry;
     struct stat entry_stat;
     
     while ((entry = readdir(dir)) != NULL) {
         std::string entry_name = entry->d_name;
         
-        // Skip hidden files starting with '.' except for parent directory
         if (entry_name[0] == '.' && entry_name != "..") {
             continue;
         }
         
-        // Get full path for stat
         std::string full_entry_path = directory_path + "/" + entry_name;
         bool is_directory = false;
         
@@ -52,17 +60,13 @@ std::string Connection::generateDirectoryListing(const std::string& directory_pa
     }
     closedir(dir);
     
-    // Sort entries: directories first, then files, both alphabetically  
-    // Simple bubble sort since we need C++98 compatibility
     for (size_t i = 0; i < entries.size(); i++) {
         for (size_t j = i + 1; j < entries.size(); j++) {
             bool should_swap = false;
             
-            // Directories come before files
             if (entries[i].second != entries[j].second) {
-                should_swap = entries[j].second; // j is directory, i is file
+                should_swap = entries[j].second;
             } else {
-                // Same type, sort alphabetically
                 should_swap = entries[i].first > entries[j].first;
             }
             
@@ -73,8 +77,6 @@ std::string Connection::generateDirectoryListing(const std::string& directory_pa
             }
         }
     }
-    
-    // Generate table
     html << "<table>\n";
     html << "<tr><th>Name</th><th>Type</th><th>Size</th></tr>\n";
     
@@ -97,12 +99,8 @@ std::string Connection::generateDirectoryListing(const std::string& directory_pa
         if (is_directory) {
             html << "/";
         }
-        html << "</a></td>";
-        
-        // Type column
+        html << "</a></td>";        
         html << "<td>" << (is_directory ? "Directory" : "File") << "</td>";
-        
-        // Size column
         std::string full_entry_path = directory_path + "/" + entry_name;
         struct stat entry_stat;
         if (stat(full_entry_path.c_str(), &entry_stat) == 0 && !is_directory) {
