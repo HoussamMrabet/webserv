@@ -457,8 +457,16 @@ std::string Response::getResponseChunk(size_t chunk_size) {
     }
     
     // Subsequent calls: send file content
-    if (!file_stream.is_open() || file_stream.eof()) {
-        is_ready = true; // Response is complete
+    if (!file_stream.is_open()) {
+        // File stream was already closed, we may need to send final chunk
+        if (!is_ready) {
+            // First time we see closed stream after sending data
+            // Send the terminating chunk
+            std::cout << "Sending final terminating chunk" << std::endl;
+            is_ready = true;
+            return "0\r\n\r\n";
+        }
+        // Already sent terminating chunk
         return "";
     }
     
@@ -477,24 +485,20 @@ std::string Response::getResponseChunk(size_t chunk_size) {
         chunk += "\r\n";
         bytes_sent += bytes_read;
         
-        // Check if this was the last chunk
-        if (file_stream.eof() || bytes_sent >= content_length) {
-            // Append final chunk (0\r\n\r\n) to signal end
-            chunk += "0\r\n\r\n";
-            is_ready = true; // Response is complete
-            file_stream.close();
-        }
         std::cout << "Bytes sent so far: " << bytes_sent << "/" << content_length << std::endl;
         std::cout << "Sending chunk of size: " << bytes_read << " bytes" << std::endl;
+        
+        // Don't close file here yet - let next call detect EOF
+        return chunk;
     } else {
-        // No more data to read, send terminating chunk
-        std::cout << "Sending final chunk" << std::endl;
-        chunk = "0\r\n\r\n";
-        is_ready = true; // Response is complete
+        // No more data to read from file, close it and prepare terminating chunk
         file_stream.close();
+        std::cout << "End of file reached. Bytes sent: " << bytes_sent << "/" << content_length << std::endl;
+        std::cout << "Sending final terminating chunk" << std::endl;
+        // Return terminating chunk and mark as ready on next call
+        is_ready = true;
+        return "0\r\n\r\n";
     }
-    
-    return chunk;
 }
 
 // Check if response is finished - server uses this to know when to close connection
