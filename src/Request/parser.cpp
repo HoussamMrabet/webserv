@@ -172,14 +172,10 @@ void Request::parseRequest(const std::string &rawRequest)
     }
     catch (const int &e)
     {
-        std::cout << "-------------------------------------------------------------------------------------------\n";
-        std::cout << "Request parsing ended with status code: " << this->message << std::endl;
-        std::cout << "-------------------------------------------------------------------------------------------\n";
         this->statusCode = e;
         this->currentStep = DONE;
         if (this->statusCode != 200)
             close(this->cgiFdRead);
         close(this->cgiFdWrite);
-        // printRequest();
     }
 }

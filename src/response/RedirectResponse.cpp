@@ -25,7 +25,6 @@ std::string Connection::checkForRedirect(Request &request, ServerConf &server) {
     if (best_location != NULL) {
         std::string redirect_url = best_location->getRedirectUrl();
         if (!redirect_url.empty()) {
-            MOHAMED && std::cout << "Redirect found for path: " << requested_path << " -> " << redirect_url << std::endl;
             return redirect_url;
         }
     }
@@ -51,7 +50,5 @@ std::string Connection::sendRedirectResponse(Request &request, const std::string
     response_obj.setBody(redirect_body);
     std::string response = response_obj.buildResponse();
     _isChunkedResponse = false; // Redirects are always small responses
-    
-    MOHAMED && std::cout << "Sending redirect response to: " << redirect_url << std::endl;
     return response;
 }

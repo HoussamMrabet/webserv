@@ -92,20 +92,15 @@ void WebServ::pollLoop()
                         continue;
                     }
                     else {
-                        CHOROUK && std::cout << "----------- READ NOT DONE ---------------\n";
                     }
                 }
             }
             else if (revents & POLLOUT){
-                CHOROUK && std::cout << "----------- INSIDE POLLOUT ---------------\n";
                 std::map<int, Connection>::iterator it = _connections.find(fd);
                 if (it == _connections.end()) continue;
                 if (it->second.isCGI() && !it->second.cgiDone()) continue;
-                CHOROUK && std::cout << "----------- INSIDE WRITE ---------------\n";
                 it->second.writeResponse();
-                CHOROUK && std::cout << "----------- AFTER WRITE ---------------\n";
                 if (it->second.isResponseDone()) {
-                    CHOROUK && std::cout << "----------- WRITE DONE ---------------\n";
                     close(fd);
                     to_remove.push_back(fd);
                     // delete it->second;
@@ -115,9 +110,6 @@ void WebServ::pollLoop()
                         to_remove.push_back(n);
                     }
                     _connections.erase(it);
-                }
-                else {
-                    CHOROUK && std::cout << "----------- WRITE NOT DONE ---------------\n";
                 }
 
             }
@@ -151,12 +143,9 @@ void WebServ::pollLoop()
 
 bool WebServ::acceptConnection(int fd){
     try{
-        CHOROUK && std::cout << "new connection fd " << fd << " " << _server.getRoot() << std::endl; 
         Connection connection = Connection(fd, _server, _sockets[fd].first, _sockets[fd].second);
         int connection_fd = connection.getFd();
         _connections.insert(std::make_pair(connection_fd, connection));
-        CHOROUK && std::cout << "------- accept fd = " << connection_fd << std::endl;
-        // _cleanRead = false;
         addPollFd(connection_fd, POLLIN, "connection");
     }
     catch (const std::exception& e){

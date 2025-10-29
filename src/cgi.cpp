@@ -92,11 +92,10 @@ void CGI::importData(Request& request){
     LocationConf conf = locations[_location];
     std::map<std::string, std::string> cgis = conf.getCgi();
     _root = conf.getRoot();
-    _root = _root.empty()? _server.getRoot(): _root; // if no root inside location get global root!!!
+    _root = _root.empty()? _server.getRoot(): _root; 
     _scriptName = request.getFullUri();
-    _scriptFileName = request.getFullPath(); // should be set after _scriptName _location and _root
+    _scriptFileName = request.getFullPath();
     _execPath = cgis[request.getCgiType()];
-    // std::cout << "exec path = " << _execPath << std::endl;
     _queryString = request.getUriQueries();
     _requestMethod = request.getStrMethod();
     _body = request.getBody();
@@ -104,17 +103,13 @@ void CGI::importData(Request& request){
     _headers = request.getHeaders();
 
     if (!validExec()){
-        // close(_fd_in);
-        // close(_fd_out);
         throw std::runtime_error("CGI interpreter not found");
     }
     if (!validPath()){
-        // close(_fd_in);
-        // close(_fd_out);
         throw std::runtime_error("Invalid CGI script path");
     }
 
-    setContentLenght(); // check output and throw error
+    setContentLenght();
     set_HTTP_Header();
     _envs.push_back("SCRIPT_NAME=" + _scriptName);
     _envs.push_back("SCRIPT_FILENAME=" + _scriptFileName);
@@ -126,7 +121,6 @@ void CGI::importData(Request& request){
     _envs.push_back("SERVER_PROTOCOL=HTTP/1.1");
     _envs.push_back("SERVER_SOFTWARE=webserv/1.0");
     _envs.push_back("GATEWAY_INTERFACE=CGI/1.1");
-    // _envc.clear();
 
     for (size_t i = 0; i < _envs.size(); ++i)
         _envc.push_back(const_cast<char*>(_envs[i].c_str()));
@@ -139,15 +133,12 @@ std::string CGI::readOutput(){
 
     if (!_execDone || _readDone) 
         return (_output);
-    // int read_counter = 0;
     n = read(_fd_out, buffer, sizeof(buffer));
     if (n > 0)
         _output.append(buffer, n);
-    // std::cout << "n = " << n << std::endl;
-    else if (n == 0){ // change to = 0 and check for -1 
+    else if (n == 0){
         _readDone = true;
         close(_fd_in);
-        // close(_fd_out);
     }
     else{
         // _readDone = true;
@@ -160,13 +151,11 @@ std::string CGI::readOutput(){
 }
 
 void CGI::printEnvironment(){
-    std::cout << "...........Environment...............\n"; 
     for (size_t i = 0; i < _envc.size() - 1; i++){
         if (_envc[i]){
             std::cout << _envc[i] << std::endl;
         }
     }
-    std::cout << "...................................\n"; 
 }
 
 bool CGI::setToNonBlocking(){

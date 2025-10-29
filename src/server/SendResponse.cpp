@@ -3,8 +3,6 @@
 bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiResponse!!!
     // First, check if we're in the middle of sending a chunked response
 
-    CHOROUK && std::cout << "------- write fd = " << _fd << std::endl;
-
     if (_isChunkedResponse) {
         if (!_response_obj.isFinished()) {
             // Get new chunk only if current one is empty
@@ -18,8 +16,6 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
             
             // Send (rest of) current chunk
             ssize_t bytes_sent = send(_fd, _currentChunk.c_str(), _currentChunk.length(), SO_NOSIGPIPE);
-            std::cout << "bytes sent  = " << bytes_sent << " on fd = " << _fd << std::endl;
-
             if (bytes_sent == -1) {
                 perror("Chunked write failed");
                 return false;
@@ -27,7 +23,6 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
                 return false;
             } else if (bytes_sent < (ssize_t)_currentChunk.length()) {
                 // Partial write - keep unsent part
-                std::cout << "Partial write: " << bytes_sent << "/" << _currentChunk.length() << std::endl;
                 _currentChunk = _currentChunk.substr(bytes_sent);  // Keep rest for next time
                 return true;
             }
@@ -87,7 +82,6 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         close(_request.getCgiFdRead());
     if (!redirect_url.empty()) {
         _response = sendRedirectResponse(_request, redirect_url, _server);
-        MOHAMED && std::cout << "Redirect Response:\n" << _response << std::endl;
         updateTimout();
     }
     else if (_request.isCGI() && (_request.getStatusCode() == 200))
@@ -101,28 +95,20 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         updateTimout();
     }
     else if ( _request.getStatusCode() != 200){
-        MOHAMED && std::cout << "Error status code: " << _request.getStatusCode()  << std::endl;
-        MOHAMED && std::cout << "Error message: " << _request.getMessage()  << std::endl;
         sendErrorPage(_request, _request.getStatusCode(), _server);
-        MOHAMED && std::cout << _response << std::endl;
         updateTimout();
     }
     else if (_request.getStrMethod() == "POST"){
         // sentPostResponse(_request, _server);
         sendPostResponse(_request, _request.getStatusCode(), _server);
-        MOHAMED && std::cout << _response << std::endl;
         updateTimout();
     }
     else if (_request.getStrMethod() == "DELETE"){
         sendDeleteResponse(_request, _server);
-        MOHAMED && std::cout << _response << std::endl;
         updateTimout();
     }
     else if (_request.getStrMethod() == "GET"){ // can use pointer to member function 
         sendGetResponse(_request, _server);
-        if (!_isChunkedResponse) {
-            MOHAMED && std::cout << _response << std::endl;
-        }
         updateTimout();
     }
     
@@ -176,7 +162,6 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
             updateTimout();
         } else {
             // Partial write, wait to write remaining later
-            std::cout << "Partial write: " << _responseBytesSent << "/" << totalLen << std::endl;
             // do not mark response done, wait for next call
         }
     }

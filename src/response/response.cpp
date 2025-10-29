@@ -484,11 +484,8 @@ std::string Response::getResponseChunk(size_t chunk_size) {
             is_ready = true; // Response is complete
             file_stream.close();
         }
-        std::cout << "Bytes sent so far: " << bytes_sent << "/" << content_length << std::endl;
-        std::cout << "Sending chunk of size: " << bytes_read << " bytes" << std::endl;
     } else {
         // No more data to read, send terminating chunk
-        std::cout << "Sending final chunk" << std::endl;
         chunk = "0\r\n\r\n";
         is_ready = true; // Response is complete
         file_stream.close();

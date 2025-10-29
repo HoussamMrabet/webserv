@@ -78,9 +78,7 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
     } else {
         full_path = document_root + "/" + requested_path;
     }
-    
-    MOHAMED && std::cout << "DELETE: Full path: " << full_path << std::endl;
-    
+        
     // Check if file exists
     struct stat file_stat;
     if (stat(full_path.c_str(), &file_stat) != 0) {
@@ -132,7 +130,6 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
     
     // Attempt to delete the file using unlink()
     if (unlink(full_path.c_str()) == 0) {
-        MOHAMED && std::cout << "DELETE: Successfully deleted: " << full_path << std::endl;
         response_obj.setStatus(200);
         response_obj.setHeader("Content-Type", "text/html");
         response_obj.setHeader("Connection", connection_header);
@@ -141,9 +138,7 @@ void Connection::sendDeleteResponse(Request &request, ServerConf &server) {
                            "<p>Path: " + requested_path + "</p></body></html>");
         _response = response_obj.buildResponse();
         _isChunkedResponse = false;
-    } else {
-        MOHAMED && std::cout << "DELETE: Failed to delete: " << full_path << std::endl;
-        
+    } else {        
         // Determine error based on errno
         int status_code = 500;
         std::string error_msg = "Failed to delete file";

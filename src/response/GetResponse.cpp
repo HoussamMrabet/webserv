@@ -47,25 +47,21 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
 
     // std::cout << "Requested path: " << file_name << std::endl;
     // std::cout << "Document root: " << document_root << std::endl;
-    std::cout << "Full path: " << full_path << std::endl;
     
     if (stat(full_path.c_str(), &fileStat) == 0) {
         // File exists
         if (S_ISREG(fileStat.st_mode)) {
             // Check file size to decide between regular and chunked response
             size_t file_size = static_cast<size_t>(fileStat.st_size);
-            std::cout << "File size: " << file_size << " bytes" << std::endl;
             
             if (file_size >= LARGE_FILE_THRESHOLD) {
                 // Use chunked transfer for large files
-                MOHAMED && std::cout << "Using chunked transfer for large file" << std::endl;
                 _response_obj.prepareResponse(full_path);
                 _isChunkedResponse = true;
                 _response = ""; // Clear regular response since we're using chunked
                 return;
             } else {
                 // Use regular response for small files
-                MOHAMED && std::cout << "Using regular response for small file" << std::endl;
                 response_obj.setStatus(200);
                 response_obj.setBodyFromFile(full_path);
                 response_obj.setHeader("Connection", connection_header);
@@ -98,18 +94,15 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
                 if (stat(index_path.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode)) {
                     // Check file size to decide between regular and chunked response
                     size_t file_size = static_cast<size_t>(fileStat.st_size);
-                    MOHAMED && std::cout << "Index file size: " << file_size << " bytes" << std::endl;
                     
                     if (file_size > LARGE_FILE_THRESHOLD) {
                         // Use chunked transfer for large index files
-                        MOHAMED && std::cout << "Using chunked transfer for large index file" << std::endl;
                         _response_obj.prepareResponse(index_path);
                         _isChunkedResponse = true;
                         _response = ""; // Clear regular response since we're using chunked
                         return;
                     } else {
                         // Use regular response for small index files
-                        MOHAMED && std::cout << "Using regular response for small index file" << std::endl;
                         response_obj.setStatus(200);
                         response_obj.setBodyFromFile(index_path);
                         response_obj.setHeader("Connection", connection_header);
@@ -142,9 +135,7 @@ void Connection::sendGetResponse(Request &request  , ServerConf &server){
                     return;
                 }
             }
-            MOHAMED && std::cout << "It's a directory." << std::endl;
         } else {
-            MOHAMED && std::cout << "It's neither a regular file nor a directory." << std::endl;
             response_obj.setStatus(403);
             response_obj.setBody("Forbidden");
             response_obj.setHeader("Content-Type", "text/html");
