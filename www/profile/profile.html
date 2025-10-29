@@ -438,6 +438,7 @@
         }
 
         document.getElementById('logoutForm').addEventListener('submit', function (e) {
+            e.preventDefault();
             fetch('/logout', {
                 method: 'POST',
                 headers: {
@@ -452,7 +453,10 @@
                     console.error('Logout error:', error);
                     setTimeout(() => {
                     }, 1000);
-                });
+                })
+                .finally(() => {
+                    location.reload();
+                })
             console.log('Logging out...');
 
         });
