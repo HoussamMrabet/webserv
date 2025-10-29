@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
             display: none;
             margin-top: 10px;
         }
+
         .file-item {
             display: flex;
             align-items: center;
@@ -19,6 +21,7 @@
             margin: 5px 0;
             border-radius: 6px;
         }
+
         .remove-file {
             background: none;
             border: none;
@@ -28,6 +31,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header class="header">
@@ -53,7 +57,8 @@
                         </div>
 
                         <div class="upload-actions">
-                            <button type="submit" class="btn btn-primary" id="submit-button" disabled>Upload Files</button>
+                            <button type="submit" class="btn btn-primary" id="submit-button" disabled>Upload
+                                Files</button>
                         </div>
                     </form>
                 </div>
@@ -74,7 +79,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const uploadForm = document.getElementById('upload-form');
             const fileInput = document.getElementById('file-input');
             const fileNameDisplay = document.getElementById('file-name-display');
@@ -105,12 +110,12 @@
                 }
             }
 
-            fileInput.addEventListener('change', function() {
+            fileInput.addEventListener('change', function () {
                 selectedFiles = Array.from(fileInput.files);
                 renderFileList();
             });
 
-            fileNameDisplay.addEventListener('click', function(e) {
+            fileNameDisplay.addEventListener('click', function (e) {
                 if (e.target.classList.contains("remove-file")) {
                     const index = e.target.getAttribute("data-index");
                     selectedFiles.splice(index, 1);
@@ -123,11 +128,15 @@
                 }
             });
 
-            uploadForm.addEventListener('submit', async function(event) {
+            uploadForm.addEventListener('submit', async function (event) {
                 event.preventDefault();
 
                 const formData = new FormData();
                 selectedFiles.forEach(file => formData.append('files[]', file));
+
+                submitButton.disabled = true;
+                const originalText = submitButton.textContent;
+                submitButton.textContent = 'Uploading...';
 
                 try {
                     const response = await fetch('/upload', {
@@ -146,10 +155,14 @@
                 } catch (error) {
                     console.error('Error:', error);
                     alert('Error: Could not upload files.');
+                } finally {
+                    submitButton.disabled = selectedFiles.length === 0;
+                    submitButton.textContent = originalText;
                 }
             });
 
-            closePopupButton.addEventListener('click', function() {
+
+            closePopupButton.addEventListener('click', function () {
                 confirmationPopup.style.display = 'none';
             });
 
@@ -175,4 +188,5 @@
         });
     </script>
 </body>
+
 </html>
