@@ -20,10 +20,7 @@ void Request::parseBody()
         {
             std::string ending = this->body.substr(this->body.size() - 5);
             if (ending == "0\r\n\r\n")
-            {
                 this->lastChunk = true;
-                std::cout << "LAST CHUNK DETECTED IN BODY\n";
-            }
         }
         
         if (this->body.empty())
@@ -89,14 +86,13 @@ void Request::parseBody()
             char *end;
             this->chunkSize = strtol(chunkSizeStr.c_str(), &end, 16);
             this->inChunk = true;
-            if ((signed)this->chunkSize < 0)
+            if (this->chunkSize < 0)
             {
                 this->message = "Invalid chunk size";
                 throw 400;
             }
             if (this->chunkSize == 0)
             {
-                std::cout << "LAST CHUNK RECEIVED\n";
                 this->body.clear();
                 throw 200;
             }
