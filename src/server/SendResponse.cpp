@@ -1,83 +1,37 @@
 #include "Connection.hpp"
 
-bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiResponse!!!
-    // First, check if we're in the middle of sending a chunked response
+bool Connection::writeResponse(){
 
     if (_isChunkedResponse) {
         if (!_response_obj.isFinished()) {
-            // Get new chunk only if current one is empty
             if (_currentChunk.empty()) {
                 _currentChunk = _response_obj.getResponseChunk();
                 if (_currentChunk.empty()) {
-                    return true;  // No chunk available yet
+                    return true;
                 }
-                // std::cout << "chunk: \n" << _currentChunk << std::endl << std::endl;
             }
             
-            // Send (rest of) current chunk
             ssize_t bytes_sent = send(_fd, _currentChunk.c_str(), _currentChunk.length(), SO_NOSIGPIPE);
             if (bytes_sent == -1) {
-                perror("Chunked write failed");
                 return false;
             } else if (bytes_sent == 0) {
                 return false;
             } else if (bytes_sent < (ssize_t)_currentChunk.length()) {
-                // Partial write - keep unsent part
-                _currentChunk = _currentChunk.substr(bytes_sent);  // Keep rest for next time
+                _currentChunk = _currentChunk.substr(bytes_sent);
                 return true;
             }
             
-            // Full chunk sent, clear it
             _currentChunk.clear();
             return true;
         } else {
-            // All chunks sent, mark response as done
-            std::cout << "Chunked response complete" << std::endl;
             _responseDone = true;
             _isChunkedResponse = false;
             _currentChunk.clear();
             return true;
         }
     }
-    // if (_isChunkedResponse) {
-    //     // std::cout << "+++ Chunked!!\n";
-    //     std::cout << "+++ Chunked response processing\n";
-    //     // Continue sending chunks from existing response
-    //     if (!_response_obj.isFinished()) {
-    //         std::string chunk = _response_obj.getResponseChunk();
-    //         std::cout << "+++ Obtained chunk of size: " << chunk.length() << std::endl;
-    //         if (!chunk.empty()) {
-    //             ssize_t bytes_sent = write(_fd, chunk.c_str(), chunk.length());
-    //             std::cout << "+++ Wrote chunk of size: " << bytes_sent << std::endl;
-    //             if (bytes_sent == -1) {
-    //                 perror("Chunked write failed");
-    //                 std::cerr << "Error details: " << strerror(errno) << std::endl;
-    //                 return (false);
-    //             } else if (bytes_sent == 0) {
-    //                 MOHAMED && std::cout << "Connection closed by peer during chunked transfer" << std::endl;
-    //                 return (false);
-    //             } else if (bytes_sent < (ssize_t)chunk.length()) {
-    //                 // Partial write - handle this case
-    //                 MOHAMED && std::cout << "Partial write: " << bytes_sent << "/" << chunk.length() << " bytes" << std::endl;
-    //                 return (false);
-    //             }
-    //             MOHAMED && std::cout << "Sent chunk of size: " << bytes_sent << std::endl;
-    //             return (true); // Successfully sent a chunk, return
-    //         }
-    //     } else {
-    //         // All chunks sent, mark response as done
-    //         MOHAMED && std::cout << "Chunked response complete" << std::endl;
-    //         _responseDone = true;
-    //         _isChunkedResponse = false;
-    //         return (true);
-    //     }
-    // }
-    
-    // Regular response processing - only if not in chunked mode
-    // Check for redirects first
     std::string redirect_url = checkForRedirect(_request, _server);
 
-    // CHOROUK && std::cout << C"--------- REDIRECTION FOUND!!!! -----------" << B"\n";
     if (_request.isCGI() && (_request.getStatusCode() != 200))
         close(_request.getCgiFdRead());
     if (!redirect_url.empty()) {
@@ -99,7 +53,6 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         updateTimout();
     }
     else if (_request.getStrMethod() == "POST"){
-        // sentPostResponse(_request, _server);
         sendPostResponse(_request, _request.getStatusCode(), _server);
         updateTimout();
     }
@@ -107,62 +60,29 @@ bool Connection::writeResponse(){ // check if cgi or not, if cgi call cgiRespons
         sendDeleteResponse(_request, _server);
         updateTimout();
     }
-    else if (_request.getStrMethod() == "GET"){ // can use pointer to member function 
+    else if (_request.getStrMethod() == "GET"){
         sendGetResponse(_request, _server);
         updateTimout();
-    }
-    
-    // Handle regular (non-chunked) response sending
-    // Only executed if we're not in chunked mode or if chunked response just started
-    // if (_response.empty()){
-    //     _response = DEFAULT_RESPONSE;
-    //     updateTimout();
-    // }
-
-
-
-    // if (!_isChunkedResponse) {
-    //     std::cout << "+++ Not chunked!!\n";
-    //     // std::cout << "----------> writing on fd = " << _fd << std::endl;
-    //     // CHOROUK && std::cout << "writing on fd = " << _fd << std::endl;
-    //     int b = write(_fd, _response.c_str(), _response.length());
-    //     if (b == -1){
-    //         // perror("Write failed"); // throw
-    //         return (false);
-    //     }
-    //     CHOROUK && std::cout << "----------- STILL HERE ---------------\n";
-    //     updateTimout();
-    //     // Response is complete
-    //     _responseDone = true;
-    // }
-    
+    }    
 
     size_t _responseBytesSent = 0;
 
     if (!_isChunkedResponse) {
-        // std::cout << "+++ Not chunked!!\n";
 
         size_t totalLen = _response.length();
 
-        // Write remaining part of the response
         ssize_t bytes_sent = write(_fd, _response.c_str() + _responseBytesSent, totalLen - _responseBytesSent);
-        // ssize_t bytes_sent = send(_fd, _response.c_str() + _responseBytesSent, totalLen - _responseBytesSent, SO_NOSIGPIPE); // no sigpipe
         updateTimout();
         if (bytes_sent == -1) {
-            // perror("Write failed");
             return true;
         }
 
         _responseBytesSent += bytes_sent;
 
         if (_responseBytesSent == totalLen) {
-            // Finished sending entire response
             _responseDone = true;
-            _responseBytesSent = 0;  // reset for next response
+            _responseBytesSent = 0;
             updateTimout();
-        } else {
-            // Partial write, wait to write remaining later
-            // do not mark response done, wait for next call
         }
     }
 

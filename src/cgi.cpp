@@ -42,7 +42,6 @@ std::string CGI::executeCGI(Request& request, ServerConf& server){
         argv[2] = NULL;
 
         execve(_execPath.c_str(), argv, &_envc[0]);
-        perror("execve");
         exit(1);
     }
     close(stdout_pipe[1]);
