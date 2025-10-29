@@ -21,7 +21,7 @@ void Request::setBodyInformations()
     {
         char *end;
         this->contentLength = strtol(contentLengthIt->second.c_str(), &end, 10);
-        if ((signed)contentLength < 0) ////////!!!!
+        if ((signed)contentLength < 0)
         {
             this->message = "Invalid Content-Length";
             throw 400;
@@ -140,7 +140,6 @@ void Request::parseRequest(const std::string &rawRequest)
 
             this->fullBody += this->requestData;
 
-            // const ServerConf &server = globalServer[0];
             std::map<std::string, LocationConf> locations = server.getLocations();
             std::map<std::string, LocationConf>::iterator locIt = locations.find(this->location);
 
@@ -173,13 +172,10 @@ void Request::parseRequest(const std::string &rawRequest)
     }
     catch (const int &e)
     {
-        std::cout << "is Done\n";
-        // this->printRequest();
         this->statusCode = e;
         this->currentStep = DONE;
         if (this->statusCode != 200)
             close(this->cgiFdRead);
         close(this->cgiFdWrite);
-        // printRequest();
     }
 }

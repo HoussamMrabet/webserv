@@ -121,30 +121,29 @@ class Request
 
         Request();
         ~Request();
-        Request(const Request&);            // don't define!!!
-        // Request& operator=(const Request&); // don't define!!!
+        Request(const Request&);
         
         t_method getMethod() const;
         std::string getStrMethod() const;
-        std::string getUri() const; // return the uri (without queries if exists)
-        std::string getUriQueries() const; // return the queries from the uri "?..."
-        std::string getUriFileName() const; // return the file name from the uri
-        std::string getLocation() const; // return the location matched in the config file
+        std::string getUri() const;
+        std::string getUriQueries() const;
+        std::string getUriFileName() const;
+        std::string getLocation() const;
         std::map<std::string, std::string> getHeaders() const;
         std::string getBody() const;
         std::string getFullPath() const;
         std::string getFullUri() const;
         std::string getHeader(const std::string &key) const;
-        std::string getHost() const; // return server name
-        std::string getCgiType() const; // return php or py as string if there is a cgi otherwise return empty string
+        std::string getHost() const;
+        std::string getCgiType() const;
         int getStatusCode() const;
         void setStatusCode(int);
-        int getCgiFdRead() const; // return read end of cgi pipe
+        int getCgiFdRead() const;
         std::string getRoot() const;
 
         bool isDone() const;
-        bool isCGI() const; // check if the request is a cgi or not
-        void CGIError(); // check if the request is a cgi or not
+        bool isCGI() const;
+        void CGIError();
         void parseRequest(const std::string& rawRequest = "");
         void printRequest();
         std::string getMessage() const;

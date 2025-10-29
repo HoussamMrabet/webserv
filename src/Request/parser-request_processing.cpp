@@ -66,22 +66,18 @@ void Request::processRequest()
     this->uriIndexe = this->uri;
     std::string file_name = this->uri.substr(std::min(location_path.length(), this->uri.length()));
     
-    if (document_root.empty()){
-        std::cout << "EMPTY!!!\n";
+    if (document_root.empty())
+    {
         document_root = server.getRoot();
         file_name = this->uri;
     }
-    std::cout << "--------------------------> file_name = " << file_name << std::endl;
 
 
     if (file_name.length() > 0 && file_name[0] == '/')
         file_name = file_name.substr(1);
-    // if (document_root[0] != '.')
-    //     document_root = "." + document_root;
-    std::cout << "--------------------------> document_root = " << document_root << std::endl;
-    std::cout << "--------------------------> file_name = " << file_name << std::endl;
+
     full_path = document_root + "/" + file_name;
-    std::cout << "--------------------------> fullpath = " << full_path << std::endl;
+
     if (file_name.empty())
     {
         std::vector<std::string> indexes = locations[location_path].getIndex();
@@ -102,8 +98,9 @@ void Request::processRequest()
             }
         }
     }
+
     this->fullPath = full_path;
-    std::cout << "--------------------------> fullpath = " << full_path << std::endl;
+
     if (this->fullPath.length() >= 4 && this->fullPath.substr(this->fullPath.length() - 4) == ".php")
     {
         this->cgiType = ".php";
@@ -114,6 +111,7 @@ void Request::processRequest()
         this->cgiType = ".py";
         this->uriFileName = index;
     }
+    
     int fd = open(fullPath.c_str(), O_RDONLY);
     if (fd == -1)
     {

@@ -94,17 +94,11 @@ std::string extractThemeFromCookie(const std::string &cookieString)
         size_t valueStart = themePos + 6;
         size_t valueEnd = cookieString.find(";", valueStart);
         if (valueEnd == std::string::npos)
-        {
             valueEnd = cookieString.length();
-        }
         std::string themeValue = cookieString.substr(valueStart, valueEnd - valueStart);
 
-        // while (!themeValue.empty() && (themeValue.back() == ' ' || themeValue.back() == '\t' || themeValue.back() == '\r')) // c++11
         while (!themeValue.empty() && (ft_back(themeValue) == ' ' || ft_back(themeValue) == '\t' || ft_back(themeValue) == '\r'))
-        {
-            // themeValue.pop_back(); // c++11
             themeValue.resize(themeValue.size() - 1);
-        }
 
         return themeValue;
     }
@@ -129,9 +123,7 @@ void Request::handleThemeCookie()
 
                 std::string themeValue = extractThemeFromCookie(cookieValue);
                 if (!themeValue.empty())
-                {
                     Request::theme = themeValue;
-                }
                 break;
             }
         }
@@ -158,7 +150,6 @@ void Request::handleSession()
             headers["X-User-Job"] = Request::loggedInUser.job;
         }
 
-        // Parse query parameters from URI
         std::string queryString = getUriQueries();
 
         if (!queryString.empty())
@@ -166,48 +157,39 @@ void Request::handleSession()
             std::string username = extractQueryParam(queryString, "username");
             std::string password = extractQueryParam(queryString, "password");
 
-            // Compare with users vector
             for (std::vector<t_user>::iterator it = Request::users.begin();
                  it != Request::users.end(); ++it)
             {
                 if (it->username == username && it->password == password)
                 {
-                    // Match found - set logged in user
                     Request::loggedInUser = *it;
                     Request::loggedIn = true;
                     return;
                 }
             }
-            // No match found - do nothing (loggedIn remains false)
         }
     }
     if (uri == "/logout")
     {
         std::cout << "Logging out user: " << Request::loggedInUser.username << std::endl;
         Request::loggedIn = false;
-        Request::loggedInUser = t_user(); // Reset to empty user
-        // Send appropriate response
+        Request::loggedInUser = t_user();
     }
 }
 
-// Helper function to extract query parameter value
 std::string Request::extractQueryParam(const std::string &queryString, const std::string &paramName)
 {
     std::string searchPattern = paramName + "=";
     size_t startPos = queryString.find(searchPattern);
 
     if (startPos == std::string::npos)
-    {
         return "";
-    }
 
     startPos += searchPattern.length();
     size_t endPos = queryString.find("&", startPos);
 
     if (endPos == std::string::npos)
-    {
         endPos = queryString.length();
-    }
 
     return queryString.substr(startPos, endPos - startPos);
 }

@@ -28,9 +28,7 @@ void Multipart::setFileName(const std::string &fileName)
     this->fileName = fileName;
     this->file = open(fileName.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
     if (this->file == -1)
-    {
         throw "Failed to open file";
-    }
 }
 
 void Multipart::setHeaders(const std::map<std::string, std::string> &headers)

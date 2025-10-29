@@ -26,18 +26,12 @@ Request::Request() : statusCode(200), message("success!"), currentStep(REQ_LINE)
                         fileName(""), createdFile(""), fullBody(""), chunkSize(0), chunkData(""), inChunk(false),
                         cgiFdRead(-1), cgiFdWrite(-1), server(ConfigBuilder::getServer()), lastChunk(false)
 {
-    CHOROUK && std::cout << G"-------- Request destructor called!! ----";
-    CHOROUK && std::cout << B"\n";
     this->headers["connection"] = "keep-alive";
-    // const ServerConf &server = globalServer[0];
-    // const ServerConf &server = ConfigBuilder::getServer();
     this->uploadDir = server.getRoot() + server.getUploadDir();
 }
 
 Request::~Request()
 {
-    CHOROUK && std::cout << G"-------- Request destructor called!! ----";
-    CHOROUK && std::cout << B"\n";
     for (size_t i = 0; i < multipartData.size(); ++i)
         delete multipartData[i];
     if (this->file != -1)
@@ -167,17 +161,13 @@ void Request::CGIError()
 
 void Request::printRequest()
 {
-    // if (!isDone())
-    //     return ;
+    if (!isDone())
+        return ;
     std::cout << this->reqLine << std::endl
               << std::endl;
     for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); it++)
         std::cout << it->first << ": " << it->second << std::endl;
     std::cout << std::endl;
-    // std::cout << Request::loggedInUser.username << std::endl;
-    // std::cout << Request::loggedInUser.password << std::endl;
-
-    // std::cout << "loggedin : " << Request::loggedIn << std::endl;
     if (!this->fullBody.empty())
         std::cout << this->fullBody << std::endl;
         std::cout << "----------------------------------------" << std::endl;

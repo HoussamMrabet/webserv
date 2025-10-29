@@ -16,7 +16,6 @@ void Request::parseBody()
 {
     if (this->isChunked)
     {
-        // Check if body ends with "0\r\n\r\n" (final chunk marker)
         if (!this->lastChunk && this->body.size() >= 5)
         {
             std::string ending = this->body.substr(this->body.size() - 5);
@@ -85,7 +84,6 @@ void Request::parseBody()
         size_t pos = this->body.find("\r\n");
         if (pos != std::string::npos)
         {
-            // std::cout << this->body;
             std::string chunkSizeStr = this->body.substr(0, pos);
             this->body.erase(0, pos + 2);
             char *end;

@@ -52,9 +52,7 @@ void Request::parseRequestLine()
     size_t lastSlash = this->uri.find_last_of('/');
     std::string lastPart;
     if (lastSlash != std::string::npos && lastSlash + 1 < this->uri.size())
-    {
         lastPart = this->uri.substr(lastSlash + 1);
-    }
 
     if (lastPart.empty())
         this->uriFileName = "";
@@ -69,9 +67,6 @@ void Request::parseRequestLine()
 
     handleUriSpecialCharacters(this->uri);
 
-    // const ServerConf &server = ConfigBuilder::getServer();
-    // const ServerConf &server = globalServer[0];
-
     std::map<std::string, LocationConf> locations = server.getLocations();
 
     std::string matchedRoute = "";
@@ -81,19 +76,14 @@ void Request::parseRequestLine()
         if (this->uri == route ||
             (this->uri.find(route) == 0 && route != "/" &&
              (route[route.size() - 1] == '/' || this->uri[route.length()] == '/')))
-        //  (route.back() == '/' || this->uri[route.length()] == '/')))
         {
             if (route.length() > matchedRoute.length())
-            {
                 matchedRoute = route;
-            }
         }
     }
 
     if (matchedRoute.empty() && locations.find("/") != locations.end())
-    {
         matchedRoute = "/";
-    }
 
     this->location = matchedRoute;
 
@@ -102,7 +92,6 @@ void Request::parseRequestLine()
         this->message = "Invalid URI";
         throw 400;
     }
-    // processRequest();
 
     if (this->uri.length() >= 4 && this->uri.substr(this->uri.length() - 4) == ".php")
         this->cgiType = ".php";
