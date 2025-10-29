@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Theme Toggle</title>
     <style>
-        /* --- Same CSS as before --- */
         :root {
             --bg-color: #ffffff;
             --text-color: #333333;
@@ -310,11 +309,10 @@
     </div>
 
     <script>
-        // Function to get user data from response headers
         async function getUserDataFromHeaders() {
             try {
                 const response = await fetch(window.location.href, {
-                    method: 'GET' // Use HEAD to get headers without body
+                    method: 'GET'
                 });
 
                 console.log(response);
@@ -341,11 +339,9 @@
             }
         }
 
-        // Function to populate profile data
         async function loadUserProfile() {
             const userData = await getUserDataFromHeaders();
 
-            // Update profile information
             document.getElementById('job').textContent = userData.job;
             document.getElementById('userfullName').textContent = userData.fullName;
             document.getElementById('username').textContent = userData.username;
@@ -353,7 +349,6 @@
             document.getElementById('fullName').textContent = userData.fullName;
             document.getElementById('avatar').src = userData.avatar;
 
-            // Set theme
             document.body.setAttribute('data-theme', userData.theme);
             updateThemeButton(userData.theme);
             updateThemeStatus(userData.theme);
@@ -372,7 +367,7 @@
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
             showStatus('Sending theme change to server...', 'sending');
 
-            setCookie('theme', newTheme, 1); // Use max-age (1 hour)
+            setCookie('theme', newTheme, 1);
 
             document.documentElement.setAttribute('data-theme', newTheme);
             updateThemeButton(newTheme);
@@ -450,46 +445,21 @@
                 }
             })
                 .then(response => {
-                    // Redirect to login regardless of response
                     setTimeout(() => {
                     }, 1000);
                 })
                 .catch(error => {
                     console.error('Logout error:', error);
-                    // Still redirect even if request fails
                     setTimeout(() => {
                     }, 1000);
                 });
             console.log('Logging out...');
 
         });
-        // function logout() {
-        //     showStatus('Logging out...', 'success');
-
-        //     // Send GET request to logout endpoint
-        //     fetch('/logout', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //         }
-        //     })
-        //         .then(response => {
-        //             // Redirect to login regardless of response
-        //             setTimeout(() => {
-        //             }, 1000);
-        //         })
-        //         .catch(error => {
-        //             console.error('Logout error:', error);
-        //             // Still redirect even if request fails
-        //             setTimeout(() => {
-        //             }, 1000);
-        //         });
-        //     console.log('Logging out...');
-        // }
 
         document.addEventListener('DOMContentLoaded', function () {
-            loadUserProfile(); // Load user data first
-            loadTheme(); // Then load theme preferences
+            loadUserProfile();
+            loadTheme();
         });
     </script>
 </body>

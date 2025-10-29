@@ -119,7 +119,6 @@ void ServerConf::printLocations(std::ostream& os) const {
 		it->second.printAllowedMethods(os);
 		it->second.printBodySizeLimit(os);
 		it->second.printRedirectUrl(os);
-		// it->second.printListing(os);
 		it->second.printCgi(os);
 		os << "----------------------------" << std::endl;
 	}
@@ -388,8 +387,6 @@ std::pair<std::string, std::string> ServerConf::parseListen(std::string str) {
 
 std::ostream& operator << (std::ostream& os, const ServerConf server) {
 		os << "Server Class : " << std::endl;
-		// os << "#" << "Listen : " << std::endl;
-		// server.printListen(os);
 		os << "#" << "Server Names : " << std::endl;
 		server.printServerNames(os);
 		os << "#" << "Root : " << std::endl;

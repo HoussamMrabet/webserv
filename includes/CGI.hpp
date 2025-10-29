@@ -16,68 +16,50 @@
 #include "Request.hpp"
 #include <iostream>
 #include <sstream>
-#include <sys/wait.h> // pipe - fork - dup2 - close - execve - write - read - waitpid - STDOUT_FILENO
-#include <unistd.h> // close - read - write - execve - STDIN_FILENO - fork - pipe
-#include <cstdio> // perror
-#include <cstdlib> // exit
-#include <fcntl.h>  // fcntl, O_NONBLOCK
-#include <sys/time.h> // gettimeofday
-#include <sys/stat.h> // stat
+#include <sys/wait.h>
+#include <unistd.h>
+#include <cstdio>
+#include <cstdlib>
+#include <fcntl.h>
+#include <sys/time.h>
+#include <sys/stat.h>
 #include <vector>
 #include <map>
-// #include <unistd.h> // for close, read, write
-// #include <cerrno>   // for errno
 
 #define SERVERERROR "HTTP/1.1 500 Internal Server Error\r\n" \
                     "Content-Type: text/plain\r\n" \
                     "Content-Length: 19\r\n\r\n" \
                     "Invalid CGI script."
 
-class CGI{ // should class name be camel-case??
+class CGI{
     
     private:
-        // env variables:
         ServerConf _server;
-        std::string _scriptName;        // filesystem path to script
-        std::string _scriptFileName;        // full path to script
+        std::string _scriptName;
+        std::string _scriptFileName;
         std::string _location;
         std::string _execPath;
         std::string _root;
-        std::string _requestMethod;     // GET, POST, etc.
-        std::string _queryString;       // stuff after '?'
-        std::string _body;              // POST body (if any)
-        std::string _contentLenght;     // _body.size()
-        std::string _contentType;       // from the headers map (should be!!)
-        std::string _remoteAddr;        // remote client IP
+        std::string _requestMethod;
+        std::string _queryString; 
+        std::string _body;
+        std::string _contentLenght;
+        std::string _contentType;
+        std::string _remoteAddr;
         std::string _output;
-        // std::string _errormsg;
         int _fd_in, _fd_out;
         bool _execDone;
         bool _readDone;
-        /* To fix the path to file, join with root
-        // if there was no root add a default path!
-        std::string _location;
-        std::string _root;
-        */
-        std::map<std::string, std::string> _headers; // HTTP headers
-        std::vector<std::string> _envs; // environment variables (string)
-        std::vector<char*> _envc;       // environment for execve (should be char*)
+        std::map<std::string, std::string> _headers;
+        std::vector<std::string> _envs;
+        std::vector<char*> _envc;
         std::string _cgiFileName;
         std::string _cgiExecPath;
 
-        // int generateCgiFile();
-        // std::string getCGIPath();
-        // void getRoot();
-        // void generateCgiFile();
-        // CGI();
-        void importData(Request&); // remove const
-        // void setQueryString();
-        // std::string setPath(); // remove const
+        void importData(Request&);
         void setContentLenght();
         void set_HTTP_Header();
-        void printEnvironment(); // to remove later
-        // std::string parseOutput(std::string &);
-        // std::string runCGI();
+        void printEnvironment();
         bool setToNonBlocking();
         bool validPath();
         bool validExec();
@@ -85,7 +67,7 @@ class CGI{ // should class name be camel-case??
     public:
         CGI();
         ~CGI();
-        std::string executeCGI(Request&, ServerConf&); // remove const in order to be able to change status code of request 
+        std::string executeCGI(Request&, ServerConf&);
         std::string readOutput();
         int getFd();
         bool readDone();

@@ -31,7 +31,7 @@ std::string CGI::executeCGI(Request& request, ServerConf& server){
             dup2(_fd_in, STDIN_FILENO);
             close(_fd_in);
         }
-        close(stdout_pipe[0]); // close read end
+        close(stdout_pipe[0]);
         dup2(stdout_pipe[1], STDOUT_FILENO);
         dup2(stdout_pipe[1], STDERR_FILENO);
         close(stdout_pipe[1]);
@@ -45,14 +45,14 @@ std::string CGI::executeCGI(Request& request, ServerConf& server){
         perror("execve");
         exit(1);
     }
-    close(stdout_pipe[1]); // close write end
+    close(stdout_pipe[1]);
     if (!setToNonBlocking())
         throw std::runtime_error("fcntl failed");
 
     int status;
     waitpid(pid, &status, 0);
     
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)/////////// check for all error types!!
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
         throw std::runtime_error("CGI script failed");
 
     _execDone = true;
@@ -141,12 +141,9 @@ std::string CGI::readOutput(){
         close(_fd_in);
     }
     else{
-        // _readDone = true;
         close(_fd_in);
-        // close(_fd_out);
         throw std::runtime_error("Read failed");
     } 
-    // throw exception!!
     return (_output);
 }
 
@@ -163,7 +160,7 @@ bool CGI::setToNonBlocking(){
 }
 
 bool CGI::validPath(){
-    if (access(_scriptFileName.c_str(), F_OK) != 0) // change file permission and test 
+    if (access(_scriptFileName.c_str(), F_OK) != 0)
         return (false);
     if (access(_scriptFileName.c_str(), R_OK) != 0)
         return (false);

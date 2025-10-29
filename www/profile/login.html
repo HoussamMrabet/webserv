@@ -212,7 +212,6 @@
     <div id="statusIndicator" class="status-indicator" style="display: none;"></div>
 
     <script>
-        // Load theme from cookie on page load
         function loadTheme() {
             const theme = getCookie('theme') || 'light';
             document.documentElement.setAttribute('data-theme', theme);
@@ -223,19 +222,15 @@
         async function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            // Show sending status
             showStatus('Sending theme change to server...', 'sending');
 
-            // Set the new theme cookie
-            setCookie('theme', newTheme, 1); // Set cookie for 30 days
+            setCookie('theme', newTheme, 1);
 
-            // Update UI immediately
             document.documentElement.setAttribute('data-theme', newTheme);
             updateThemeButton(newTheme);
             updateThemeStatus(newTheme);
 
             try {
-                // Send request to server with new theme
                 const response = await fetch('/profile', {
                     method: 'POST',
                     headers: {
@@ -261,7 +256,6 @@
             indicator.className = `status-indicator status-${type}`;
             indicator.style.display = 'block';
 
-            // Hide after 3 seconds
             setTimeout(() => {
                 indicator.style.display = 'none';
             }, 3000);
@@ -278,7 +272,7 @@
         }
 
         function setCookie(name, value, hours) {
-            const maxAge = hours * 60 * 60; // Convert hours to seconds
+            const maxAge = hours * 60 * 60;
             console.log('Setting cookie:', `${name}=${value};max-age=${maxAge};path=/`);
             document.cookie = `${name}=${value};max-age=${maxAge};path=/`;
         }
@@ -294,20 +288,16 @@
             return null;
         }
 
-        // Handle form submission
         document.getElementById('loginForm').addEventListener('submit', function (e) {
-            // e.preventDefault(); // Prevent default form submission
 
             const formData = new FormData(this);
             const username = formData.get('username');
             const password = formData.get('password');
 
-            // Create query parameters
             const queryParams = new URLSearchParams();
             queryParams.append('username', username);
             queryParams.append('password', password);
 
-            // Send GET request to /auth with query parameters
             fetch(`/profile/profile.html?${queryParams.toString()}`, {
                 method: 'GET',
                 headers: {
@@ -318,7 +308,6 @@
                     if (response.ok) {
                         showStatus('Login successful!', 'success');
                         setTimeout(() => {
-                            // window.location.href = '/profile/profile.html';
                         }, 1000);
                     } else {
                         showStatus('Invalid credentials', 'error');
@@ -330,7 +319,6 @@
                 });
         });
 
-        // Load theme on page load
         loadTheme();
     </script>
 </body>

@@ -4,9 +4,9 @@
 #include <string>
 #include <ctime>
 #include <iostream>
-#include <sys/socket.h> // accept 
-#include <fcntl.h> // fcntl
-#include <unistd.h>   // read, write, close
+#include <sys/socket.h> 
+#include <fcntl.h>
+#include <unistd.h>
 #include <algorithm>
 #include <dirent.h>
 #include <vector>
@@ -18,7 +18,7 @@
 #include "ServerConf.hpp"
 #include "CGI.hpp"
 
-#define LARGE_FILE_THRESHOLD 1048576  // 1MB - files larger than this will use chunked transfer
+#define LARGE_FILE_THRESHOLD 1048576
 
 class Connection{
 private:
@@ -29,15 +29,13 @@ private:
     time_t _time;
     std::string _buffer;
     Request  _request;
-    Response _response_obj;  // For chunked responses
-    std::string _response;   // For simple responses
+    Response _response_obj;
+    std::string _response;
     ServerConf _server;
     CGI _cgi;
-    // std::string cgiOutput;
     bool _done;
-    // bool _isCGI;
     bool _responseDone;
-    bool _isChunkedResponse; // Flag to track if we're doing chunked response
+    bool _isChunkedResponse;
     std::string _currentChunk;
 
 public:
@@ -56,18 +54,15 @@ public:
     bool isResponseDone();
     bool writeResponse();
     bool setNonBlocking();
-    void printRequest(); // to remove
+    void printRequest();
     std::string setCGIHeaders();
     void updateTimout();
     std::string to_str(int);
-    // std::string getRequestMethod();
     void requestInfo(const std::string&, const std::string&, int, const std::string&, const std::string&, const std::string&);
     void getRquestType();
     void sendGetResponse(Request    &request, ServerConf &server);
     void sendPostResponse(Request   &request, int status_code, ServerConf &server);
     void sendDeleteResponse(Request &request, ServerConf &server);
-    // void sentPostResponse(Request   &request, ServerConf &server);
-    // void sendAutoIndex(Response &response_obj, const std::string &full_path, const std::string &requested_path);
     void sendErrorPage(Request &request, int code, ServerConf &server);
     std::string generateDirectoryListing(const std::string&, const std::string&);
     std::string getConnectionHeader(Request &request);

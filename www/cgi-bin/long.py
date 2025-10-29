@@ -6,15 +6,12 @@ import os
 
 cgitb.enable()
 
-# Parse form data
 form = cgi.FieldStorage()
 name = form.getvalue("name", "Guest")
 
-# Start with proper headers
 print("Content-Type: text/html")
 print()
 
-# Begin HTML output
 print("<!DOCTYPE html>")
 print("<html>")
 print("<head>")

@@ -36,7 +36,6 @@ class Response {
 	bool is_ready;
 	bool has_body;
 
-	// For chunked file sending
 	std::string file_path;
 	std::ifstream file_stream;
 	size_t bytes_sent;
@@ -47,39 +46,32 @@ class Response {
 	static std::map<int, std::string> status_map;
 	
 	public :
-		// Constructor and basic setup
 		Response();
 		Response(int status_code);
 		~Response();
 		
-		// Static method for simple error responses (keep existing)
 		static std::string getResponse(int code);
 		
-		// New methods for building responses
 		void setStatus(int status_code);
 		void setHeader(const std::string& key, const std::string& value);
 		void setBody(const std::string& content);
 		void setBodyFromFile(const std::string& file_path);
-		void setHttpVersion(const std::string& version); // New method to set HTTP version
+		void setHttpVersion(const std::string& version);
 		
-		// Response generation methods
 		std::string buildResponse();
 		std::string buildGetResponse(const std::string& file_path);
 		std::string buildPostResponse();
 		std::string buildDeleteResponse(const std::string& file_path);
 		
-		// Chunked response methods for large files
 		void prepareFileResponse(const std::string& file_path);
 		std::string getNextChunk(size_t chunk_size = BUFFER_SIZE);
 		bool isResponseComplete() const;
 		void reset();
 		
-		// Universal response method - works for any file size
 		void prepareResponse(const std::string& file_path);
 		std::string getResponseChunk(size_t chunk_size = BUFFER_SIZE);
 		bool isFinished() const;
 		
-		// Utility methods
 		std::string getContentType(const std::string& file_path);
 		bool fileExists(const std::string& file_path);
 		std::string getStatusMessage(int code);

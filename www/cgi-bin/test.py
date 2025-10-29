@@ -5,7 +5,6 @@ import sys
 import html
 from urllib.parse import parse_qs
 
-# Read POST data
 try:
     content_length = int(os.environ.get('CONTENT_LENGTH', 0))
     post_data = sys.stdin.read(content_length) if content_length > 0 else ""
@@ -13,11 +12,9 @@ try:
 except Exception:
     form = {}
 
-# Get form fields with defaults
 name = html.escape(form.get("name", ["No Name Provided"])[0])
 email = html.escape(form.get("email", ["No Email Provided"])[0])
 
-# Output HTTP headers and HTML response
 print("Content-Type: text/html\n")
 print(f"""<!DOCTYPE html>
 <html lang="en">

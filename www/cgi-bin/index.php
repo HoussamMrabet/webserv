@@ -4,14 +4,11 @@ function h($s) {
     return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-// Helper: robustly obtain a request parameter (fallback to raw QUERY_STRING / POST body)
 function get_param($key) {
-    // 1) normal superglobals
     if (isset($_REQUEST[$key]) && $_REQUEST[$key] !== '') {
         return $_REQUEST[$key];
     }
 
-    // 2) parse QUERY_STRING env
     $qs = getenv('QUERY_STRING');
     if ($qs === false || $qs === null) {
         $qs = isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : '';
@@ -23,7 +20,6 @@ function get_param($key) {
         }
     }
 
-    // 3) if POST, read raw body and parse
     $method = getenv('REQUEST_METHOD');
     if ($method === false || $method === null) {
         $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '';

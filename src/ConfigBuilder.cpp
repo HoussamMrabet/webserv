@@ -44,7 +44,6 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 	std::stack<char> stk;
 	for (std::vector<std::string>::const_iterator it = tokens.begin(); it != tokens.end(); ++it ) {
 		if (*it == "server" && (it + 1 ) != tokens.end() && *(it + 1) == "{" ) {
-			// std::cout << "there is a server !" << std::endl;
 			it++;
 			temp = ConfigBuilder::buildServer(it, tokens, stk);
 			res.push_back(temp);
@@ -66,8 +65,6 @@ std::vector<ServerConf> ConfigBuilder::generateServers(std::string file) {
 		throw ConfigBuilder::ErrorConfig("Config file : 'listen' directive is required and cannot be empty");
 	}
 
-	// std::cout << "Server configuration loaded successfully.\n";
-	// res[0].printListen(std::cout);
 	_server = res[0];
 	return (res);
 }
@@ -138,11 +135,6 @@ ServerConf ConfigBuilder::buildServer(std::vector<std::string>::const_iterator &
 			break;
 		it++;
 	}
-	// if (server.getReady() == false)
-	// 	throw ConfigBuilder::ErrorConfig("Error : your server should have directives to be able to run !");
-	// std::cout << server.getUploadDir() << std::endl << server << std::endl;
-	// std::cout << "_____________________________" <<std::endl;
-	// server.printLocations(std::cout);
 	return (server);
 }
 

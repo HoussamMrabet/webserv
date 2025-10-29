@@ -1,24 +1,20 @@
 #ifndef SOCKET_HPPP
 #define SOCKET_HPPP
 
-#include <iostream> // For cout
-#include <cstring> // for strerror
-#include <sys/socket.h> // For socket functions
-#include <unistd.h> // For close and read (fd)
-#include <arpa/inet.h> // For sockaddr_in struct
-#include <cerrno> // for errno, check if c++11
-#include <cstdlib> // For exit() and EXIT_FAILURE
+#include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <cerrno>
+#include <cstdlib>
 #include <vector>
 #include <fcntl.h>
-/* useless headers ?*/
-#include <arpa/inet.h>  // For inet_ntop
-#include <netdb.h>   // For getaddrinfo
-// #include "Listen.hpp"
+#include <arpa/inet.h>
+#include <netdb.h>
 #include "ServerConf.hpp"
 #define MAXCONNECTIONS 100
-// creat one socket 
         
-// Factory designe
 class Socket{
 
     private:
@@ -35,7 +31,6 @@ class Socket{
 
     public:
         static int StartSocket(const std::string&, const std::string&);
-        // add canonical form
         ~Socket();
 
 };

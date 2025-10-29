@@ -1,4 +1,3 @@
-/* Reset and Base Styles for Error Pages */
 * {
     margin: 0;
     padding: 0;
@@ -140,7 +139,6 @@ body {
     font-size: 0.9rem;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
     .error-container {
         padding: 15px;

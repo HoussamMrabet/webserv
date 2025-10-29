@@ -20,7 +20,7 @@ class LocationConf;
 class ServerConf {
 
 	private :
-		std::vector<std::pair<std::string, std::string> > listen;    // getaddrinfo     
+		std::vector<std::pair<std::string, std::string> > listen;   
     	std::set<std::string> serverNames;    
     	std::string root;                   
     	std::vector<std::string> index;         
