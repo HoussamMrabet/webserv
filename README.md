@@ -231,7 +231,7 @@ This repository is a learning project. Suggested improvements:
 This project was developed by a dedicated team — big thanks to all contributors:
 
 - [Houssam Mrabet](https://github.com/HoussamMrabet)
-- [Mohammed El Hamdaoui](https://github.com/mel-hamd)
+- [Mohammed El Hamdaoui](https://github.com/M-elhamdaoui)
 - [Chorouk Masnaoui](https://github.com/Cho-r-ouk)
 
 We appreciate everyone's work and collaboration on this project.
